@@ -1,0 +1,187 @@
+name: Build Phone Installers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, work ]
+    paths:
+      - '.github/workflows/build-phone-installers.yml'
+      - 'fabrication_pro_capacitor/**'
+
+jobs:
+  android-apk:
+    name: Android Permanently Signed APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Verify preserved web app and build configuration
+        run: npm run verify
+
+      - name: Add and sync Android
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Configure permanent Android release signing
+        run: node scripts/android-signing.mjs
+
+      - name: Validate Android signing secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Required GitHub Actions secret $name is not configured. See docs/ANDROID_SIGNING.md."
+              exit 1
+            fi
+          done
+
+      - name: Restore permanent Android signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/fabrication-pro-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          keytool -list \
+            -keystore "$KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" > /dev/null
+          echo "Permanent Android signing key restored and validated."
+
+      - name: Build permanently signed release APK
+        working-directory: fabrication_pro_capacitor/android
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/fabrication-pro-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Verify signing identity and package APK
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/Fabrication-Pro-Android.apk
+          sha256sum dist/Fabrication-Pro-Android.apk > dist/Fabrication-Pro-Android.apk.sha256
+
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::Android SDK apksigner was not found."
+            exit 1
+          fi
+          SIGNING_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs dist/Fabrication-Pro-Android.apk)"
+          printf '%s\n' "$SIGNING_OUTPUT" | tee dist/Fabrication-Pro-Android-signing.txt
+
+          ACTUAL_FINGERPRINT="$(printf '%s\n' "$SIGNING_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED_FINGERPRINT="$(tr -d '[:space:]:' < docs/ANDROID_SIGNING_CERT_SHA256.txt | tr '[:upper:]' '[:lower:]')"
+          if [ -z "$ACTUAL_FINGERPRINT" ] || [ "$ACTUAL_FINGERPRINT" != "$EXPECTED_FINGERPRINT" ]; then
+            echo "::error::APK signing certificate does not match the permanent Fabrication Pro certificate."
+            echo "Expected: $EXPECTED_FINGERPRINT"
+            echo "Actual:   ${ACTUAL_FINGERPRINT:-unavailable}"
+            exit 1
+          fi
+          echo "Permanent Android certificate fingerprint verified: $ACTUAL_FINGERPRINT"
+
+      - name: Upload Android installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fabrication-Pro-Android-APK
+          path: |
+            fabrication_pro_capacitor/dist/Fabrication-Pro-Android.apk
+            fabrication_pro_capacitor/dist/Fabrication-Pro-Android.apk.sha256
+            fabrication_pro_capacitor/dist/Fabrication-Pro-Android-signing.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  ios-unsigned-ipa:
+    name: iPhone IPA for SideStore or AltStore
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Verify preserved web app
+        run: npm run verify
+
+      - name: Add and sync iOS
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Register required iOS privacy manifest
+        run: node --input-type=module -e "import { installIosPrivacyManifest } from './scripts/ios-privacy.mjs'; installIosPrivacyManifest(process.cwd());"
+
+      - name: Build unsigned physical-device app
+        run: |
+          set -euxo pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath "$PWD/build/ios" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          set -euxo pipefail
+          APP_PATH="$PWD/build/ios/Build/Products/Release-iphoneos/App.app"
+          test -d "$APP_PATH"
+          mkdir -p "$PWD/dist/Payload"
+          cp -R "$APP_PATH" "$PWD/dist/Payload/Fabrication Pro.app"
+          cd "$PWD/dist"
+          /usr/bin/zip -qry Fabrication-Pro-iPhone-Unsigned.ipa Payload
+          rm -rf Payload
+          shasum -a 256 Fabrication-Pro-iPhone-Unsigned.ipa > Fabrication-Pro-iPhone-Unsigned.ipa.sha256
+
+      - name: Upload iPhone IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fabrication-Pro-iPhone-Unsigned-IPA
+          path: |
+            fabrication_pro_capacitor/dist/Fabrication-Pro-iPhone-Unsigned.ipa
+            fabrication_pro_capacitor/dist/Fabrication-Pro-iPhone-Unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 30
