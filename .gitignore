@@ -1,0 +1,11 @@
+fabrication_pro_capacitor/node_modules/
+fabrication_pro_capacitor/android/
+fabrication_pro_capacitor/ios/
+fabrication_pro_capacitor/build/
+fabrication_pro_capacitor/dist/
+*.jks
+*.keystore
+*.p12
+*.pem
+.env
+.DS_Store
