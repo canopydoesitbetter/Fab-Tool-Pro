@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { patchAndroidBuildGradle, ANDROID_SIGNING_MARKER } from './android-signing.mjs';
 
-const workflow = readFileSync(new URL('../.github/workflows/build-phone-installers.yml', import.meta.url), 'utf8');
+const workflow = readFileSync(new URL('../../.github/workflows/build-phone-installers.yml', import.meta.url), 'utf8');
 const signingScript = readFileSync(new URL('./android-signing.mjs', import.meta.url), 'utf8');
 const pinnedFingerprint = readFileSync(new URL('../docs/ANDROID_SIGNING_CERT_SHA256.txt', import.meta.url), 'utf8').trim();
 
