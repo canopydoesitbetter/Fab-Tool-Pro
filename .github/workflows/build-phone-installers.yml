@@ -99,7 +99,7 @@ jobs:
           SIGNING_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs dist/Fabrication-Pro-Android.apk)"
           printf '%s\n' "$SIGNING_OUTPUT" | tee dist/Fabrication-Pro-Android-signing.txt
 
-          ACTUAL_FINGERPRINT="$(printf '%s\n' "$SIGNING_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL_FINGERPRINT="$(printf '%s\n' "$SIGNING_OUTPUT" | sed -n 's/^.*certificate SHA-256 digest: //p' | head -n 1 | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
           EXPECTED_FINGERPRINT="$(tr -d '[:space:]:' < docs/ANDROID_SIGNING_CERT_SHA256.txt | tr '[:upper:]' '[:lower:]')"
           if [ -z "$ACTUAL_FINGERPRINT" ] || [ "$ACTUAL_FINGERPRINT" != "$EXPECTED_FINGERPRINT" ]; then
             echo "::error::APK signing certificate does not match the permanent Fabrication Pro certificate."
