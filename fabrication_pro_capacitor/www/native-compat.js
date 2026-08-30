@@ -2,13 +2,25 @@
  * Fabrication Pro — Capacitor native compatibility layer
  *
  * Purpose: make the existing Blob + <a download> JSON exports reliable inside
- * native iOS/Android WebViews without changing any existing application data,
+ * native iOS/Android WebViews without changing existing application data,
  * calculations, validation, import formats, timer behavior, or export payloads.
  *
- * In a normal browser this file intentionally does nothing.
+ * Also loads the approved Fabri-Cadabra UI enhancement layer in both browser
+ * and native builds while leaving the preserved original HTML untouched.
  */
 (() => {
   'use strict';
+
+  if (typeof document !== 'undefined') {
+    const existing = document.querySelector('script[data-fabri-cadabra-upgrades]');
+    if (!existing) {
+      const script = document.createElement('script');
+      script.src = 'fabri-cadabra.js';
+      script.defer = true;
+      script.dataset.fabriCadabraUpgrades = 'true';
+      document.head.appendChild(script);
+    }
+  }
 
   const cap = window.Capacitor;
   const isNative = !!(cap && (
@@ -67,8 +79,6 @@
     const data = await blobToBase64(blob);
     const path = safeFilename(filename);
 
-    // Cache is intentionally used: the portable JSON is handed to the native
-    // share/save sheet immediately and does not need permanent app-private storage.
     await Filesystem.writeFile({
       path,
       data,
@@ -94,9 +104,6 @@
 
     if (!blob) return anchorClick.call(this);
 
-    // Preserve the original synchronous export functions. The share/save UI is
-    // launched asynchronously, while the original function can continue and show
-    // its existing status text exactly as before.
     nativeExport(blob, filename).catch(error => {
       console.error('[Fabrication Pro] Native JSON export failed; falling back to WebView download behavior.', error);
       try { anchorClick.call(this); } catch (fallbackError) {
