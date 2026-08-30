@@ -1,0 +1,25 @@
+name: Verify Navigation Source of Truth
+
+on:
+  push:
+    branches: [ refactor/navigation-source-of-truth ]
+    paths:
+      - '.github/workflows/verify-navigation-source-of-truth.yml'
+      - 'fabrication_pro_capacitor/www/app.js'
+      - 'fabrication_pro_capacitor/www/index.html'
+      - 'fabrication_pro_capacitor/scripts/verify-features.mjs'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts
+      - run: npm run verify:features
