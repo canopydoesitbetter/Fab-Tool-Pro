@@ -1,0 +1,29 @@
+name: Verify Task Logging Launch and Page Order
+
+on:
+  push:
+    branches: [ refactor/tasklog-launch-page-order ]
+    paths:
+      - '.github/workflows/verify-tasklog-launch-page-order.yml'
+      - 'fabrication_pro_capacitor/www/index.html'
+      - 'fabrication_pro_capacitor/www/app.js'
+      - 'fabrication_pro_capacitor/scripts/verify-features.mjs'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/tasklog-launch-page-order
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Verify full project
+        run: npm run verify
