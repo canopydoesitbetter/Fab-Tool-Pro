@@ -16,13 +16,13 @@
       <div class="brand-row">
         <div class="brand">
           <h1>Fabri-Cadabra</h1>
-          <p>Offline shop tools for panel cuts, material optimization, saw cutting, task logging, fabricator notes, checklists, overhangs, fastener spacing, and quick references.</p>
+          <p>The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.</p>
         </div>
         <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch color theme">☾ Dark</button>
       </div>
     </header>
 
-    <section id="tool-overhang" class="tool-panel active">
+    <section id="tool-overhang" class="tool-panel">
       <div class="tool-title">
         <h2>Aluminum Overhang Cut Calculator</h2>
         <p>Enter the finished overhang dimensions. Corner and seam flange material is added automatically.</p>
@@ -123,7 +123,7 @@
     <section id="tool-optimizer" class="tool-panel">
       <div class="tool-title optimizer-title-row">
         <div>
-          <h2>Material Cut Optimizer</h2>
+          <h2>Sheet Optimizer</h2>
           <p>Add finished panel sizes and quantities. The optimizer evaluates the entire job together, reorders parts as needed, and assigns cuts across stock sheets. .063 Aluminum and ACP are automatically constrained to full-edge shear cuts; other materials use free-form nesting.</p>
         </div>
         <button id="optimizerCutListMenuBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="optimizerCutListDrawer">
@@ -363,7 +363,7 @@
     </section>
 
 
-    <section id="tool-tasklog" class="tool-panel">
+    <section id="tool-tasklog" class="tool-panel active">
       <div class="tool-title tasklog-title-row">
         <div>
           <h2>Task Logging</h2>
@@ -712,15 +712,15 @@
   <aside id="pageMenuDrawer" class="cut-list-drawer fab-page-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="pageMenuDrawerTitle">
     <div class="cut-list-drawer-head"><strong id="pageMenuDrawerTitle">Pages</strong><button id="pageMenuCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Pages">×</button></div>
     <div class="cut-list-drawer-body"><nav class="fab-page-list" aria-label="Fabrication tools">
-  <button class="fab-page-link" type="button" data-tool="overhang">Aluminum Overhang</button>
-  <button class="fab-page-link" type="button" data-tool="fasteners">Fastener Spacing</button>
-  <button class="fab-page-link" type="button" data-tool="optimizer">Material Optimizer</button>
-  <button class="fab-page-link" type="button" data-tool="saw">Saw Optimizer</button>
   <button class="fab-page-link" type="button" data-tool="tasklog">Task Logging</button>
   <button class="fab-page-link" type="button" data-tool="notes">Fabricator Notes</button>
   <button class="fab-page-link" type="button" data-tool="checklist">Checklist</button>
-  <button class="fab-page-link" type="button" data-tool="reference">Quick Reference</button>
   <button class="fab-page-link" type="button" data-tool="calculator">Basic Calculator</button>
+  <button class="fab-page-link" type="button" data-tool="reference">Quick Reference</button>
+  <button class="fab-page-link" type="button" data-tool="fasteners">Fastener Spacing</button>
+  <button class="fab-page-link" type="button" data-tool="optimizer">Sheet Optimizer</button>
+  <button class="fab-page-link" type="button" data-tool="saw">Saw Optimizer</button>
+  <button class="fab-page-link" type="button" data-tool="overhang">Aluminum Overhang</button>
 </nav></div>
   </aside>
 

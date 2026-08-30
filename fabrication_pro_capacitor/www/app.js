@@ -5,7 +5,7 @@
   const themeColorMeta = document.getElementById('themeColorMeta');
   const pageLinks = Array.from(document.querySelectorAll('.fab-page-link'));
   const toolPanels = Array.from(document.querySelectorAll('.tool-panel'));
-  const DEFAULT_TOOL = 'overhang';
+  const DEFAULT_TOOL = 'tasklog';
   const VALID_TOOLS = new Set(pageLinks.map(link=>link.dataset.tool));
   const drawerReturnFocus = new Map();
   let activeTool = DEFAULT_TOOL;
@@ -130,8 +130,7 @@
     }
   });
 
-  const savedTool = storageGet('fabricationTool');
-  selectTool(VALID_TOOLS.has(savedTool)?savedTool:DEFAULT_TOOL);
+  selectTool(DEFAULT_TOOL);
 
   window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen};
 
