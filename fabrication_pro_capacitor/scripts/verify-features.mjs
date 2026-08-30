@@ -34,6 +34,7 @@ const requiredSnippets = [
   "document.title = 'Fabri-Cadabra'",
   "brandHeading.textContent = 'Fabri-Cadabra'",
   "pageMenuBtn.id = 'pageMenuBtn'",
+  'top:max(82px, calc(env(safe-area-inset-top) + 68px))',
   "id:'pageMenuDrawer'",
   "['calculator','Basic Calculator']",
   "calculatorPanel.id = 'tool-calculator'",
