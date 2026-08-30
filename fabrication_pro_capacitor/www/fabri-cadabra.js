@@ -183,7 +183,7 @@
         <li><b>%</b> applies percentage behavior based on the pending operator.</li>
         <li><b>π</b> enters pi. <b>xʸ</b> raises the first entered value to the next entered power.</li>
         <li><b>R2 / R0</b> round the displayed result to 2 decimal places or 0 decimal places.</li>
-        <li><b>Backspace</b> deletes one typed character from the right. <b>Delete / Escape</b> clears the active calculation when no drawer is open.</li>
+        <li><b>Backspace / Delete</b> delete one typed character from the right. <b>Escape</b> clears the active calculation when no drawer is open.</li>
         <li><b>Copy</b> by selecting the result text in the display and using your device or browser copy command.</li>
       </ul></section>
       <section class="fab-guide-section"><h3>Addition and subtraction</h3><ul class="fab-guide-list">
@@ -437,8 +437,8 @@
     else if (['+','-','*','/','^'].includes(key)) { event.preventDefault(); chooseOperator(key); }
     else if (key==='%' ) { event.preventDefault(); percent(); }
     else if (key==='Enter' || key==='=') { event.preventDefault(); equals(); }
-    else if (key==='Backspace') { event.preventDefault(); backspace(); }
-    else if (key==='Delete' || key==='Escape') { event.preventDefault(); clearAll(); }
+    else if (key==='Backspace' || key==='Delete') { event.preventDefault(); backspace(); }
+    else if (key==='Escape') { event.preventDefault(); clearAll(); }
   });
 
   const savedTool = storageGet('fabricationTool');
