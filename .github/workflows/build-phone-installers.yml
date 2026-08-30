@@ -1,4 +1,4 @@
-name: Build Phone Installers
+name: Build Fabri-Cadabra Installers
 
 on:
   workflow_dispatch:
@@ -33,13 +33,19 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts
 
-      - name: Verify preserved web app and build configuration
+      - name: Verify Fabri-Cadabra source and build configuration
         run: npm run verify
 
       - name: Add and sync Android
         run: |
           npx cap add android
           npx cap sync android
+
+      - name: Verify Android launcher name
+        run: |
+          set -euo pipefail
+          grep -F '<string name="app_name">Fabri-Cadabra</string>' android/app/src/main/res/values/strings.xml
+          grep -F '<string name="title_activity_main">Fabri-Cadabra</string>' android/app/src/main/res/values/strings.xml
 
       - name: Configure permanent Android release signing
         run: node scripts/android-signing.mjs
@@ -66,7 +72,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          KEYSTORE_PATH="$RUNNER_TEMP/fabrication-pro-release.jks"
+          KEYSTORE_PATH="$RUNNER_TEMP/fabri-cadabra-release.jks"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           chmod 600 "$KEYSTORE_PATH"
           keytool -list \
@@ -78,7 +84,7 @@ jobs:
       - name: Build permanently signed release APK
         working-directory: fabrication_pro_capacitor/android
         env:
-          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/fabrication-pro-release.jks
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/fabri-cadabra-release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -88,21 +94,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk dist/Fabrication-Pro-Android.apk
-          sha256sum dist/Fabrication-Pro-Android.apk > dist/Fabrication-Pro-Android.apk.sha256
+          cp android/app/build/outputs/apk/release/app-release.apk dist/Fabri-Cadabra-Android.apk
+          sha256sum dist/Fabri-Cadabra-Android.apk > dist/Fabri-Cadabra-Android.apk.sha256
 
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           if [ -z "$APKSIGNER" ]; then
             echo "::error::Android SDK apksigner was not found."
             exit 1
           fi
-          SIGNING_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs dist/Fabrication-Pro-Android.apk)"
-          printf '%s\n' "$SIGNING_OUTPUT" | tee dist/Fabrication-Pro-Android-signing.txt
+          SIGNING_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs dist/Fabri-Cadabra-Android.apk)"
+          printf '%s\n' "$SIGNING_OUTPUT" | tee dist/Fabri-Cadabra-Android-signing.txt
 
           ACTUAL_FINGERPRINT="$(printf '%s\n' "$SIGNING_OUTPUT" | sed -n 's/^.*certificate SHA-256 digest: //p' | head -n 1 | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
           EXPECTED_FINGERPRINT="$(tr -d '[:space:]:' < docs/ANDROID_SIGNING_CERT_SHA256.txt | tr '[:upper:]' '[:lower:]')"
           if [ -z "$ACTUAL_FINGERPRINT" ] || [ "$ACTUAL_FINGERPRINT" != "$EXPECTED_FINGERPRINT" ]; then
-            echo "::error::APK signing certificate does not match the permanent Fabrication Pro certificate."
+            echo "::error::APK signing certificate does not match the permanent Fabri-Cadabra certificate."
             echo "Expected: $EXPECTED_FINGERPRINT"
             echo "Actual:   ${ACTUAL_FINGERPRINT:-unavailable}"
             exit 1
@@ -112,11 +118,11 @@ jobs:
       - name: Upload Android installer
         uses: actions/upload-artifact@v4
         with:
-          name: Fabrication-Pro-Android-APK
+          name: Fabri-Cadabra-Android-APK
           path: |
-            fabrication_pro_capacitor/dist/Fabrication-Pro-Android.apk
-            fabrication_pro_capacitor/dist/Fabrication-Pro-Android.apk.sha256
-            fabrication_pro_capacitor/dist/Fabrication-Pro-Android-signing.txt
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-Android.apk
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-Android.apk.sha256
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-Android-signing.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -138,13 +144,20 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts
 
-      - name: Verify preserved web app
+      - name: Verify Fabri-Cadabra source
         run: npm run verify
 
       - name: Add and sync iOS
         run: |
           npx cap add ios
           npx cap sync ios
+
+      - name: Verify iOS display name
+        run: |
+          set -euo pipefail
+          DISPLAY_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' ios/App/App/Info.plist)"
+          test "$DISPLAY_NAME" = 'Fabri-Cadabra'
+          echo "iOS display name verified: $DISPLAY_NAME"
 
       - name: Register required iOS privacy manifest
         run: node --input-type=module -e "import { installIosPrivacyManifest } from './scripts/ios-privacy.mjs'; installIosPrivacyManifest(process.cwd());"
@@ -170,18 +183,18 @@ jobs:
           APP_PATH="$PWD/build/ios/Build/Products/Release-iphoneos/App.app"
           test -d "$APP_PATH"
           mkdir -p "$PWD/dist/Payload"
-          cp -R "$APP_PATH" "$PWD/dist/Payload/Fabrication Pro.app"
+          cp -R "$APP_PATH" "$PWD/dist/Payload/Fabri-Cadabra.app"
           cd "$PWD/dist"
-          /usr/bin/zip -qry Fabrication-Pro-iPhone-Unsigned.ipa Payload
+          /usr/bin/zip -qry Fabri-Cadabra-iPhone-Unsigned.ipa Payload
           rm -rf Payload
-          shasum -a 256 Fabrication-Pro-iPhone-Unsigned.ipa > Fabrication-Pro-iPhone-Unsigned.ipa.sha256
+          shasum -a 256 Fabri-Cadabra-iPhone-Unsigned.ipa > Fabri-Cadabra-iPhone-Unsigned.ipa.sha256
 
       - name: Upload iPhone IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Fabrication-Pro-iPhone-Unsigned-IPA
+          name: Fabri-Cadabra-iPhone-Unsigned-IPA
           path: |
-            fabrication_pro_capacitor/dist/Fabrication-Pro-iPhone-Unsigned.ipa
-            fabrication_pro_capacitor/dist/Fabrication-Pro-iPhone-Unsigned.ipa.sha256
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-iPhone-Unsigned.ipa
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-iPhone-Unsigned.ipa.sha256
           if-no-files-found: error
           retention-days: 30
