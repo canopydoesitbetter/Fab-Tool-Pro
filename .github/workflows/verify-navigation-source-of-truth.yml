@@ -8,7 +8,11 @@ on:
       - 'fabrication_pro_capacitor/www/app.js'
       - 'fabrication_pro_capacitor/www/index.html'
       - 'fabrication_pro_capacitor/scripts/verify-features.mjs'
+      - 'fabrication_pro_capacitor/scripts/navigation_source_of_truth_migration.py'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   verify:
@@ -18,8 +22,28 @@ jobs:
         working-directory: fabrication_pro_capacitor
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refactor/navigation-source-of-truth
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --ignore-scripts
-      - run: npm run verify:features
+      - name: Apply navigation source-of-truth refactor
+        run: python scripts/navigation_source_of_truth_migration.py
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Verify full project
+        run: npm run verify
+      - name: Commit production refactor when needed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- www/app.js; then
+            echo 'No production migration changes to commit.'
+            exit 0
+          fi
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fabrication_pro_capacitor/www/app.js
+          git commit -m 'refactor: derive navigation tools from canonical markup'
+          git push origin HEAD:refactor/navigation-source-of-truth
