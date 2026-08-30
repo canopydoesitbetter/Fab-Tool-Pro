@@ -1,42 +1,51 @@
-# Put Fabrication Pro directly on your phones
+# Install Fabri-Cadabra on your phones
 
-This repository is configured to produce the actual phone-installable files from **GitHub Actions → Build Phone Installers**.
+The repository produces phone-installable files through **GitHub Actions → Build Fabri-Cadabra Installers**.
 
 ## Android — direct APK install
 
-The Android build artifact is:
+The Android installer is:
 
-`Fabrication-Pro-Android.apk`
+```text
+Fabri-Cadabra-Android.apk
+```
 
-1. Download the APK to the Android phone (AirDrop is Apple-only; use USB, Google Drive, email to yourself, Nearby/Quick Share, etc.).
-2. Tap the APK in Files / Downloads.
-3. If Android asks, allow **Install unknown apps** for the app you opened the file from.
-4. Tap **Install**.
-5. Fabrication Pro appears in the normal app launcher and works offline.
+1. Transfer or download the APK to the Android phone using USB, cloud storage, Quick Share, email to yourself, or another trusted transfer method.
+2. Open the APK from Files/Downloads.
+3. If Android asks, allow **Install unknown apps** for the app you used to open the APK.
+4. Tap **Install** or **Update**.
+5. The launcher/home-screen app name is **Fabri-Cadabra**.
 
-The APK is a permanently release-signed sideload build when the repository signing secrets are configured. It does not need the Play Store. Keep the permanent keystore backed up privately; future APKs signed with the same key can update the installed app normally. See `ANDROID_SIGNING.md`.
+The APK is a permanently release-signed sideload build. Future APKs can update the existing installation when both of these remain unchanged:
 
-## iPhone — why the IPA cannot install unsigned
+- application ID `com.fabricationpro.app`;
+- permanent signing certificate SHA-256 `5769bbe5a1f4fdccd985fd0145495f3614e0db41992871c99b9eb361634bb586`.
 
-iOS will not install an arbitrary unsigned `.ipa` simply because it was copied into Files. Apple requires the application to be signed for your device/account.
+See `ANDROID_SIGNING.md` for the signing contract.
 
-The build artifact is:
+## iPhone — unsigned IPA
 
-`Fabrication-Pro-iPhone-Unsigned.ipa`
+iOS does not install an arbitrary unsigned `.ipa` directly from Files. The application must be signed for your Apple account/device.
 
-It is a real physical-device iPhone build, packaged specifically so **SideStore**, **AltStore**, or another legitimate personal-signing tool can re-sign it with your Apple ID and install it.
+The generated file is:
+
+```text
+Fabri-Cadabra-iPhone-Unsigned.ipa
+```
+
+It is a physical-device iPhone build intended for re-signing with SideStore, AltStore, or another legitimate Apple signing workflow. After installation, the iOS display name is **Fabri-Cadabra**.
 
 ### SideStore / AltStore route
 
-1. Install SideStore or AltStore on the iPhone using that project's current official instructions.
-2. Transfer `Fabrication-Pro-iPhone-Unsigned.ipa` to the iPhone (AirDrop, iCloud Drive, Files, etc.).
-3. Open SideStore/AltStore and choose the IPA.
-4. The tool signs the app with your Apple ID and installs it.
+1. Install SideStore or AltStore using that project's current official instructions.
+2. Transfer `Fabri-Cadabra-iPhone-Unsigned.ipa` to the iPhone.
+3. Open SideStore/AltStore and select the IPA.
+4. Let the tool sign and install the application with your Apple ID.
 
-A free Apple ID normally requires periodic re-signing. A paid Apple Developer account gives longer-lived signing and also enables TestFlight / Ad Hoc distribution.
+A free Apple ID normally requires periodic re-signing. A paid Apple Developer account enables longer-lived signing and additional distribution options such as TestFlight or Ad Hoc distribution.
 
-## Data behavior
+## Data behavior during updates
 
-The web application code and data formats are not converted to a new database. The installed apps continue to use the same localStorage keys and timestamp-based timer logic as the supplied HTML.
+Fabri-Cadabra continues to use the same existing `localStorage` keys, JSON import/export formats, and timestamp-based task timer model. A normal update of the same application identity preserves its app-local data.
 
-Uninstalling the native app removes its app-local WebView storage. Keep using the built-in JSON Export functions for portable backups.
+Uninstalling the native application removes its WebView-local storage. Use Fabri-Cadabra's JSON Export features when you need a portable backup or transfer between installations.
