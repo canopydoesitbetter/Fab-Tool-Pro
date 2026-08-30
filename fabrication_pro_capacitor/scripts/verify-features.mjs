@@ -15,13 +15,29 @@ const installerWorkflow=readFileSync(join(root,'..','.github','workflows','build
 const pagesWorkflow=readFileSync(join(root,'..','.github','workflows','deploy-pages.yml'),'utf8');
 const combined=[html,app,calculator,native].join('\n');
 const tools=['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
+const expectedNavTools=['tasklog','notes','checklist','calculator','reference','fasteners','optimizer','saw','overhang'];
 const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^"]+)"/g)].map(match=>match[1]);
 if(new Set(navTools).size!==navTools.length) throw new Error('Pages drawer contains duplicate data-tool identifiers.');
+if(JSON.stringify(navTools)!==JSON.stringify(expectedNavTools)) throw new Error(`Pages drawer order changed unexpectedly. Expected ${expectedNavTools.join(' > ')}, got ${navTools.join(' > ')}.`);
 for (const tool of tools) {
   const nav=navTools.filter(value=>value===tool).length;
   const panel=(html.match(new RegExp(`id="tool-${tool}"`,'g'))||[]).length;
   if(nav!==1) throw new Error(`Expected exactly one canonical Pages link for ${tool}; found ${nav}.`);
   if(panel!==1) throw new Error(`Expected exactly one canonical tool panel for ${tool}; found ${panel}.`);
+}
+const pageLabels={
+  tasklog:'Task Logging',
+  notes:'Fabricator Notes',
+  checklist:'Checklist',
+  calculator:'Basic Calculator',
+  reference:'Quick Reference',
+  fasteners:'Fastener Spacing',
+  optimizer:'Sheet Optimizer',
+  saw:'Saw Optimizer',
+  overhang:'Aluminum Overhang'
+};
+for(const [tool,label] of Object.entries(pageLabels)) {
+  if(!html.includes(`data-tool="${tool}">${label}</button>`)) throw new Error(`Pages drawer label mismatch for ${tool}: expected ${label}.`);
 }
 for(const marker of ['id="pageMenuBtn"','id="pageMenuBackdrop"','id="pageMenuDrawer"','id="calculatorGuideBtn"','id="calculatorGuideBackdrop"','id="calculatorGuideDrawer"','id="calculatorDisplay"','id="calculatorClearBtn"']) {
   if(!html.includes(marker)) throw new Error(`Missing static UI marker: ${marker}`);
@@ -32,18 +48,24 @@ for(const section of ['Function definitions','Addition and subtraction','Multipl
 for(const action of ['memory-clear','memory-recall','memory-subtract','memory-add','clear-context','sqrt','percent','pi','power','round-2','round-0']) {
   if(!html.includes(`data-calc-action="${action}"`)) throw new Error(`Missing static calculator action: ${action}`);
 }
-for(const marker of ['function selectTool(tool)','const VALID_TOOLS','window.FabriCadabraApp','getActiveTool','openDrawer','closeDrawer','isDrawerOpen',"storageGet('fabricationTool')"]) {
+const tagline='<p>The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.</p>';
+if(!html.includes(tagline)) throw new Error('Canonical Fabri-Cadabra introductory copy is missing or changed.');
+if(!html.includes('<h2>Sheet Optimizer</h2>')) throw new Error('Optimizer page header must read Sheet Optimizer.');
+const activePanels=[...html.matchAll(/<section id="tool-([^"]+)" class="tool-panel active">/g)].map(match=>match[1]);
+if(activePanels.length!==1 || activePanels[0]!=='tasklog') throw new Error(`Task Logging must be the only initially active tool panel; got ${activePanels.join(', ') || 'none'}.`);
+for(const marker of ['function selectTool(tool)','const VALID_TOOLS','window.FabriCadabraApp','getActiveTool','openDrawer','closeDrawer','isDrawerOpen']) {
   if(!app.includes(marker)) throw new Error(`Missing canonical app/navigation marker: ${marker}`);
 }
 for(const marker of [
-  "const DEFAULT_TOOL = 'overhang';",
+  "const DEFAULT_TOOL = 'tasklog';",
   'const VALID_TOOLS = new Set(pageLinks.map(link=>link.dataset.tool));',
   'let activeTool = DEFAULT_TOOL;',
   "const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;",
-  'selectTool(VALID_TOOLS.has(savedTool)?savedTool:DEFAULT_TOOL);'
+  'selectTool(DEFAULT_TOOL);'
 ]) {
   if(!app.includes(marker)) throw new Error(`Navigation source-of-truth contract missing: ${marker}`);
 }
+if(app.includes("storageGet('fabricationTool')")) throw new Error('Launch behavior must be hard-wired to Task Logging instead of restoring the previously viewed page.');
 if(/const VALID_TOOLS\s*=\s*new Set\s*\(\s*\[/.test(app)) throw new Error('Navigation must derive valid tool IDs from canonical Pages markup instead of maintaining a second hard-coded list.');
 for(const marker of ['function clearEntry()','function equals()','function percent()','function sqrt()','function memory(action)',"key==='Backspace' || key==='Delete'",'FabriCadabraApp.getActiveTool()']) {
   if(!calculator.includes(marker)) throw new Error(`Missing calculator behavior marker: ${marker}`);
@@ -67,5 +89,6 @@ for(const forbidden of ['originalNav.remove()','originalTabs','originalTabByTool
 }
 console.log('Canonical navigation and calculator structure: OK');
 console.log('Navigation source-of-truth contract: OK');
+console.log('Task Logging hard-wired launch and page-order contract: OK');
 console.log('Persistence, import/export, and timer compatibility markers: OK');
 console.log('Official Fabri-Cadabra naming and compatibility-sensitive identity: OK');
