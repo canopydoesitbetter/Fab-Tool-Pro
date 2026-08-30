@@ -9,6 +9,10 @@ const html=readFileSync(join(root,'www/index.html'),'utf8');
 const app=readFileSync(join(root,'www/app.js'),'utf8');
 const calculator=readFileSync(join(root,'www/calculator.js'),'utf8');
 const native=readFileSync(join(root,'www/native-compat.js'),'utf8');
+const config=JSON.parse(readFileSync(join(root,'capacitor.config.json'),'utf8'));
+const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+const installerWorkflow=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
+const pagesWorkflow=readFileSync(join(root,'..','.github','workflows','deploy-pages.yml'),'utf8');
 const combined=[html,app,calculator,native].join('\n');
 const tools=['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
 for (const tool of tools) {
@@ -37,8 +41,18 @@ for(const key of storageKeys) if(!combined.includes(key)) throw new Error(`Prote
 const formats=['FabricationTaskLogJobs','FabricationTaskLogPresets','FabricationFabricatorNotes','FabricationChecklist','FabricationCutOptimizerJob','FabricationSawOptimizerJob'];
 for(const format of formats) if(!combined.includes(format)) throw new Error(`Protected import/export format missing: ${format}`);
 for(const marker of ['running','startedAt','accumulatedMs']) if(!app.includes(marker)) throw new Error(`Protected timer state marker missing: ${marker}`);
+
+if(config.appId!=='com.fabricationpro.app') throw new Error(`Capacitor appId changed unexpectedly: ${config.appId}`);
+if(config.appName!=='Fabri-Cadabra') throw new Error(`Official native app name must be Fabri-Cadabra; got ${config.appName}`);
+if(pkg.name!=='fabri-cadabra-capacitor') throw new Error(`Package name must be fabri-cadabra-capacitor; got ${pkg.name}`);
+for(const artifact of ['Fabri-Cadabra-Android.apk','Fabri-Cadabra-Android.apk.sha256','Fabri-Cadabra-Android-signing.txt','Fabri-Cadabra-iPhone-Unsigned.ipa','Fabri-Cadabra-iPhone-Unsigned.ipa.sha256']) {
+  if(!installerWorkflow.includes(artifact)) throw new Error(`Installer workflow missing canonical artifact name: ${artifact}`);
+}
+if(/Fabrication Pro|Fabrication-Pro/.test(installerWorkflow+pagesWorkflow)) throw new Error('Active GitHub workflow still uses the old official product name.');
+
 for(const forbidden of ['originalNav.remove()','originalTabs','originalTabByTool',"script.src = 'fabri-cadabra.js'",'calculatorPanel.innerHTML','document.title =']) {
   if(combined.includes(forbidden)) throw new Error(`Forbidden legacy architecture marker remains: ${forbidden}`);
 }
 console.log('Canonical navigation and calculator structure: OK');
 console.log('Persistence, import/export, and timer compatibility markers: OK');
+console.log('Official Fabri-Cadabra naming and compatibility-sensitive identity: OK');
