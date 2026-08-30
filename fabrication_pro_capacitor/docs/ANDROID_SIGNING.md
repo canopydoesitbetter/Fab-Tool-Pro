@@ -1,52 +1,60 @@
-# Permanent Android signing for GitHub Actions
+# Permanent Android signing for Fabri-Cadabra
 
-Fabrication Pro's Android GitHub Actions job builds a **release APK** signed by one permanent key. The key itself is stored only in GitHub Actions Secrets, not in the repository.
+Fabri-Cadabra's Android GitHub Actions job builds a **release APK** signed by one permanent key. The private key remains in GitHub Actions Secrets and is never committed to the repository.
 
 ## Required repository secrets
 
-Open your GitHub repository and go to:
+In GitHub, open **Settings → Secrets and variables → Actions** and keep these four repository secrets configured exactly as named:
 
-**Settings → Secrets and variables → Actions → New repository secret**
+- `ANDROID_KEYSTORE_BASE64` — one-line Base64 representation of the permanent `.jks` keystore;
+- `ANDROID_KEYSTORE_PASSWORD` — password that opens the keystore;
+- `ANDROID_KEY_ALIAS` — alias of the permanent signing key;
+- `ANDROID_KEY_PASSWORD` — password for that alias.
 
-Create these four secrets exactly:
+The workflow fails if any required secret is missing.
 
-- `ANDROID_KEYSTORE_BASE64` — one-line Base64 representation of the permanent `.jks` keystore.
-- `ANDROID_KEYSTORE_PASSWORD` — password that opens the keystore.
-- `ANDROID_KEY_ALIAS` — alias of the permanent signing key inside the keystore.
-- `ANDROID_KEY_PASSWORD` — password for that key alias.
+## Permanent certificate identity
 
-The workflow fails immediately with a clear error if any one of these secrets is missing.
+The pinned public certificate SHA-256 is stored in `docs/ANDROID_SIGNING_CERT_SHA256.txt` and must remain:
+
+```text
+5769bbe5a1f4fdccd985fd0145495f3614e0db41992871c99b9eb361634bb586
+```
+
+This fingerprint is not secret. It lets CI reject an APK signed with the wrong private key.
+
+The Capacitor application ID must also remain:
+
+```text
+com.fabricationpro.app
+```
+
+The official launcher name is **Fabri-Cadabra**, but changing the display name does not change the application identity. Keeping both the application ID and signing certificate stable is what allows future APKs to update the installed app and retain app-local data.
 
 ## What the workflow does
 
-1. Verifies that the Fabrication Pro web application is still preserved.
-2. Generates/syncs the Capacitor Android project.
-3. Adds a release-only Gradle signing configuration that reads credentials from environment variables.
-4. Restores the permanent keystore into GitHub's temporary runner directory.
-5. Confirms the configured alias exists in that keystore.
-6. Runs `./gradlew assembleRelease`.
-7. Uses Android SDK `apksigner` to verify the finished APK and record its signing certificate.
-8. Compares the APK certificate to the pinned public fingerprint in `docs/ANDROID_SIGNING_CERT_SHA256.txt` and fails if it differs.
-9. Uploads:
-   - `Fabrication-Pro-Android.apk`
-   - `Fabrication-Pro-Android.apk.sha256`
-   - `Fabrication-Pro-Android-signing.txt`
+1. Verifies the canonical Fabri-Cadabra source and compatibility contracts.
+2. Generates and synchronizes the Capacitor Android project.
+3. Verifies the generated Android launcher label is `Fabri-Cadabra`.
+4. Adds a release-only Gradle signing configuration that reads credentials from environment variables.
+5. Restores the permanent keystore only into GitHub's temporary runner directory.
+6. Confirms the configured alias exists in the keystore.
+7. Runs `./gradlew assembleRelease`.
+8. Uses Android SDK `apksigner` to verify the finished APK and report its signing certificate.
+9. Compares that certificate to `docs/ANDROID_SIGNING_CERT_SHA256.txt` and fails on any mismatch.
+10. Uploads:
+   - `Fabri-Cadabra-Android.apk`
+   - `Fabri-Cadabra-Android.apk.sha256`
+   - `Fabri-Cadabra-Android-signing.txt`
 
-Keep a private backup of the original keystore and passwords. Losing the signing key means you will not be able to install future APKs as updates to copies signed by that key.
+Keep a private backup of the original keystore and credentials. Losing the permanent key prevents future APKs from updating installations signed with that key.
 
-## Important if a debug APK is already installed
+## Installing updates
 
-A permanently signed release APK **cannot update** an older APK that was signed with GitHub's disposable debug certificate. Android will report a signature mismatch.
+Once a device has the permanently signed build installed, future `Fabri-Cadabra-Android.apk` files signed by the same certificate can install over it normally. Android retains application data during a normal same-identity update.
 
-Before changing from the old debug build to the permanent release build:
+If a much older **debug-signed** build is still installed on a device, that debug build cannot be directly updated by the permanent release certificate. Export any needed data, uninstall the debug build, install the permanent release build, and import the data once. That is a one-time signing migration.
 
-1. Export any Fabrication Pro data you need to keep using the app's built-in JSON exports.
-2. Uninstall the old debug-signed Fabrication Pro app.
-3. Install the first permanently signed `Fabrication-Pro-Android.apk`.
-4. Import your exported data if necessary.
+## Security boundary
 
-After that one-time migration, future APKs generated with the same permanent key can install over the existing app normally and preserve its app-local data.
-
-## Pinned certificate fingerprint
-
-The repository includes only the **public SHA-256 certificate fingerprint** in `docs/ANDROID_SIGNING_CERT_SHA256.txt`. This is safe to commit and lets CI detect if the private signing key was accidentally replaced. The private `.jks` file and passwords must remain outside the repository.
+Only the public fingerprint is committed. The `.jks` file, keystore password, key alias credential, and key password must remain outside the repository and must never be pasted into source, issues, pull requests, logs, or documentation.

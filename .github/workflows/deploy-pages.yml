@@ -1,4 +1,4 @@
-name: Deploy Fabrication Pro Web App
+name: Deploy Fabri-Cadabra Web App
 
 on:
   workflow_dispatch:
@@ -34,13 +34,13 @@ jobs:
           node-version: '22'
           package-manager-cache: false
 
-      - name: Verify preserved Fabrication Pro app
+      - name: Verify Fabri-Cadabra app
         run: npm run verify
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Fabrication Pro web app
+      - name: Upload Fabri-Cadabra web app
         uses: actions/upload-pages-artifact@v4
         with:
           path: fabrication_pro_capacitor/www
@@ -53,6 +53,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy Fabrication Pro
+      - name: Deploy Fabri-Cadabra
         id: deployment
         uses: actions/deploy-pages@v5

@@ -1,8 +1,8 @@
 {
-  "name": "fabrication-pro-capacitor",
+  "name": "fabri-cadabra-capacitor",
   "version": "1.0.0",
   "private": true,
-  "description": "Native Capacitor wrapper for the Fabrication Pro offline fabrication shop application.",
+  "description": "Capacitor wrapper and canonical web source for the offline Fabri-Cadabra fabrication toolkit.",
   "engines": {
     "node": ">=22.0.0"
   },

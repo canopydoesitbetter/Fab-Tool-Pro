@@ -1,88 +1,58 @@
-import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import vm from 'node:vm';
 
-// This verifier intentionally checks approved UI behavior markers before installer builds.
-const root = process.cwd();
-const originalPath = join(root, 'source', 'fabrication_pro.original.html');
-const appPath = join(root, 'www', 'index.html');
-const shimPath = join(root, 'www', 'native-compat.js');
-const featurePath = join(root, 'www', 'fabri-cadabra.js');
-
-const original = readFileSync(originalPath, 'utf8');
-const app = readFileSync(appPath, 'utf8');
-const shim = readFileSync(shimPath, 'utf8');
-const feature = readFileSync(featurePath, 'utf8');
-
-const expectedOriginalSha = '0999b807c9d63f717531cef21885a9db42cdfcf25d9ecb560b14058960335c45';
-const actualOriginalSha = createHash('sha256').update(original).digest('hex');
-if (actualOriginalSha !== expectedOriginalSha) {
-  throw new Error(`Preserved original HTML changed. Expected ${expectedOriginalSha}, got ${actualOriginalSha}.`);
+const root=process.cwd();
+for (const f of ['www/index.html','www/app.js','www/calculator.js','www/native-compat.js']) {
+  if (!existsSync(join(root,f))) throw new Error(`Missing canonical source required by feature verification: ${f}`);
 }
-
-if (!app.includes('<script src="native-compat.js"></script>')) {
-  throw new Error('Live app no longer loads the compatibility/enhancement entrypoint.');
+const html=readFileSync(join(root,'www/index.html'),'utf8');
+const app=readFileSync(join(root,'www/app.js'),'utf8');
+const calculator=readFileSync(join(root,'www/calculator.js'),'utf8');
+const native=readFileSync(join(root,'www/native-compat.js'),'utf8');
+const config=JSON.parse(readFileSync(join(root,'capacitor.config.json'),'utf8'));
+const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+const installerWorkflow=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
+const pagesWorkflow=readFileSync(join(root,'..','.github','workflows','deploy-pages.yml'),'utf8');
+const combined=[html,app,calculator,native].join('\n');
+const tools=['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
+for (const tool of tools) {
+  const nav=(html.match(new RegExp(`class="fab-page-link"[^>]*data-tool="${tool}"`,'g'))||[]).length;
+  const panel=(html.match(new RegExp(`id="tool-${tool}"`,'g'))||[]).length;
+  if(nav!==1) throw new Error(`Expected exactly one canonical Pages link for ${tool}; found ${nav}.`);
+  if(panel!==1) throw new Error(`Expected exactly one canonical tool panel for ${tool}; found ${panel}.`);
 }
-if (!shim.includes("script.src = 'fabri-cadabra.js'")) {
-  throw new Error('Native compatibility layer does not load the approved Fabri-Cadabra enhancements.');
+for(const marker of ['id="pageMenuBtn"','id="pageMenuBackdrop"','id="pageMenuDrawer"','id="calculatorGuideBtn"','id="calculatorGuideBackdrop"','id="calculatorGuideDrawer"','id="calculatorDisplay"','id="calculatorClearBtn"']) {
+  if(!html.includes(marker)) throw new Error(`Missing static UI marker: ${marker}`);
 }
-
-new vm.Script(feature, { filename:'fabri-cadabra.js' });
-
-const requiredSnippets = [
-  "document.title = 'Fabri-Cadabra'",
-  "brandHeading.textContent = 'Fabri-Cadabra'",
-  "pageMenuBtn.id = 'pageMenuBtn'",
-  'top:max(82px, calc(env(safe-area-inset-top) + 68px))',
-  "id:'pageMenuDrawer'",
-  "['calculator','Basic Calculator']",
-  "calculatorPanel.id = 'tool-calculator'",
-  'id="calculatorGuideBtn"',
-  "id:'calculatorGuideDrawer'",
-  'id="calculatorDisplay"',
-  'data-calc-action="memory-clear"',
-  'data-calc-action="memory-recall"',
-  'data-calc-action="memory-subtract"',
-  'data-calc-action="memory-add"',
-  'data-calc-action="clear-context"',
-  'id="calculatorClearBtn"',
-  'data-calc-action="sqrt"',
-  'data-calc-action="percent"',
-  'data-calc-action="pi"',
-  'data-calc-action="power"',
-  'data-calc-action="round-2"',
-  'data-calc-action="round-0"',
-  'function clearEntry()',
-  '<b>CE / AC</b>',
-  '<b>Backspace / Delete</b>',
-  "key==='Backspace' || key==='Delete'",
-  '<h3>Addition and subtraction</h3>',
-  '<h3>Multiplication and division</h3>',
-  '<h3>Repeating operations</h3>',
-  '<h3>Memory functions</h3>',
-  '<h3>Roots, exponents and powers</h3>',
-  '<h3>Order of operations</h3>',
-  '<h3>Additional operations</h3>',
-  '<h3>Percentage operations</h3>',
-  '<h3>Correcting mistakes</h3>',
-  "savedTool === 'calculator'",
-  'originalNav.remove()'
-];
-
-for (const snippet of requiredSnippets) {
-  if (!feature.includes(snippet)) throw new Error(`Missing approved feature marker: ${snippet}`);
+for(const section of ['Function definitions','Addition and subtraction','Multiplication and division','Repeating operations','Memory functions','Roots, exponents and powers','Order of operations','Additional operations','Percentage operations','Correcting mistakes']) {
+  if(!html.includes(`<h3>${section}</h3>`)) throw new Error(`Missing Calculator Guide section: ${section}`);
 }
-
-const protectedStorageKeys = [
-  'fabricationTaskLogJobsV1',
-  'fabricationTaskLogPresetsV1',
-  'fabricationChecklistV1'
-];
-for (const key of protectedStorageKeys) {
-  if (!original.includes(key)) throw new Error(`Expected protected storage key missing from preserved source: ${key}`);
+for(const action of ['memory-clear','memory-recall','memory-subtract','memory-add','clear-context','sqrt','percent','pi','power','round-2','round-0']) {
+  if(!html.includes(`data-calc-action="${action}"`)) throw new Error(`Missing static calculator action: ${action}`);
 }
+for(const marker of ['function selectTool(tool)','const VALID_TOOLS','window.FabriCadabraApp','getActiveTool','openDrawer','closeDrawer','isDrawerOpen',"storageGet('fabricationTool')"]) {
+  if(!app.includes(marker)) throw new Error(`Missing canonical app/navigation marker: ${marker}`);
+}
+for(const marker of ['function clearEntry()','function equals()','function percent()','function sqrt()','function memory(action)',"key==='Backspace' || key==='Delete'",'FabriCadabraApp.getActiveTool()']) {
+  if(!calculator.includes(marker)) throw new Error(`Missing calculator behavior marker: ${marker}`);
+}
+const storageKeys=['fabricationChecklistV1','fabricationFabricatorNotesV1','fabricationOptimizerJobsV1','fabricationQuickReferenceDecimalMode','fabricationQuickReferenceTable','fabricationTaskLogJobsV1','fabricationTaskLogPresetsV1','fabricationTheme','fabricationTool'];
+for(const key of storageKeys) if(!combined.includes(key)) throw new Error(`Protected persistence key missing: ${key}`);
+const formats=['FabricationTaskLogJobs','FabricationTaskLogPresets','FabricationFabricatorNotes','FabricationChecklist','FabricationCutOptimizerJob','FabricationSawOptimizerJob'];
+for(const format of formats) if(!combined.includes(format)) throw new Error(`Protected import/export format missing: ${format}`);
+for(const marker of ['running','startedAt','accumulatedMs']) if(!app.includes(marker)) throw new Error(`Protected timer state marker missing: ${marker}`);
 
-console.log(`Preserved original HTML SHA-256: ${actualOriginalSha}`);
-console.log('Fabri-Cadabra enhancement script syntax: OK');
-console.log('Approved floating navigation, calculator controls, and full guide markers: OK');
+if(config.appId!=='com.fabricationpro.app') throw new Error(`Capacitor appId changed unexpectedly: ${config.appId}`);
+if(config.appName!=='Fabri-Cadabra') throw new Error(`Official native app name must be Fabri-Cadabra; got ${config.appName}`);
+if(pkg.name!=='fabri-cadabra-capacitor') throw new Error(`Package name must be fabri-cadabra-capacitor; got ${pkg.name}`);
+for(const artifact of ['Fabri-Cadabra-Android.apk','Fabri-Cadabra-Android.apk.sha256','Fabri-Cadabra-Android-signing.txt','Fabri-Cadabra-iPhone-Unsigned.ipa','Fabri-Cadabra-iPhone-Unsigned.ipa.sha256']) {
+  if(!installerWorkflow.includes(artifact)) throw new Error(`Installer workflow missing canonical artifact name: ${artifact}`);
+}
+if(/Fabrication Pro|Fabrication-Pro/.test(installerWorkflow+pagesWorkflow)) throw new Error('Active GitHub workflow still uses the old official product name.');
+
+for(const forbidden of ['originalNav.remove()','originalTabs','originalTabByTool',"script.src = 'fabri-cadabra.js'",'calculatorPanel.innerHTML','document.title =']) {
+  if(combined.includes(forbidden)) throw new Error(`Forbidden legacy architecture marker remains: ${forbidden}`);
+}
+console.log('Canonical navigation and calculator structure: OK');
+console.log('Persistence, import/export, and timer compatibility markers: OK');
+console.log('Official Fabri-Cadabra naming and compatibility-sensitive identity: OK');

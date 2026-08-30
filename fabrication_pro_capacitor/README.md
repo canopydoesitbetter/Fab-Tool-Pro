@@ -1,22 +1,39 @@
-# Fabrication Pro — Capacitor iOS + Android Wrapper
+# Fabri-Cadabra
 
-This project wraps the supplied **Fabrication Pro / Fabrication Calculators** single-file application in Capacitor while preserving the existing application logic and data formats.
+Fabri-Cadabra is an offline fabrication toolkit delivered as a browser application and wrapped with Capacitor for Android and iOS. The project deliberately uses a small, framework-free source layout so each part of the application has one authoritative home.
 
-## What is preserved
+## Canonical source map
 
-- The authoritative uploaded app is stored byte-for-byte at `source/fabrication_pro.original.html`.
-- `www/index.html` is the same application with exactly one additive line: it loads `www/native-compat.js`.
-- No calculator formulas, optimizer algorithms, saw rules, localStorage keys, JSON schemas, import validators, checklist/note/job logic, or task-timer logic were rewritten.
-- The app still runs fully offline from bundled web assets.
-- Existing timestamp-based task timers keep using the device clock and persisted timestamps exactly as before.
+Edit the file that owns the thing you want to change:
+
+| File | Responsibility |
+| --- | --- |
+| `www/index.html` | Application markup, visible copy, page/drawer structure, calculator/guide markup |
+| `www/styles.css` | All application styling and responsive behavior |
+| `www/app.js` | Fabrication tools, saved-data behavior, canonical navigation, shared drawer mechanics, self-tests |
+| `www/calculator.js` | Basic Calculator behavior and Calculator Guide event wiring |
+| `www/native-compat.js` | Capacitor-only Blob export compatibility |
+
+There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. Git history is the archive for previous source versions.
+
+## Compatibility guarantees
+
+The canonical-source refactor does not intentionally change fabrication behavior or saved-data formats. In particular:
+
+- existing `localStorage` keys remain unchanged;
+- existing JSON import/export formats remain unchanged;
+- Task Logging timers continue to use persisted timestamps, including `running`, `startedAt`, and `accumulatedMs`;
+- fabrication formulas, optimizer algorithms, saw rules, notes, checklist, and job behavior remain unchanged;
+- native JSON exports preserve the bytes and filename produced by application code;
+- the Capacitor application ID remains `com.fabricationpro.app`, so a correctly signed Android build remains an update to the existing installed application.
 
 ## Why `native-compat.js` exists
 
-The existing application exports JSON by creating a `Blob`, creating a `blob:` URL, and programmatically clicking an `<a download>` element. Native WebViews have historically been inconsistent with Blob downloads, especially on Android.
+Browser exports create a `Blob`, a `blob:` URL, and an `<a download>` element. Native WebViews are less consistent with that download path.
 
-On **native Capacitor only**, the compatibility layer captures those same generated Blob bytes and same filename, writes them temporarily to the app cache with `@capacitor/filesystem`, and opens the native save/share sheet with `@capacitor/share`. The JSON payload itself is not changed. Browser behavior is untouched.
+On **native Capacitor only**, `www/native-compat.js` intercepts the same generated Blob, writes the exact bytes temporarily to the app cache with `@capacitor/filesystem`, and opens the native share/save sheet with `@capacitor/share`. It does not own application UI, navigation, calculator behavior, or feature loading. Normal browser download behavior is left alone.
 
-Imports continue to use the application's existing `<input type="file">` + `FileReader` logic and therefore use the native document picker supplied by the WebView.
+Imports continue to use the application's existing file input and `FileReader` behavior.
 
 ## Versions pinned
 
@@ -25,27 +42,44 @@ Imports continue to use the application's existing `<input type="file">` + `File
 - `@capacitor/share`: **8.0.1**
 - Node.js: **22+**
 
+## Official app identity
 
-## Phone-installable builds
+- Display / launcher name: **Fabri-Cadabra**
+- Bundle / application ID: `com.fabricationpro.app`
 
-This repository now includes `.github/workflows/build-phone-installers.yml`, which produces the actual files you can transfer to phones:
+The display name may be changed without creating a different Android/iOS app. Do **not** change `com.fabricationpro.app` unless you intentionally want a separate application identity.
 
-- `Fabrication-Pro-Android.apk` — permanently release-signed from GitHub Secrets; copy to an Android phone and tap to install.
-- `Fabrication-Pro-iPhone-Unsigned.ipa` — physical-device iOS build for re-signing/installing with SideStore/AltStore or your Apple signing workflow. Apple does not allow unsigned IPAs to be installed directly from Files.
+## Verification
 
-See `docs/PHONE_INSTALL.md` for phone-side installation steps and `docs/ANDROID_SIGNING.md` for the permanent Android signing setup.
-
-## First-time setup
-
-From this folder:
+Before building or committing application changes, run from `fabrication_pro_capacitor`:
 
 ```bash
 npm install
-npm run verify:web
+npm run verify
+```
+
+The verification suite checks the canonical source structure, JavaScript syntax, protected persistence/import/export contracts, native Blob export byte preservation, iOS privacy configuration, and Android permanent-signing workflow configuration.
+
+## Phone-installable builds
+
+`.github/workflows/build-phone-installers.yml` produces:
+
+- `Fabri-Cadabra-Android.apk` — permanently release-signed Android installer;
+- `Fabri-Cadabra-iPhone-Unsigned.ipa` — physical-device iOS build for re-signing/installing with SideStore, AltStore, or another Apple signing workflow.
+
+See `docs/PHONE_INSTALL.md` for installation guidance and `docs/ANDROID_SIGNING.md` for the permanent Android signing contract.
+
+## First-time native setup
+
+From `fabrication_pro_capacitor`:
+
+```bash
+npm install
+npm run verify
 npm run native:init
 ```
 
-`native:init` adds Android and iOS if they do not exist, runs `cap sync`, and writes the iOS Filesystem privacy-manifest entry required for App Store submission.
+`native:init` creates Android/iOS projects when needed, runs Capacitor sync, and installs the iOS Filesystem privacy-manifest entry.
 
 ### Android
 
@@ -53,7 +87,7 @@ npm run native:init
 npm run android:open
 ```
 
-Android Studio opens the generated native project. Select a device/emulator and Run. The included GitHub Actions workflow builds a permanently signed release APK when the four Android signing repository secrets are configured. See `docs/ANDROID_SIGNING.md`.
+Android Studio opens the generated native project. The GitHub Actions release workflow uses the permanent signing key stored in repository secrets.
 
 ### iOS
 
@@ -63,37 +97,24 @@ A Mac with Xcode is required to build/sign iOS apps.
 npm run ios:open
 ```
 
-In Xcode, choose your Apple Developer Team / signing settings, select a device/simulator, and Run. Archive from Xcode when you are ready for TestFlight/App Store distribution.
+Choose the appropriate Apple Developer Team/signing settings in Xcode, then run or archive the generated project.
 
-## Day-to-day workflow after editing the web app
+## Day-to-day development
 
-If you update `www/index.html` or other bundled web assets:
+After changing any bundled web asset, verify it first:
+
+```bash
+npm run verify
+```
+
+When working with generated native projects locally, sync the current web assets with:
 
 ```bash
 npm run sync
 ```
 
-Then rebuild/run in Android Studio or Xcode.
-
-## App identity
-
-Current native identity:
-
-- App name: `Fabrication Pro`
-- Bundle/Application ID: `com.fabricationpro.app`
-
-Change the `appId` before your first store release if you own a different reverse-domain identifier. Once an app is published, changing its application ID creates a different app in the stores.
+Generated `android/` and `ios/` projects are build products for this workflow; the canonical product source remains the five files under `www/` listed above.
 
 ## Persistence notes
 
-The existing app uses browser `localStorage`. In Capacitor, that storage belongs to this installed app's WebView and persists across normal app restarts and updates. Uninstalling the app removes app-local storage, so the existing JSON Export features remain the portable backup/transfer mechanism.
-
-## Integrity check
-
-Run:
-
-```bash
-npm run verify:web
-```
-
-It verifies JavaScript syntax and confirms that removing the one native compatibility script include from `www/index.html` reconstructs the original uploaded HTML exactly.
+Fabri-Cadabra uses browser/WebView `localStorage`. In Capacitor, that storage belongs to the installed application and persists across normal restarts and same-identity app updates. Uninstalling the application removes app-local storage, so the built-in JSON exports remain the portable backup/transfer mechanism.
