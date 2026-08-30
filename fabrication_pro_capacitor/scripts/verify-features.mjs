@@ -54,6 +54,8 @@ const requiredSnippets = [
   'data-calc-action="round-0"',
   'function clearEntry()',
   '<b>CE / AC</b>',
+  '<b>Backspace / Delete</b>',
+  "key==='Backspace' || key==='Delete'",
   '<h3>Addition and subtraction</h3>',
   '<h3>Multiplication and division</h3>',
   '<h3>Repeating operations</h3>',
