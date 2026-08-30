@@ -77,6 +77,14 @@ It will not contain:
 - inline application CSS
 - a duplicate legacy title that is replaced later
 
+Scripts will be referenced directly with `defer` in this order:
+
+1. `native-compat.js`
+2. `app.js`
+3. `calculator.js`
+
+This makes the native export bridge available before application interaction while preserving deterministic application initialization. No shipped script will dynamically load another shipped script.
+
 ### `www/styles.css`
 
 Authoritative source for all application CSS.
@@ -102,9 +110,22 @@ It will retain all existing fabrication logic, including:
 - theme handling
 - drawer utilities shared by existing tools
 - application self-tests
-- page activation for established tools
+- canonical page activation
 
 The existing functions should be moved with minimal semantic edits. This refactor is not permission to rewrite formulas, packing algorithms, import schemas, timer logic, or saved-data models.
+
+`app.js` owns the canonical application-level UI state. It will expose one small namespace for cross-file coordination:
+
+```js
+window.FabriCadabraApp = {
+  getActiveTool(),
+  openDrawer(drawerId, returnFocusElement),
+  closeDrawer(drawerId, returnFocusElement),
+  isDrawerOpen(drawerId)
+};
+```
+
+No other general-purpose globals will be introduced for this refactor. `calculator.js` may consume this interface but must not reach into private application variables.
 
 ### `www/calculator.js`
 
@@ -120,11 +141,13 @@ It will own:
 - roots/powers/rounding
 - CE/AC behavior
 - keyboard behavior
-- calculator guide open/close behavior if it is calculator-specific
+- Calculator Guide event wiring
 
 It will consume static calculator markup already present in `index.html`. It must not generate application markup or inject styles.
 
-Calculator memory remains session-only. The existing `fabricationTool=calculator` page-selection persistence remains supported.
+Calculator memory remains session-only. The existing `fabricationTool=calculator` page-selection persistence remains supported by canonical navigation in `app.js`.
+
+For keyboard handling, `calculator.js` will first respect application-level drawer state through `window.FabriCadabraApp`. Escape must never clear the calculator while the Pages drawer or Calculator Guide drawer is open.
 
 ### `www/native-compat.js`
 
@@ -158,7 +181,7 @@ The canonical page model will include exactly these tool identifiers:
 - `reference`
 - `calculator`
 
-A single activation path will:
+A single activation path in `app.js` will:
 
 1. validate the requested tool identifier,
 2. activate only the matching `.tool-panel`,
@@ -175,7 +198,7 @@ There will be no hidden or detached legacy navigation elements.
 
 Existing drawers already share the `cut-list-drawer` visual system. The Pages drawer and Calculator Guide drawer will remain consistent with that system.
 
-Shared open/close behavior may remain in `app.js` when it is generic and used by multiple features. Calculator-specific guide event wiring may live in `calculator.js`. Ownership must be clear: generic drawer mechanics in one place, feature-specific controls in the feature owner.
+Generic drawer mechanics live in `app.js` and are exposed only through the `window.FabriCadabraApp` interface defined above. Feature-specific button/listener wiring stays with the owning feature. Existing tool-specific drawer behavior may call the same internal generic mechanics directly from `app.js`; `calculator.js` uses the public interface.
 
 Escape-key behavior must preserve current priority:
 
@@ -222,6 +245,8 @@ Must remain unchanged:
 
 The visible/native app display name will be normalized to `Fabri-Cadabra` in `capacitor.config.json`, because that is the current product name. This must not alter the application ID or Android signing identity.
 
+Installer artifact filenames are not compatibility-sensitive identifiers, but renaming them is not required for this structural refactor. The build workflow may retain existing artifact filenames to minimize unrelated release-pipeline churn; visible product naming in the app and documentation is the canonical naming requirement.
+
 ## Files to Remove
 
 After their valid functionality has been migrated and verified, delete:
@@ -244,26 +269,27 @@ The current verification suite enforces the architecture being removed. It must 
 
 Will verify:
 
-- `www/index.html` exists and directly references `styles.css`, `app.js`, `calculator.js`, and `native-compat.js`
+- `www/index.html` exists and directly references `styles.css`, `native-compat.js`, `app.js`, and `calculator.js` in the documented order
 - no inline application `<style>` block remains
 - no large inline application `<script>` block remains
 - `app.js`, `calculator.js`, and `native-compat.js` parse successfully
 - the live HTML directly contains `Fabri-Cadabra`
 - the legacy `Fabrication Calculators` heading and `.tool-menu` markup are absent
 - `fabri-cadabra.js` is not referenced
-- `native-compat.js` does not dynamically load feature scripts
+- no shipped script dynamically loads another shipped script
 
 ### `verify-features.mjs`
 
 Will verify structural and compatibility contracts rather than implementation hacks:
 
-- all nine canonical page identifiers exist exactly once in navigation
+- all nine canonical page identifiers exist exactly once in the Pages navigation
 - all nine corresponding tool panels exist
 - Basic Calculator static controls exist
 - Calculator Guide static sections exist
 - Pages drawer static markup exists
 - calculator behavior markers exist in `calculator.js`
-- page activation and `fabricationTool` restoration exist in canonical logic
+- canonical page activation and `fabricationTool` restoration exist in `app.js`
+- the documented `window.FabriCadabraApp` interface exists and does not expose unrelated internals
 - protected persistence keys and import/export format markers remain present
 - forbidden legacy architecture markers are absent (`originalNav.remove()`, dynamic `script.src = 'fabri-cadabra.js'`, runtime calculator-panel construction, runtime title replacement)
 
@@ -291,7 +317,7 @@ Documentation must clearly state:
 
 - edit `www/index.html` for markup/copy
 - edit `www/styles.css` for styling
-- edit `www/app.js` for existing fabrication-tool behavior
+- edit `www/app.js` for existing fabrication-tool behavior and canonical navigation
 - edit `www/calculator.js` for calculator behavior
 - edit `www/native-compat.js` only for native export compatibility
 - run `npm run verify` before builds
@@ -338,7 +364,7 @@ Compare the baseline and refactored persistence/import/export marker inventory. 
 
 ### Navigation regression tests
 
-Test valid saved page restoration, invalid saved page fallback, active panel uniqueness, and calculator restoration.
+Test valid saved page restoration, invalid saved page fallback, active panel uniqueness, Pages active-state synchronization, and calculator restoration.
 
 ### Calculator regression tests
 
@@ -378,7 +404,8 @@ The refactor is complete only when all of the following are true on the final `m
 11. A fresh signed Android APK artifact is downloaded and its checksum is reported.
 12. Existing persisted user data/import files remain compatible by design and verification.
 13. `com.fabricationpro.app` remains unchanged.
-14. Product-facing name is consistently `Fabri-Cadabra`.
+14. Visible app/product naming is `Fabri-Cadabra`; release artifact filenames may remain unchanged.
+15. Cross-file application coordination is limited to the documented `window.FabriCadabraApp` interface.
 
 ## Non-Goals
 
