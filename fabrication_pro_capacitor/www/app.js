@@ -5,9 +5,10 @@
   const themeColorMeta = document.getElementById('themeColorMeta');
   const pageLinks = Array.from(document.querySelectorAll('.fab-page-link'));
   const toolPanels = Array.from(document.querySelectorAll('.tool-panel'));
-  const VALID_TOOLS = new Set(['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator']);
+  const DEFAULT_TOOL = 'overhang';
+  const VALID_TOOLS = new Set(pageLinks.map(link=>link.dataset.tool));
   const drawerReturnFocus = new Map();
-  let activeTool = 'overhang';
+  let activeTool = DEFAULT_TOOL;
 
   function systemPrefersDark() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -96,7 +97,7 @@
   });
 
   function selectTool(tool) {
-    const next=VALID_TOOLS.has(tool)?tool:'overhang';
+    const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;
     activeTool=next;
     pageLinks.forEach(link=>link.classList.toggle('active',link.dataset.tool===next));
     toolPanels.forEach(panel=>panel.classList.toggle('active',panel.id==='tool-'+next));
@@ -130,7 +131,7 @@
   });
 
   const savedTool = storageGet('fabricationTool');
-  selectTool(VALID_TOOLS.has(savedTool)?savedTool:'overhang');
+  selectTool(VALID_TOOLS.has(savedTool)?savedTool:DEFAULT_TOOL);
 
   window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen};
 

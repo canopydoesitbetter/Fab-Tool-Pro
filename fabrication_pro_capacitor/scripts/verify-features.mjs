@@ -15,8 +15,10 @@ const installerWorkflow=readFileSync(join(root,'..','.github','workflows','build
 const pagesWorkflow=readFileSync(join(root,'..','.github','workflows','deploy-pages.yml'),'utf8');
 const combined=[html,app,calculator,native].join('\n');
 const tools=['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
+const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^"]+)"/g)].map(match=>match[1]);
+if(new Set(navTools).size!==navTools.length) throw new Error('Pages drawer contains duplicate data-tool identifiers.');
 for (const tool of tools) {
-  const nav=(html.match(new RegExp(`class="fab-page-link"[^>]*data-tool="${tool}"`,'g'))||[]).length;
+  const nav=navTools.filter(value=>value===tool).length;
   const panel=(html.match(new RegExp(`id="tool-${tool}"`,'g'))||[]).length;
   if(nav!==1) throw new Error(`Expected exactly one canonical Pages link for ${tool}; found ${nav}.`);
   if(panel!==1) throw new Error(`Expected exactly one canonical tool panel for ${tool}; found ${panel}.`);
@@ -33,6 +35,16 @@ for(const action of ['memory-clear','memory-recall','memory-subtract','memory-ad
 for(const marker of ['function selectTool(tool)','const VALID_TOOLS','window.FabriCadabraApp','getActiveTool','openDrawer','closeDrawer','isDrawerOpen',"storageGet('fabricationTool')"]) {
   if(!app.includes(marker)) throw new Error(`Missing canonical app/navigation marker: ${marker}`);
 }
+for(const marker of [
+  "const DEFAULT_TOOL = 'overhang';",
+  'const VALID_TOOLS = new Set(pageLinks.map(link=>link.dataset.tool));',
+  'let activeTool = DEFAULT_TOOL;',
+  "const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;",
+  'selectTool(VALID_TOOLS.has(savedTool)?savedTool:DEFAULT_TOOL);'
+]) {
+  if(!app.includes(marker)) throw new Error(`Navigation source-of-truth contract missing: ${marker}`);
+}
+if(/const VALID_TOOLS\s*=\s*new Set\s*\(\s*\[/.test(app)) throw new Error('Navigation must derive valid tool IDs from canonical Pages markup instead of maintaining a second hard-coded list.');
 for(const marker of ['function clearEntry()','function equals()','function percent()','function sqrt()','function memory(action)',"key==='Backspace' || key==='Delete'",'FabriCadabraApp.getActiveTool()']) {
   if(!calculator.includes(marker)) throw new Error(`Missing calculator behavior marker: ${marker}`);
 }
@@ -54,5 +66,6 @@ for(const forbidden of ['originalNav.remove()','originalTabs','originalTabByTool
   if(combined.includes(forbidden)) throw new Error(`Forbidden legacy architecture marker remains: ${forbidden}`);
 }
 console.log('Canonical navigation and calculator structure: OK');
+console.log('Navigation source-of-truth contract: OK');
 console.log('Persistence, import/export, and timer compatibility markers: OK');
 console.log('Official Fabri-Cadabra naming and compatibility-sensitive identity: OK');
