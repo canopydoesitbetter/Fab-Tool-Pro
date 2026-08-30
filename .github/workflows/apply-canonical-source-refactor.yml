@@ -1,0 +1,91 @@
+name: Apply Canonical Source Refactor
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ refactor/canonical-source ]
+    paths:
+      - '.github/workflows/apply-canonical-source-refactor.yml'
+      - 'fabrication_pro_capacitor/scripts/canonical_web_migration.py'
+      - 'fabrication_pro_capacitor/scripts/canonical_project_migration.py'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  migrate:
+    name: Migrate and verify canonical source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout refactor branch
+        uses: actions/checkout@v4
+        with:
+          ref: refactor/canonical-source
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply tested web-source migration
+        run: python fabrication_pro_capacitor/scripts/canonical_web_migration.py fabrication_pro_capacitor
+
+      - name: Apply project naming and legacy cleanup
+        run: python fabrication_pro_capacitor/scripts/canonical_project_migration.py fabrication_pro_capacitor
+
+      - name: Install verification dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm install --ignore-scripts --package-lock=false
+
+      - name: Verify canonical Fabri-Cadabra project
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Verify stale architecture is gone
+        run: |
+          set -euo pipefail
+          test ! -e fabrication_pro_capacitor/www/fabri-cadabra.js
+          test ! -e fabrication_pro_capacitor/source/fabrication_pro.original.html
+          test ! -e fabrication_pro_capacitor/SOURCE_SHA256.txt
+          ! grep -R -F 'Fabrication Calculators' fabrication_pro_capacitor/www
+          ! grep -R -F "script.src = 'fabri-cadabra.js'" fabrication_pro_capacitor/www
+          ! grep -R -F 'originalNav.remove()' fabrication_pro_capacitor/www
+          ! grep -R -F 'class="tool-menu"' fabrication_pro_capacitor/www
+          git diff --check
+
+      - name: Verify official identity contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('fabrication_pro_capacitor')
+          config=json.loads((root/'capacitor.config.json').read_text())
+          assert config['appName']=='Fabri-Cadabra', config
+          assert config['appId']=='com.fabricationpro.app', config
+          assert (root/'docs/ANDROID_SIGNING_CERT_SHA256.txt').read_text().strip()=='5769bbe5a1f4fdccd985fd0145495f3614e0db41992871c99b9eb361634bb586'
+          print('Official name, application ID, and signing fingerprint contract: OK')
+          PY
+
+      - name: Remove one-time migration machinery
+        run: |
+          rm fabrication_pro_capacitor/scripts/canonical_web_migration.py
+          rm fabrication_pro_capacitor/scripts/canonical_project_migration.py
+          rm .github/workflows/apply-canonical-source-refactor.yml
+
+      - name: Commit canonical source
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git status --short
+          git diff --cached --check
+          git commit -m 'refactor: establish canonical Fabri-Cadabra source'
+          git push origin HEAD:refactor/canonical-source
+
+      - name: Build Android and iOS installers from verified refactor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build-phone-installers.yml --ref refactor/canonical-source
