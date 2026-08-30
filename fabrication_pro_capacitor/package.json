@@ -18,8 +18,9 @@
     "ios:run": "npx cap run ios",
     "doctor": "npx cap doctor",
     "verify:web": "node scripts/verify-web.mjs",
+    "verify:features": "node scripts/verify-features.mjs",
     "verify:native-shim": "node scripts/verify-native-shim.mjs",
-    "verify": "npm run verify:web && npm run verify:native-shim && npm run verify:ios-privacy && npm run verify:android-signing",
+    "verify": "npm run verify:web && npm run verify:features && npm run verify:native-shim && npm run verify:ios-privacy && npm run verify:android-signing",
     "verify:ios-privacy": "node scripts/verify-ios-privacy.mjs",
     "verify:android-signing": "node scripts/verify-android-signing.mjs"
   },
