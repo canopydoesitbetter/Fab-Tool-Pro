@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import vm from 'node:vm';
 
+// This verifier intentionally checks approved UI behavior markers before installer builds.
 const root = process.cwd();
 const originalPath = join(root, 'source', 'fabrication_pro.original.html');
 const appPath = join(root, 'www', 'index.html');
