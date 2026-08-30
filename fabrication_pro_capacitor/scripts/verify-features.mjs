@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import vm from 'node:vm';
 
+// This verifier intentionally checks approved UI behavior markers before installer builds.
 const root = process.cwd();
 const originalPath = join(root, 'source', 'fabrication_pro.original.html');
 const appPath = join(root, 'www', 'index.html');
@@ -33,6 +34,7 @@ const requiredSnippets = [
   "document.title = 'Fabri-Cadabra'",
   "brandHeading.textContent = 'Fabri-Cadabra'",
   "pageMenuBtn.id = 'pageMenuBtn'",
+  'top:max(82px, calc(env(safe-area-inset-top) + 68px))',
   "id:'pageMenuDrawer'",
   "['calculator','Basic Calculator']",
   "calculatorPanel.id = 'tool-calculator'",
@@ -43,12 +45,27 @@ const requiredSnippets = [
   'data-calc-action="memory-recall"',
   'data-calc-action="memory-subtract"',
   'data-calc-action="memory-add"',
+  'data-calc-action="clear-context"',
+  'id="calculatorClearBtn"',
   'data-calc-action="sqrt"',
   'data-calc-action="percent"',
   'data-calc-action="pi"',
   'data-calc-action="power"',
   'data-calc-action="round-2"',
   'data-calc-action="round-0"',
+  'function clearEntry()',
+  '<b>CE / AC</b>',
+  '<b>Backspace / Delete</b>',
+  "key==='Backspace' || key==='Delete'",
+  '<h3>Addition and subtraction</h3>',
+  '<h3>Multiplication and division</h3>',
+  '<h3>Repeating operations</h3>',
+  '<h3>Memory functions</h3>',
+  '<h3>Roots, exponents and powers</h3>',
+  '<h3>Order of operations</h3>',
+  '<h3>Additional operations</h3>',
+  '<h3>Percentage operations</h3>',
+  '<h3>Correcting mistakes</h3>',
   "savedTool === 'calculator'",
   'originalNav.remove()'
 ];
@@ -68,4 +85,4 @@ for (const key of protectedStorageKeys) {
 
 console.log(`Preserved original HTML SHA-256: ${actualOriginalSha}`);
 console.log('Fabri-Cadabra enhancement script syntax: OK');
-console.log('Approved floating navigation and calculator feature markers: OK');
+console.log('Approved floating navigation, calculator controls, and full guide markers: OK');
