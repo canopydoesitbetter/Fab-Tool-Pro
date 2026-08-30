@@ -1,3 +1,4 @@
+# Temporary branch-only verification; removed before merge.
 name: Verify Navigation Source of Truth
 
 on:
