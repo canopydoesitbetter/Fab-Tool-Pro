@@ -9,6 +9,10 @@ on:
       - 'fabrication_pro_capacitor/scripts/canonical_web_migration.py'
       - 'fabrication_pro_capacitor/scripts/canonical_project_migration.py'
 
+concurrency:
+  group: canonical-source-migration
+  cancel-in-progress: true
+
 permissions:
   contents: write
   actions: write
@@ -68,11 +72,10 @@ jobs:
           print('Official name, application ID, and signing fingerprint contract: OK')
           PY
 
-      - name: Remove one-time migration machinery
+      - name: Remove one-time migration scripts
         run: |
           rm fabrication_pro_capacitor/scripts/canonical_web_migration.py
           rm fabrication_pro_capacitor/scripts/canonical_project_migration.py
-          rm .github/workflows/apply-canonical-source-refactor.yml
 
       - name: Commit canonical source
         run: |
@@ -82,6 +85,10 @@ jobs:
           git add -A
           git status --short
           git diff --cached --check
+          if git diff --cached --name-only | grep -q '^.github/workflows/'; then
+            echo '::error::Canonical migration must not stage workflow files; workflow updates are handled by the repository connector.'
+            exit 1
+          fi
           git commit -m 'refactor: establish canonical Fabri-Cadabra source'
           git push origin HEAD:refactor/canonical-source
 
