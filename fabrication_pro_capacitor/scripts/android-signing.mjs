@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const ANDROID_SIGNING_MARKER = '// Fabrication Pro permanent CI release signing';
+export const ANDROID_SIGNING_MARKER = '// Fabri-Cadabra permanent CI release signing';
 
 export function patchAndroidBuildGradle(source) {
   if (source.includes(ANDROID_SIGNING_MARKER)) return source;
@@ -13,18 +13,18 @@ ${ANDROID_SIGNING_MARKER}
 // The keystore and passwords stay in GitHub Actions Secrets. They are never committed.
 android {
     signingConfigs {
-        fabricationProRelease {
-            def fabricationProKeystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
-            def fabricationProKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+        fabriCadabraRelease {
+            def fabriCadabraKeystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
+            def fabriCadabraKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
             def fabricationProKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
             def fabricationProKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
 
-            if (!fabricationProKeystoreFile || !fabricationProKeystorePassword || !fabricationProKeyAlias || !fabricationProKeyPassword) {
-                throw new GradleException("Fabrication Pro Android release signing environment variables are missing.")
+            if (!fabriCadabraKeystoreFile || !fabriCadabraKeystorePassword || !fabricationProKeyAlias || !fabricationProKeyPassword) {
+                throw new GradleException("Fabri-Cadabra Android release signing environment variables are missing.")
             }
 
-            storeFile file(fabricationProKeystoreFile)
-            storePassword fabricationProKeystorePassword
+            storeFile file(fabriCadabraKeystoreFile)
+            storePassword fabriCadabraKeystorePassword
             keyAlias fabricationProKeyAlias
             keyPassword fabricationProKeyPassword
         }
@@ -32,7 +32,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.fabricationProRelease
+            signingConfig signingConfigs.fabriCadabraRelease
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Fabrication Pro — Capacitor native compatibility layer
+ * Fabri-Cadabra — Capacitor native compatibility layer
  *
  * Purpose: make the existing Blob + <a download> JSON exports reliable inside
  * native iOS/Android WebViews without changing existing application data,
@@ -10,17 +10,6 @@
  */
 (() => {
   'use strict';
-
-  if (typeof document !== 'undefined') {
-    const existing = document.querySelector('script[data-fabri-cadabra-upgrades]');
-    if (!existing) {
-      const script = document.createElement('script');
-      script.src = 'fabri-cadabra.js';
-      script.defer = true;
-      script.dataset.fabriCadabraUpgrades = 'true';
-      document.head.appendChild(script);
-    }
-  }
 
   const cap = window.Capacitor;
   const isNative = !!(cap && (
@@ -33,7 +22,7 @@
   const Filesystem = plugins.Filesystem;
   const Share = plugins.Share;
   if (!Filesystem || !Share) {
-    console.warn('[Fabrication Pro] Native export bridge unavailable; browser download behavior will be used.');
+    console.warn('[Fabri-Cadabra] Native export bridge unavailable; browser download behavior will be used.');
     return;
   }
 
@@ -105,9 +94,9 @@
     if (!blob) return anchorClick.call(this);
 
     nativeExport(blob, filename).catch(error => {
-      console.error('[Fabrication Pro] Native JSON export failed; falling back to WebView download behavior.', error);
+      console.error('[Fabri-Cadabra] Native JSON export failed; falling back to WebView download behavior.', error);
       try { anchorClick.call(this); } catch (fallbackError) {
-        console.error('[Fabrication Pro] WebView fallback export also failed.', fallbackError);
+        console.error('[Fabri-Cadabra] WebView fallback export also failed.', fallbackError);
       }
     });
   };

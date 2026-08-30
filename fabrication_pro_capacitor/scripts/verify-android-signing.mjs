@@ -48,7 +48,7 @@ for (const variable of requiredEnvironmentVariables) {
     throw new Error(`Gradle signing patch is missing ${variable}.`);
   }
 }
-if (!signingScript.includes('signingConfig signingConfigs.fabricationProRelease')) {
+if (!signingScript.includes('signingConfig signingConfigs.fabriCadabraRelease')) {
   throw new Error('Gradle signing patch does not bind the permanent signing config to the release build type.');
 }
 
@@ -60,7 +60,7 @@ if (!patched.includes(ANDROID_SIGNING_MARKER)) {
 if (patchAndroidBuildGradle(patched) !== patched) {
   throw new Error('Gradle signing patch is not idempotent.');
 }
-if ((patched.match(/fabricationProRelease/g) || []).length < 2) {
+if ((patched.match(/fabriCadabraRelease/g) || []).length < 2) {
   throw new Error('Gradle signing patch does not define and apply the release signing configuration.');
 }
 

@@ -245,7 +245,7 @@ Must remain unchanged:
 
 The visible/native app display name will be normalized to `Fabri-Cadabra` in `capacitor.config.json`, because that is the current product name. This must not alter the application ID or Android signing identity.
 
-Installer artifact filenames are not compatibility-sensitive identifiers, but renaming them is not required for this structural refactor. The build workflow may retain existing artifact filenames to minimize unrelated release-pipeline churn; visible product naming in the app and documentation is the canonical naming requirement.
+Installer artifact filenames are not compatibility-sensitive identifiers, so they will also be normalized to `Fabri-Cadabra` for one consistent official product name across source, launcher/display labels, documentation, and release artifacts.
 
 ## Files to Remove
 
@@ -404,7 +404,7 @@ The refactor is complete only when all of the following are true on the final `m
 11. A fresh signed Android APK artifact is downloaded and its checksum is reported.
 12. Existing persisted user data/import files remain compatible by design and verification.
 13. `com.fabricationpro.app` remains unchanged.
-14. Visible app/product naming is `Fabri-Cadabra`; release artifact filenames may remain unchanged.
+14. Visible app/product naming, Android/iOS launcher/display names, and installer artifact filenames use `Fabri-Cadabra`.
 15. Cross-file application coordination is limited to the documented `window.FabriCadabraApp` interface.
 
 ## Non-Goals
