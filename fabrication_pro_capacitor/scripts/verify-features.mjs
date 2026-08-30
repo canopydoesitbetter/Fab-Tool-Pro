@@ -1,12 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import vm from 'node:vm';
 
 const root = process.cwd();
-const appPath = join(root, 'www', 'index.html');
 const originalPath = join(root, 'source', 'fabrication_pro.original.html');
-const app = readFileSync(appPath, 'utf8');
+const appPath = join(root, 'www', 'index.html');
+const shimPath = join(root, 'www', 'native-compat.js');
+const featurePath = join(root, 'www', 'fabri-cadabra.js');
+
 const original = readFileSync(originalPath, 'utf8');
+const app = readFileSync(appPath, 'utf8');
+const shim = readFileSync(shimPath, 'utf8');
+const feature = readFileSync(featurePath, 'utf8');
 
 const expectedOriginalSha = '0999b807c9d63f717531cef21885a9db42cdfcf25d9ecb560b14058960335c45';
 const actualOriginalSha = createHash('sha256').update(original).digest('hex');
@@ -14,15 +20,24 @@ if (actualOriginalSha !== expectedOriginalSha) {
   throw new Error(`Preserved original HTML changed. Expected ${expectedOriginalSha}, got ${actualOriginalSha}.`);
 }
 
+if (!app.includes('<script src="native-compat.js"></script>')) {
+  throw new Error('Live app no longer loads the compatibility/enhancement entrypoint.');
+}
+if (!shim.includes("script.src = 'fabri-cadabra.js'")) {
+  throw new Error('Native compatibility layer does not load the approved Fabri-Cadabra enhancements.');
+}
+
+new vm.Script(feature, { filename:'fabri-cadabra.js' });
+
 const requiredSnippets = [
-  '<title>Fabri-Cadabra</title>',
-  '<h1>Fabri-Cadabra</h1>',
-  'id="pageMenuBtn"',
-  'id="pageMenuDrawer"',
-  'data-tool="calculator"',
-  'id="tool-calculator"',
+  "document.title = 'Fabri-Cadabra'",
+  "brandHeading.textContent = 'Fabri-Cadabra'",
+  "pageMenuBtn.id = 'pageMenuBtn'",
+  "id:'pageMenuDrawer'",
+  "['calculator','Basic Calculator']",
+  "calculatorPanel.id = 'tool-calculator'",
   'id="calculatorGuideBtn"',
-  'id="calculatorGuideDrawer"',
+  "id:'calculatorGuideDrawer'",
   'id="calculatorDisplay"',
   'data-calc-action="memory-clear"',
   'data-calc-action="memory-recall"',
@@ -34,16 +49,23 @@ const requiredSnippets = [
   'data-calc-action="power"',
   'data-calc-action="round-2"',
   'data-calc-action="round-0"',
-  "savedTool === 'calculator'"
+  "savedTool === 'calculator'",
+  'originalNav.remove()'
 ];
 
 for (const snippet of requiredSnippets) {
-  if (!app.includes(snippet)) throw new Error(`Missing approved feature marker: ${snippet}`);
+  if (!feature.includes(snippet)) throw new Error(`Missing approved feature marker: ${snippet}`);
 }
 
-if (/class="tool-menu"/.test(app)) {
-  throw new Error('Legacy in-header page grid is still present; navigation should use the floating drawer.');
+const protectedStorageKeys = [
+  'fabricationTaskLogJobsV1',
+  'fabricationTaskLogPresetsV1',
+  'fabricationChecklistV1'
+];
+for (const key of protectedStorageKeys) {
+  if (!original.includes(key)) throw new Error(`Expected protected storage key missing from preserved source: ${key}`);
 }
 
 console.log(`Preserved original HTML SHA-256: ${actualOriginalSha}`);
-console.log('Approved Fabri-Cadabra navigation and calculator feature markers: OK');
+console.log('Fabri-Cadabra enhancement script syntax: OK');
+console.log('Approved floating navigation and calculator feature markers: OK');
