@@ -43,12 +43,25 @@ const requiredSnippets = [
   'data-calc-action="memory-recall"',
   'data-calc-action="memory-subtract"',
   'data-calc-action="memory-add"',
+  'data-calc-action="clear-context"',
+  'id="calculatorClearBtn"',
   'data-calc-action="sqrt"',
   'data-calc-action="percent"',
   'data-calc-action="pi"',
   'data-calc-action="power"',
   'data-calc-action="round-2"',
   'data-calc-action="round-0"',
+  'function clearEntry()',
+  '<b>CE / AC</b>',
+  '<h3>Addition and subtraction</h3>',
+  '<h3>Multiplication and division</h3>',
+  '<h3>Repeating operations</h3>',
+  '<h3>Memory functions</h3>',
+  '<h3>Roots, exponents and powers</h3>',
+  '<h3>Order of operations</h3>',
+  '<h3>Additional operations</h3>',
+  '<h3>Percentage operations</h3>',
+  '<h3>Correcting mistakes</h3>',
   "savedTool === 'calculator'",
   'originalNav.remove()'
 ];
@@ -68,4 +81,4 @@ for (const key of protectedStorageKeys) {
 
 console.log(`Preserved original HTML SHA-256: ${actualOriginalSha}`);
 console.log('Fabri-Cadabra enhancement script syntax: OK');
-console.log('Approved floating navigation and calculator feature markers: OK');
+console.log('Approved floating navigation, calculator controls, and full guide markers: OK');
