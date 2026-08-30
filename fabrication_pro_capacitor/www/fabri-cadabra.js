@@ -14,7 +14,7 @@
   const style = document.createElement('style');
   style.textContent = `
     .fab-page-menu-btn {
-      position:fixed; top:max(12px, env(safe-area-inset-top)); right:max(12px, env(safe-area-inset-right));
+      position:fixed; top:max(82px, calc(env(safe-area-inset-top) + 68px)); right:max(12px, env(safe-area-inset-right));
       z-index:185; min-height:44px; border:1px solid rgba(255,255,255,.32); border-radius:13px;
       padding:9px 12px; background:linear-gradient(135deg,var(--nav),var(--nav2)); color:#fff;
       box-shadow:0 7px 20px rgba(0,0,0,.22); font-weight:900; cursor:pointer;
