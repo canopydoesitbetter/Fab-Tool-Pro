@@ -1,0 +1,29 @@
+name: Checklist Final Branch Verification
+
+on:
+  push:
+    branches: [ feature/checklist-drag-reorder ]
+    paths:
+      - '.github/workflows/checklist-final-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/checklist-drag-reorder
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run full verification suite
+        run: npm run verify
+      - name: Check repository whitespace
+        working-directory: .
+        run: git diff --check HEAD^ HEAD
