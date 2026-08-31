@@ -1,0 +1,39 @@
+name: Double Panel Strong Buttons Green Verification
+
+on:
+  push:
+    branches: [ feature/double-panel-strong-buttons ]
+    paths:
+      - '.github/workflows/double-panel-strong-buttons-green.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  green:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm install --ignore-scripts
+      - name: Apply approved styling
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/apply-double-panel-strong-buttons.mjs
+      - name: Run full verification suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+      - name: Check production diff whitespace
+        run: git diff --check
+      - name: Commit verified production styling
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fabrication_pro_capacitor/www/styles.css fabrication_pro_capacitor/scripts/verify-features.mjs
+          git commit -m 'Refine outer panels and button depth'
+          git push origin HEAD:feature/double-panel-strong-buttons
