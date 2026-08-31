@@ -2047,8 +2047,9 @@
       margin-top:8px;
     }
     .checklist-item {
+      position:relative;
       display:grid;
-      grid-template-columns:44px minmax(0,1fr) 42px;
+      grid-template-columns:40px 44px minmax(0,1fr) 42px;
       gap:8px;
       align-items:center;
       min-height:56px;
@@ -2056,10 +2057,59 @@
       border:1px solid var(--border);
       border-radius:11px;
       background:var(--card2);
+      transition:border-color .12s ease,box-shadow .12s ease,opacity .12s ease;
     }
     .checklist-item.checked {
       background:color-mix(in srgb, var(--good-bg) 58%, var(--card2));
     }
+    .checklist-drag-handle {
+      width:40px;
+      min-width:40px;
+      height:40px;
+      border:1px solid transparent;
+      border-radius:9px;
+      background:transparent;
+      color:var(--muted);
+      font-size:1.35rem;
+      font-weight:900;
+      line-height:1;
+      cursor:grab;
+      touch-action:none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .checklist-drag-handle:hover,
+    .checklist-drag-handle:focus-visible {
+      border-color:var(--border);
+      background:var(--card);
+      color:var(--accent);
+      outline:none;
+      box-shadow:0 0 0 3px rgba(28,109,161,.14);
+    }
+    .checklist-item.drag-pending .checklist-drag-handle,
+    .checklist-item.dragging .checklist-drag-handle {
+      cursor:grabbing;
+      color:var(--accent);
+    }
+    .checklist-item.dragging {
+      z-index:2;
+      opacity:.76;
+      border-color:var(--accent);
+      box-shadow:0 8px 22px rgba(22,34,43,.16);
+    }
+    .checklist-item.drag-before::before,
+    .checklist-item.drag-after::after {
+      content:'';
+      position:absolute;
+      left:4px;
+      right:4px;
+      height:3px;
+      border-radius:999px;
+      background:var(--accent);
+      pointer-events:none;
+    }
+    .checklist-item.drag-before::before { top:-6px; }
+    .checklist-item.drag-after::after { bottom:-6px; }
     .checklist-box {
       width:28px;
       height:28px;
