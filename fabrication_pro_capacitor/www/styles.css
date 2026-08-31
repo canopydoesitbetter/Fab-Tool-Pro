@@ -161,7 +161,7 @@
       box-shadow:var(--shadow);
     }
     .card { padding:16px; margin-bottom:14px; }
-    :where(
+    :is(
       .tool-panel > .card,
       .tool-panel > .result,
       .tool-panel > .grid-two > .result,
