@@ -1,0 +1,57 @@
+name: Pencil Panel Specificity Branch Verification
+
+on:
+  push:
+    branches: [ fix/pencil-panel-specificity ]
+    paths:
+      - '.github/workflows/pencil-panel-specificity-branch.yml'
+      - 'fabrication_pro_capacitor/package.json'
+      - 'fabrication_pro_capacitor/scripts/verify-style-cascade.mjs'
+      - 'fabrication_pro_capacitor/scripts/apply-pencil-panel-specificity-fix.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  red-green:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm install --ignore-scripts
+      - name: Confirm current selector fails regression check
+        working-directory: fabrication_pro_capacitor
+        run: |
+          set +e
+          npm run verify > /tmp/red.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/red.log
+          if [ "$status" -eq 0 ]; then
+            echo "::error::Expected current :where selector to fail the specificity regression check."
+            exit 1
+          fi
+          grep -F 'Outer-panel pencil selector cannot use :where()' /tmp/red.log
+      - name: Apply selector fix
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/apply-pencil-panel-specificity-fix.mjs
+      - name: Run full verification suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+      - name: Check production diff whitespace
+        run: git diff --check
+      - name: Commit verified CSS fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fabrication_pro_capacitor/www/styles.css
+          git commit -m 'Fix pencil panel selector specificity'
+          git push origin HEAD:fix/pencil-panel-specificity
