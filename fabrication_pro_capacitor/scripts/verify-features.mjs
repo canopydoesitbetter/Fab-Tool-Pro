@@ -95,6 +95,27 @@ if(!app.includes("topic.items.map(item=>({id:item.id,text:String(item.text || ''
   throw new Error('Checklist export must continue serializing items in their stored array order without changing the protected format.');
 }
 
+for(const marker of [
+  'button:not(:disabled)',
+  '@media (hover:hover) and (pointer:fine)',
+  'transform:translateY(1px) scale(.985)',
+  '@media (prefers-reduced-motion: reduce)',
+  '--panel-pencil:',
+  '--panel-pencil-soft:',
+  '--panel-depth:',
+  '.tool-panel > .card',
+  '.tool-panel > .tasklog-workspace > .card',
+  '.tool-panel > .notes-workspace > .card',
+  '.tool-panel > .checklist-workspace > .card',
+  '0 0 0 3px var(--panel-pencil)',
+  '0 0 0 6px var(--panel-pencil-soft)'
+]) {
+  if(!styles.includes(marker)) throw new Error(`App-wide tactile styling contract missing: ${marker}`);
+}
+if(/.metric[^}]*--panel-pencil|.checklist-item[^}]*--panel-pencil|.rule[^}]*--panel-pencil/s.test(styles)) {
+  throw new Error('Triple-pencil panel treatment must stay on outer panels and not bleed into protected subpanels.');
+}
+
 if(config.appId!=='com.fabricationpro.app') throw new Error(`Capacitor appId changed unexpectedly: ${config.appId}`);
 if(config.appName!=='Fabri-Cadabra') throw new Error(`Official native app name must be Fabri-Cadabra; got ${config.appName}`);
 if(pkg.name!=='fabri-cadabra-capacitor') throw new Error(`Package name must be fabri-cadabra-capacitor; got ${pkg.name}`);
@@ -111,4 +132,5 @@ console.log('Navigation source-of-truth contract: OK');
 console.log('Task Logging hard-wired launch and page-order contract: OK');
 console.log('Persistence, import/export, and timer compatibility markers: OK');
 console.log('Checklist drag/reorder compatibility contract: OK');
+console.log('App-wide tactile buttons and outer-panel styling contract: OK');
 console.log('Official Fabri-Cadabra naming and compatibility-sensitive identity: OK');
