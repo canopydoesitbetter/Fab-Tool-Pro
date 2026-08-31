@@ -98,22 +98,30 @@ if(!app.includes("topic.items.map(item=>({id:item.id,text:String(item.text || ''
 for(const marker of [
   'button:not(:disabled)',
   '@media (hover:hover) and (pointer:fine)',
-  'transform:translateY(1px) scale(.985)',
+  'transform:translateY(2px) scale(.97)',
   '@media (prefers-reduced-motion: reduce)',
-  '--panel-pencil:',
-  '--panel-pencil-soft:',
+  '--panel-border-inner:',
+  '--panel-border-outer:',
   '--panel-depth:',
+  '--button-edge:',
+  '--button-depth:',
+  '--button-hover-depth:',
+  '--button-press-depth:',
+  'box-shadow:0 3px 0 var(--button-edge),var(--button-depth);',
+  'transform:translateY(-2px)',
+  'box-shadow:0 5px 0 var(--button-edge),var(--button-hover-depth);',
+  'box-shadow:0 1px 0 var(--button-edge),var(--button-press-depth);',
   '.tool-panel > .card',
   '.tool-panel > .tasklog-workspace > .card',
   '.tool-panel > .notes-workspace > .card',
   '.tool-panel > .checklist-workspace > .card',
-  '0 0 0 3px var(--panel-pencil)',
-  '0 0 0 6px var(--panel-pencil-soft)'
+  'border:2px solid var(--panel-border-inner)',
+  '0 0 0 3px var(--panel-border-outer)'
 ]) {
   if(!styles.includes(marker)) throw new Error(`App-wide tactile styling contract missing: ${marker}`);
 }
-if(/.metric[^}]*--panel-pencil|.checklist-item[^}]*--panel-pencil|.rule[^}]*--panel-pencil/s.test(styles)) {
-  throw new Error('Triple-pencil panel treatment must stay on outer panels and not bleed into protected subpanels.');
+if(/.metric[^}]*(--panel-border-inner|--panel-border-outer)|.checklist-item[^}]*(--panel-border-inner|--panel-border-outer)|.rule[^}]*(--panel-border-inner|--panel-border-outer)/s.test(styles)) {
+  throw new Error('Double-border panel treatment must stay on outer panels and not bleed into protected subpanels.');
 }
 
 if(config.appId!=='com.fabricationpro.app') throw new Error(`Capacitor appId changed unexpectedly: ${config.appId}`);
