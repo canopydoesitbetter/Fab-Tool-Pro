@@ -1,0 +1,26 @@
+name: Final Pencil Panel Specificity Verification
+
+on:
+  push:
+    branches: [ fix/pencil-panel-specificity ]
+    paths:
+      - '.github/workflows/pencil-panel-specificity-final.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm install --ignore-scripts
+      - name: Run full verification suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+      - name: Check production diff whitespace
+        run: git diff --check origin/main...HEAD
