@@ -1,0 +1,31 @@
+name: Double Panel Strong Buttons Branch Verification
+
+on:
+  push:
+    branches: [ feature/double-panel-strong-buttons ]
+    paths:
+      - '.github/workflows/double-panel-strong-buttons-branch.yml'
+      - 'fabrication_pro_capacitor/scripts/verify-style-cascade.mjs'
+      - 'fabrication_pro_capacitor/scripts/verify-features.mjs'
+      - 'fabrication_pro_capacitor/www/styles.css'
+      - 'fabrication_pro_capacitor/scripts/apply-double-panel-strong-buttons.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm install --ignore-scripts
+      - name: Verify styling contract
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
