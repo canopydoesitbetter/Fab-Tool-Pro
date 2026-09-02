@@ -9,12 +9,14 @@ Edit the file that owns the thing you want to change:
 | File | Responsibility |
 | --- | --- |
 | `www/index.html` | Application markup, visible copy, page/drawer structure, calculator/guide markup |
-| `www/styles.css` | All application styling and responsive behavior |
+| `www/styles.css` | Core application styling and responsive behavior |
+| `www/ux.css` | Focused interaction styling for streamlined management sections and drawer-based Task Logging / Fabricator Notes controls |
 | `www/app.js` | Fabrication tools, saved-data behavior, canonical navigation, shared drawer mechanics, self-tests |
+| `www/ux.js` | Focused Task Logging / Fabricator Notes presentation wiring that delegates data, timers, persistence, and note operations to `app.js` |
 | `www/calculator.js` | Basic Calculator behavior and Calculator Guide event wiring |
 | `www/native-compat.js` | Capacitor-only Blob export compatibility |
 
-There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. Git history is the archive for previous source versions.
+There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. `ux.js` is an explicit shipped UI module for the canonical markup in `index.html`; it does not replace markup or own fabrication data. Git history is the archive for previous source versions.
 
 ## Compatibility guarantees
 
@@ -113,7 +115,7 @@ When working with generated native projects locally, sync the current web assets
 npm run sync
 ```
 
-Generated `android/` and `ios/` projects are build products for this workflow; the canonical product source remains the five files under `www/` listed above.
+Generated `android/` and `ios/` projects are build products for this workflow; the canonical product source remains the files under `www/` listed above.
 
 ## Persistence notes
 
