@@ -19,6 +19,9 @@
   color:var(--text);
   font-weight:900;
 }
+.management-summary > span:first-child {
+  color:var(--accent);
+}
 .management-summary::after {
   content:"▾";
   flex:0 0 auto;
@@ -38,6 +41,11 @@
 .management-details-body {
   padding-top:12px;
   border-top:1px solid var(--border);
+}
+
+label[for="taskLogJobTitle"],
+label[for="fabricatorNotesTitle"] {
+  color:var(--accent);
 }
 
 .tasklog-title-row {
@@ -75,7 +83,7 @@
 
 .notes-management-actions {
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:10px;
 }
 .notes-management-actions .btn,
@@ -89,6 +97,12 @@
 }
 .notes-editor-card {
   width:100%;
+}
+.notes-topics-inline-btn {
+  width:100%;
+  min-width:0;
+  justify-content:center;
+  margin-bottom:12px;
 }
 .notes-topics-drawer-list {
   max-height:none;
@@ -110,7 +124,7 @@
     min-width:0;
   }
   .notes-management-actions {
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:1fr;
   }
 }
 
