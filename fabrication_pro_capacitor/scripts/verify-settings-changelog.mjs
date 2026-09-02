@@ -42,7 +42,7 @@ requireMatch(sync,/package\.json/,'Version sync must read package.json as the ca
 requireMatch(sync,/FABRI_CADABRA_VERSION/,'Version sync must update the browser-readable FABRI_CADABRA_VERSION marker.');
 const generatedVersion=ux.match(/const FABRI_CADABRA_VERSION='([^']+)'/i)?.[1];
 if (generatedVersion!==pkg.version) throw new Error(`Browser version ${generatedVersion || 'missing'} does not match canonical package version ${pkg.version}.`);
-requireMatch(ux,/id='settingsVersionValue'>\$\{FABRI_CADABRA_VERSION\}<\/strong>/,'Settings must display the canonical current version.');
+requireMatch(ux,/id='settingsVersionValue' class='settings-version-value'>\$\{FABRI_CADABRA_VERSION\}<\/strong>/,'Settings must display the canonical current version with the version-value styling hook.');
 
 // Changelog opens as a modal drawer and composes the current release before the 1.0.0 baseline entry.
 requireMatch(ux,/openDrawer\('settingsChangelogDrawer'/,'Changelog button must reuse shared modal/drawer focus behavior.');
