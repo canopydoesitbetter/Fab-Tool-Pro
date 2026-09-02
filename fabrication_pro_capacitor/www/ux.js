@@ -1,4 +1,13 @@
 (() => {
+  function moveStatusOutsideManagement(detailsId,statusId) {
+    const details=document.getElementById(detailsId);
+    const status=document.getElementById(statusId);
+    if (details && status && details.contains(status)) details.after(status);
+  }
+
+  moveStatusOutsideManagement('taskLogManagementDetails','taskLogStatus');
+  moveStatusOutsideManagement('fabricatorNotesManagementDetails','fabricatorNotesStatus');
+
   const taskLogPresetList=document.getElementById('taskLogPresetList');
   const taskLogTaskList=document.getElementById('taskLogTaskList');
 
