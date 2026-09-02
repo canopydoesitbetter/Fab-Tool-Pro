@@ -274,7 +274,7 @@
         <div class='settings-version-row'>
           <div>
             <span class='settings-row-label'>Current Version</span>
-            <strong id='settingsVersionValue'>${FABRI_CADABRA_VERSION}</strong>
+            <strong id='settingsVersionValue' class='settings-version-value'>${FABRI_CADABRA_VERSION}</strong>
           </div>
           <button id='settingsChangelogBtn' class='btn settings-changelog-btn' type='button' aria-expanded='false' aria-controls='settingsChangelogDrawer'>Changelog</button>
         </div>
