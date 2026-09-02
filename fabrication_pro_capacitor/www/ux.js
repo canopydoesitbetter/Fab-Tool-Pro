@@ -56,6 +56,12 @@
   const fabricatorNotesTopicsBackdrop=document.getElementById('fabricatorNotesTopicsBackdrop');
   const fabricatorNotesTopicsCloseBtn=document.getElementById('fabricatorNotesTopicsCloseBtn');
   const fabricatorNotesTopicList=document.getElementById('fabricatorNotesTopicList');
+  const fabricatorNotesEditor=document.getElementById('fabricatorNotesEditor');
+
+  if (fabricatorNotesTopicsBtn && fabricatorNotesEditor) {
+    fabricatorNotesTopicsBtn.classList.add('notes-topics-inline-btn');
+    fabricatorNotesEditor.insertBefore(fabricatorNotesTopicsBtn,fabricatorNotesEditor.firstElementChild);
+  }
 
   function setFabricatorNotesTopicsDrawerOpen(open) {
     if (!fabricatorNotesTopicsBtn || !window.FabriCadabraApp) return;
