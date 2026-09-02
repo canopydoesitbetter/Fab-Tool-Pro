@@ -44,12 +44,11 @@ const generatedVersion=ux.match(/const FABRI_CADABRA_VERSION='([^']+)'/i)?.[1];
 if (generatedVersion!==pkg.version) throw new Error(`Browser version ${generatedVersion || 'missing'} does not match canonical package version ${pkg.version}.`);
 requireMatch(ux,/id='settingsVersionValue'>\$\{FABRI_CADABRA_VERSION\}<\/strong>/,'Settings must display the canonical current version.');
 
-// Changelog opens as a modal drawer and is newest-first.
+// Changelog opens as a modal drawer and composes the current release before the 1.0.0 baseline entry.
 requireMatch(ux,/openDrawer\('settingsChangelogDrawer'/,'Changelog button must reuse shared modal/drawer focus behavior.');
 requireMatch(ux,/closeDrawer\('settingsChangelogDrawer'/,'Changelog close behavior is missing.');
-const newestIndex=ux.indexOf("data-changelog-version='current'");
-const baselineIndex=ux.indexOf("data-changelog-version='1.0.0'");
-if (newestIndex<0 || baselineIndex<0 || newestIndex>=baselineIndex) throw new Error('Changelog entries must place the current version before 1.0.0.');
+requireMatch(ux,/function changelogMarkup\(\)\s*\{[\s\S]*?data-changelog-version='current'[\s\S]*?\$\{currentFeaturesChangelogMarkup\(\)\}[\s\S]*?\}/,'Changelog must render the current version before the 1.0.0 baseline entry.');
+requireMatch(ux,/data-changelog-version='1\.0\.0'/,'The 1.0.0 Current Features baseline entry is missing.');
 for (const heading of ['Task Logging','Fabricator Notes','Checklist','Basic Calculator','Quick Reference','Fastener Spacing','Sheet Optimizer','Saw Optimizer','Aluminum Overhang','App-Wide Features']) {
   if (!ux.includes(`<h3>${heading}</h3>`)) throw new Error(`Current Features changelog is missing section: ${heading}`);
 }
