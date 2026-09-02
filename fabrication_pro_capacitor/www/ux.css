@@ -1,0 +1,127 @@
+/* Focused UX refinements for Task Logging and Fabricator Notes. */
+.management-details {
+  overflow:hidden;
+}
+.management-details > summary {
+  list-style:none;
+}
+.management-details > summary::-webkit-details-marker {
+  display:none;
+}
+.management-summary {
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  cursor:pointer;
+  user-select:none;
+  color:var(--text);
+  font-weight:900;
+}
+.management-summary::after {
+  content:"▾";
+  flex:0 0 auto;
+  color:var(--accent);
+  font-size:.9rem;
+  transition:transform .16s ease;
+}
+.management-details[open] .management-summary::after {
+  transform:rotate(180deg);
+}
+.management-summary-state {
+  margin-left:auto;
+  color:var(--muted);
+  font-size:.74rem;
+  font-weight:800;
+}
+.management-details-body {
+  padding-top:12px;
+  border-top:1px solid var(--border);
+}
+
+.tasklog-title-row {
+  display:block;
+}
+.tasklog-preset-launch {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+}
+.tasklog-preset-launch-copy strong {
+  display:block;
+  color:var(--text);
+  font-size:.92rem;
+  font-weight:900;
+}
+.tasklog-preset-launch-copy .hint {
+  display:block;
+  margin-top:3px;
+}
+.tasklog-job-preset-btn {
+  min-width:170px;
+  justify-content:center;
+}
+.tasklog-remove-task {
+  display:none !important;
+}
+.tasklog-remove-assigned-btn {
+  border-color:color-mix(in srgb, var(--danger) 42%, var(--border));
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:1.2rem;
+}
+
+.notes-management-actions {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.notes-management-actions .btn,
+.notes-management-actions .cut-list-menu-btn {
+  width:100%;
+  min-width:0;
+  justify-content:center;
+}
+.notes-workspace {
+  display:block;
+}
+.notes-editor-card {
+  width:100%;
+}
+.notes-topics-drawer-list {
+  max-height:none;
+  overflow:visible;
+}
+.notes-topics-drawer-list .notes-topic-item {
+  min-height:64px;
+}
+
+@media (max-width:760px) {
+  .management-summary-state {
+    display:none;
+  }
+  .tasklog-preset-launch {
+    grid-template-columns:1fr;
+  }
+  .tasklog-job-preset-btn {
+    width:100%;
+    min-width:0;
+  }
+  .notes-management-actions {
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media (max-width:480px) {
+  .notes-management-actions {
+    grid-template-columns:1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .management-summary::after {
+    transition:none;
+  }
+}
