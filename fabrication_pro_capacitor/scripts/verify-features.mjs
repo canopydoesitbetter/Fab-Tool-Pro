@@ -2,19 +2,21 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
-for (const f of ['www/index.html','www/styles.css','www/app.js','www/calculator.js','www/native-compat.js']) {
+for (const f of ['www/index.html','www/styles.css','www/ux.css','www/app.js','www/ux.js','www/calculator.js','www/native-compat.js']) {
   if (!existsSync(join(root,f))) throw new Error(`Missing canonical source required by feature verification: ${f}`);
 }
 const html=readFileSync(join(root,'www','index.html'),'utf8');
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
+const uxStyles=readFileSync(join(root,'www','ux.css'),'utf8');
 const app=readFileSync(join(root,'www','app.js'),'utf8');
+const ux=readFileSync(join(root,'www','ux.js'),'utf8');
 const calculator=readFileSync(join(root,'www','calculator.js'),'utf8');
 const native=readFileSync(join(root,'www','native-compat.js'),'utf8');
 const config=JSON.parse(readFileSync(join(root,'capacitor.config.json'),'utf8'));
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 const installerWorkflow=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
 const pagesWorkflow=readFileSync(join(root,'..','.github','workflows','deploy-pages.yml'),'utf8');
-const combined=[html,styles,app,calculator,native].join('\n');
+const combined=[html,styles,uxStyles,app,ux,calculator,native].join('\n');
 const tools=['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
 const expectedNavTools=['tasklog','notes','checklist','calculator','reference','fasteners','optimizer','saw','overhang'];
 const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^"]+)"/g)].map(match=>match[1]);
@@ -77,34 +79,40 @@ const formats=['FabricationTaskLogJobs','FabricationTaskLogPresets','Fabrication
 for(const format of formats) if(!combined.includes(format)) throw new Error(`Protected import/export format missing: ${format}`);
 for(const marker of ['running','startedAt','accumulatedMs']) if(!app.includes(marker)) throw new Error(`Protected timer state marker missing: ${marker}`);
 
-// Task Logging and Fabricator Notes UX contract.
+// Task Logging and Fabricator Notes streamlined UX contract.
 for(const marker of [
-  'id="taskLogManagementDetails" class="management-details"',
+  'id="taskLogManagementDetails" class="card management-details"',
   'id="taskLogPresetMenuBtn" class="cut-list-menu-btn tasklog-preset-menu-btn tasklog-job-preset-btn"',
-  'id="fabricatorNotesManagementDetails" class="management-details"',
+  'id="fabricatorNotesManagementDetails" class="card management-details"',
   'id="fabricatorNotesTopicsBtn"',
   'id="fabricatorNotesTopicsBackdrop"',
   'id="fabricatorNotesTopicsDrawer"',
-  'id="fabricatorNotesTopicsCloseBtn"'
+  'id="fabricatorNotesTopicsCloseBtn"',
+  'id="fabricatorNotesTopicList" class="notes-topic-list notes-topics-drawer-list"'
 ]) {
   if(!html.includes(marker)) throw new Error(`User-friendly management/drawer markup missing: ${marker}`);
 }
 if(/<details[^>]*id="taskLogManagementDetails"[^>]*\sopen(?:\s|>)/.test(html)) throw new Error('Task Logging Management must be collapsed by default.');
 if(/<details[^>]*id="fabricatorNotesManagementDetails"[^>]*\sopen(?:\s|>)/.test(html)) throw new Error('Notes Management must be collapsed by default.');
-for(const forbidden of ['id="taskLogPresetSelect"','id="taskLogAddTaskBtn"','class="card notes-topics-card"','data-tasklog-remove-task=']) {
-  if(html.includes(forbidden) || app.includes(forbidden)) throw new Error(`Retired Task Logging/Notes control remains: ${forbidden}`);
+if(html.includes('class="card notes-topics-card"')) throw new Error('Fabricator Notes must not keep a permanent Topics side panel.');
+if(!/<div hidden aria-hidden="true">[\s\S]*?id="taskLogPresetSelect"[\s\S]*?id="taskLogAddTaskBtn"[\s\S]*?<\/div>/.test(html)) {
+  throw new Error('Retired Task Logging select/Add Task controls must remain hidden only as compatibility hooks for the unchanged task engine.');
+}
+if(!uxStyles.includes('.tasklog-remove-task') || !uxStyles.includes('display:none !important;')) {
+  throw new Error('Inline task removal must be hidden so tasks can only be removed from the preset drawer.');
 }
 for(const marker of [
   'data-tasklog-remove-assigned',
   'function removeAssignedTaskLogPreset(',
-  "openDrawer('fabricatorNotesTopicsDrawer'",
-  "closeDrawer('fabricatorNotesTopicsDrawer'",
-  'fabricatorNotesTopicsBtn.setAttribute(\'aria-expanded\''
+  'new MutationObserver(normalizeAssignedPresetActions)',
+  "window.FabriCadabraApp.openDrawer('fabricatorNotesTopicsDrawer'",
+  "window.FabriCadabraApp.closeDrawer('fabricatorNotesTopicsDrawer'",
+  "fabricatorNotesTopicsBtn.setAttribute('aria-expanded'"
 ]) {
-  if(!app.includes(marker)) throw new Error(`Task Logging/Notes drawer behavior missing: ${marker}`);
+  if(!ux.includes(marker)) throw new Error(`Task Logging/Notes UX behavior missing: ${marker}`);
 }
-for(const marker of ['.management-details','.management-summary','.tasklog-job-preset-btn','.notes-topics-drawer-list']) {
-  if(!styles.includes(marker)) throw new Error(`Task Logging/Notes UX style missing: ${marker}`);
+for(const marker of ['.management-details','.management-summary','.tasklog-job-preset-btn','.tasklog-remove-assigned-btn','.notes-topics-drawer-list']) {
+  if(!uxStyles.includes(marker)) throw new Error(`Task Logging/Notes UX style missing: ${marker}`);
 }
 
 for(const marker of [
