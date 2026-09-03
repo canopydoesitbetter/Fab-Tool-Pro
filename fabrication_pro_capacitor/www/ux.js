@@ -1,5 +1,5 @@
 (() => {
-  const FABRI_CADABRA_VERSION='1.0.2'; // @generated from package.json by scripts/sync-app-version.mjs
+  const FABRI_CADABRA_VERSION='1.0.3'; // @generated from package.json by scripts/sync-app-version.mjs
 
   function moveStatusOutsideManagement(detailsId,statusId) {
     const details=document.getElementById(detailsId);
@@ -107,17 +107,43 @@
     return {time:`${displayHour}:${minute}`,period};
   }
 
+  // @shift-smart-time-start
+  function normalizeShiftTimeEntry(value) {
+    const raw=String(value ?? '').trim();
+    if (!raw) return null;
+    let hourText='';
+    let minuteText='';
+    const colonMatch=raw.match(/^(\d{1,2}):(\d{2})$/);
+    if (colonMatch) {
+      hourText=colonMatch[1];
+      minuteText=colonMatch[2];
+    } else if (/^\d{1,4}$/.test(raw)) {
+      if (raw.length<=2) {
+        hourText=raw;
+        minuteText='00';
+      } else {
+        hourText=raw.slice(0,-2);
+        minuteText=raw.slice(-2);
+      }
+    } else return null;
+    const hour=Number(hourText);
+    const minute=Number(minuteText);
+    if (!Number.isInteger(hour) || hour<1 || hour>12 || !Number.isInteger(minute) || minute<0 || minute>59) return null;
+    return `${hour}:${String(minute).padStart(2,'0')}`;
+  }
+
   function shiftTimeTo24(value,period) {
-    const match=String(value||'').trim().match(/^(\d{1,2}):(\d{2})$/);
-    if (!match) return null;
+    const normalized=normalizeShiftTimeEntry(value);
+    if (!normalized) return null;
+    const match=normalized.match(/^(\d{1,2}):(\d{2})$/);
     let hour=Number(match[1]);
     const minute=Number(match[2]);
-    if (hour<1 || hour>12 || minute<0 || minute>59) return null;
     if (period==='AM') hour=hour===12?0:hour;
     else if (period==='PM') hour=hour===12?12:hour+12;
     else return null;
     return `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
   }
+  // @shift-smart-time-end
 
   function renderShiftClockUi() {
     if (!shiftSchedule || !shiftClockControl || !shiftClockStatus || !shiftClockBtn || !taskLogShiftStatus) return;
@@ -315,6 +341,19 @@
         <div class='changelog-entry-heading'>
           <div>
             <span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>
+            <h2>Smart Shift Time Entry</h2>
+          </div>
+        </div>
+        <ul>
+          <li>Shift Schedule time fields are now phone-friendly and accept digits without requiring a colon from the mobile keyboard.</li>
+          <li>Type 730 for 7:30, 1230 for 12:30, or a single hour such as 7 for 7:00; the existing AM/PM selector remains explicit.</li>
+          <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>
+        </ul>
+      </article>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.2'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span class='changelog-version-label'>Version 1.0.2</span>
             <h2>Shift Schedule &amp; Clock Controls</h2>
           </div>
         </div>
@@ -401,7 +440,7 @@
             <div class='settings-shift-row'>
               <label for='shiftClockInTime'>Clock In</label>
               <div class='settings-shift-fields settings-shift-time-fields'>
-                <input id='shiftClockInTime' type='text' inputmode='numeric' autocomplete='off' placeholder='7:00' aria-label='Clock In time' />
+                <input id='shiftClockInTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='7:00' aria-label='Clock In time' />
                 <select id='shiftClockInPeriod' aria-label='Clock In AM or PM'><option>AM</option><option>PM</option></select>
               </div>
             </div>
@@ -415,7 +454,7 @@
                 </label>
               </div>
               <div class='settings-shift-fields settings-shift-pause-fields'>
-                <input id='shiftBreakTime' type='text' inputmode='numeric' autocomplete='off' placeholder='9:00' aria-label='Break time' />
+                <input id='shiftBreakTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='9:00' aria-label='Break time' />
                 <select id='shiftBreakPeriod' aria-label='Break AM or PM'><option>AM</option><option>PM</option></select>
                 <label class='settings-shift-minutes-field'>
                   <span>Length in minutes</span>
@@ -434,7 +473,7 @@
                 </label>
               </div>
               <div class='settings-shift-fields settings-shift-pause-fields'>
-                <input id='shiftLunchTime' type='text' inputmode='numeric' autocomplete='off' placeholder='12:00' aria-label='Lunch time' />
+                <input id='shiftLunchTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='12:00' aria-label='Lunch time' />
                 <select id='shiftLunchPeriod' aria-label='Lunch AM or PM'><option>AM</option><option>PM</option></select>
                 <label class='settings-shift-minutes-field'>
                   <span>Length in minutes</span>
@@ -447,10 +486,11 @@
             <div class='settings-shift-row'>
               <label for='shiftClockOutTime'>Clock Out</label>
               <div class='settings-shift-fields settings-shift-time-fields'>
-                <input id='shiftClockOutTime' type='text' inputmode='numeric' autocomplete='off' placeholder='3:30' aria-label='Clock Out time' />
+                <input id='shiftClockOutTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='3:30' aria-label='Clock Out time' />
                 <select id='shiftClockOutPeriod' aria-label='Clock Out AM or PM'><option>AM</option><option>PM</option></select>
               </div>
             </div>
+            <span class='hint settings-shift-time-hint'>Phone-friendly time entry: type 730 for 7:30, 1230 for 12:30, or 7 for 7:00. No colon needed.</span>
           </div>
 
           <div class='settings-shift-actions'>
@@ -528,6 +568,23 @@
     const shiftClockOutPeriod=document.getElementById('shiftClockOutPeriod');
     const shiftScheduleSaveBtn=document.getElementById('shiftScheduleSaveBtn');
     const shiftScheduleStatus=document.getElementById('shiftScheduleStatus');
+
+    function bindShiftSmartTimeInput(input) {
+      if (!input) return;
+      input.addEventListener('input',()=>{
+        const raw=String(input.value || '');
+        const clean=raw.replace(/[^\d:]/g,'').slice(0,5);
+        if (clean!==raw) input.value=clean;
+      });
+      input.addEventListener('blur',()=>{
+        const normalized=normalizeShiftTimeEntry(input.value);
+        if (normalized) input.value=normalized;
+      });
+    }
+    bindShiftSmartTimeInput(shiftClockInTime);
+    bindShiftSmartTimeInput(shiftBreakTime);
+    bindShiftSmartTimeInput(shiftLunchTime);
+    bindShiftSmartTimeInput(shiftClockOutTime);
 
     function showShiftScheduleStatus(message,type='ok') {
       if (!shiftScheduleStatus) return;
