@@ -19,6 +19,10 @@
           <h1>Fabri-Cadabra</h1>
           <p>The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.</p>
         </div>
+        <div id="shiftClockControl" class="shift-clock-control" aria-live="polite">
+          <span id="shiftClockStatus" class="shift-clock-status">Shift Schedule Off</span>
+          <button id="shiftClockBtn" class="shift-clock-btn schedule-off" type="button" disabled>SHIFT SCHEDULE OFF</button>
+        </div>
         <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch color theme">☾ Dark</button>
       </div>
     </header>
@@ -367,6 +371,8 @@
           <p>Create jobs, assign reusable preset tasks, and track real fabrication time with persistent start/stop timers. Timers are timestamp-based, so locking the phone or switching pages does not lose elapsed time.</p>
         </div>
       </div>
+
+      <div id="taskLogShiftStatus" class="tasklog-shift-status" role="status" aria-live="polite">Shift Schedule Off</div>
 
       <div id="taskLogRunningBanner" class="tasklog-running-banner" role="status" aria-live="polite">
         <span class="tasklog-running-dot" aria-hidden="true"></span>

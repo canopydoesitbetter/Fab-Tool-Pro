@@ -338,3 +338,182 @@ label[for="fabricatorNotesTitle"] {
     display:none !important;
   }
 }
+
+/* ---------------- Shift Schedule / Clock controls ---------------- */
+.brand { min-width:0; flex:1 1 420px; }
+.shift-clock-control {
+  flex:0 0 auto;
+  display:grid;
+  gap:5px;
+  min-width:160px;
+  align-self:flex-start;
+}
+.shift-clock-status {
+  color:#d8e8f2;
+  font-size:.76rem;
+  font-weight:800;
+  line-height:1.15;
+  text-align:center;
+}
+.shift-clock-btn {
+  min-height:44px;
+  padding:8px 12px;
+  border:1px solid rgba(255,255,255,.34);
+  border-radius:12px;
+  font-size:.82rem;
+  font-weight:950;
+  letter-spacing:.035em;
+  white-space:nowrap;
+}
+.shift-clock-btn.schedule-off {
+  background:rgba(255,255,255,.10);
+  color:#d8e8f2;
+  opacity:.78;
+}
+.shift-clock-btn.clock-in {
+  background:var(--good-bg);
+  color:var(--good);
+  border-color:color-mix(in srgb,var(--good) 55%,var(--border));
+}
+.shift-clock-btn.clock-out {
+  background:var(--danger-bg);
+  color:var(--danger);
+  border-color:color-mix(in srgb,var(--danger) 55%,var(--border));
+}
+.tasklog-shift-status {
+  display:flex;
+  align-items:center;
+  width:100%;
+  min-height:38px;
+  margin:0 0 10px;
+  padding:8px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card2);
+  color:var(--muted);
+  font-size:.84rem;
+  font-weight:850;
+}
+
+.settings-shift-schedule { overflow:visible; }
+.settings-shift-schedule > .management-summary { align-items:center; }
+.shift-schedule-master-state {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:82px;
+  padding:5px 9px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:.72rem;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+.shift-schedule-master-state.enabled {
+  background:var(--good-bg);
+  color:var(--good);
+  border-color:color-mix(in srgb,var(--good) 45%,var(--border));
+}
+.shift-schedule-master-state.disabled {
+  background:var(--danger-bg);
+  color:var(--danger);
+  border-color:color-mix(in srgb,var(--danger) 38%,var(--border));
+}
+.settings-shift-master-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:13px 14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card2);
+}
+.settings-shift-master-row > div { display:grid; gap:4px; }
+.settings-shift-form {
+  display:grid;
+  gap:10px;
+  margin-top:12px;
+}
+.settings-shift-row {
+  display:grid;
+  grid-template-columns:minmax(105px,.62fr) minmax(0,1.8fr);
+  gap:10px 14px;
+  align-items:center;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.settings-shift-row:last-child { border-bottom:0; }
+.settings-shift-row > label,
+.settings-shift-pause-label > label:first-child {
+  font-weight:900;
+  color:var(--text);
+}
+.settings-shift-fields {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.settings-shift-fields > input[type='text'] { min-width:0; flex:1 1 130px; }
+.settings-shift-fields > select { flex:0 1 130px; min-width:86px; }
+.settings-shift-through { color:var(--muted); font-size:.82rem; font-weight:800; }
+.settings-shift-time-fields input { max-width:150px; }
+.settings-shift-time-fields select { max-width:92px; }
+.settings-shift-pause-row { align-items:start; }
+.settings-shift-pause-label {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding-top:7px;
+}
+.toggle-switch.compact { transform:scale(.86); transform-origin:right center; }
+.settings-shift-pause-fields { flex-wrap:wrap; }
+.settings-shift-pause-fields > input[type='text'] { max-width:135px; }
+.settings-shift-pause-fields > select { max-width:92px; }
+.settings-shift-minutes-field {
+  display:grid;
+  gap:4px;
+  min-width:135px;
+  flex:1 1 155px;
+}
+.settings-shift-minutes-field > span {
+  color:var(--muted);
+  font-size:.7rem;
+  font-weight:800;
+}
+.settings-shift-minutes-field input { width:100%; }
+.settings-shift-mode-hint {
+  grid-column:2;
+  margin-top:-5px;
+}
+.settings-shift-actions {
+  display:flex;
+  justify-content:flex-end;
+  margin-top:12px;
+}
+.settings-shift-actions .btn { min-width:150px; }
+
+@media (max-width:720px) {
+  .brand-row { flex-wrap:wrap; align-items:stretch; }
+  .brand { flex-basis:100%; }
+  .shift-clock-control { flex:1 1 170px; min-width:0; }
+  .theme-toggle { flex:0 0 106px; align-self:end; }
+  .shift-clock-status { text-align:left; }
+  .settings-shift-row { grid-template-columns:1fr; }
+  .settings-shift-mode-hint { grid-column:1; }
+  .settings-shift-pause-label { padding-top:0; }
+  .settings-shift-fields { flex-wrap:wrap; }
+  .settings-shift-days-row .settings-shift-fields select { flex:1 1 120px; }
+}
+
+@media (max-width:430px) {
+  .shift-clock-control { flex-basis:100%; }
+  .theme-toggle { flex:1 1 100%; width:100%; }
+  .shift-clock-status { text-align:center; }
+  .settings-shift-master-row { align-items:flex-start; }
+  .settings-shift-fields > input[type='text'],
+  .settings-shift-pause-fields > input[type='text'],
+  .settings-shift-time-fields input { max-width:none; flex:1 1 110px; }
+}
