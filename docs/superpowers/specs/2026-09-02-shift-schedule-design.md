@@ -96,6 +96,7 @@ The day range is inclusive and cyclic. Examples:
 
 - Monday through Friday means Monday, Tuesday, Wednesday, Thursday, Friday.
 - Friday through Tuesday means Friday, Saturday, Sunday, Monday, Tuesday.
+- Monday through Monday means Monday only, not all seven days.
 
 Clock In and Clock Out are required whenever Shift Schedule is enabled.
 
@@ -105,9 +106,9 @@ Break and Lunch are optional independently.
 
 Each Break/Lunch row has a compact toggle near the row label.
 
-When no scheduled shift is currently active, the toggle represents the saved default for future shifts.
+When there is no active scheduled shift instance, the toggle represents the saved default for future shifts.
 
-During an active scheduled shift, changing that control applies only to the current shift instance and must be labeled or helper-texted clearly as a current-shift override. The saved default remains unchanged.
+Once a scheduled shift instance has been established by manual Clock In, changing that control applies only to that shift instance and must be labeled or helper-texted clearly as a current-shift override. The saved default remains unchanged.
 
 Current-shift overrides:
 
@@ -115,6 +116,8 @@ Current-shift overrides:
 - survive a manual Clock Out followed by Clock In again within the same scheduled shift window;
 - expire when that scheduled shift instance ends;
 - return to the saved default for the next scheduled shift.
+
+Override changes are prospective. If Break/Lunch is turned off after its window has already stopped a task, the task remains stopped and the user may manually restart it immediately if no other rule blocks work. If a currently active Break/Lunch is turned back on while a task is running, that task stops at the override-change time rather than being retroactively truncated to the original pause start.
 
 Overtime and unscheduled work modes do not inherit unrelated scheduled Break/Lunch boundaries.
 
@@ -155,7 +158,8 @@ When Shift Schedule is disabled:
 - existing pre-v1.0.2 Task Logging behavior is restored;
 - no clock-in requirement is enforced;
 - no Break/Lunch/Clock Out automatic stops are applied;
-- a currently running task may continue normally.
+- a currently running task may continue normally;
+- live clock/work-mode state and current-shift overrides are cleared, while saved schedule defaults and times are preserved.
 
 Re-enabling starts again from Clocked Out.
 
@@ -167,7 +171,7 @@ Clock In is intentionally flexible so the schedule does not become a hindrance.
 
 ### Early clock-in
 
-A user may Clock In before the scheduled Clock In time. After confirmation, they are immediately allowed to start Task Logging timers. They do not have to wait for the scheduled start.
+A user may Clock In before the scheduled Clock In time on a scheduled shift-start day. After confirmation, they are immediately allowed to start Task Logging timers. They do not have to wait for the scheduled start.
 
 The remainder of that scheduled shift's enabled Break, Lunch, and Clock Out boundaries still apply.
 
@@ -248,7 +252,7 @@ Unscheduled mode:
 
 Overnight shifts are supported.
 
-A shift whose Clock Out wall-clock time is at or before its Clock In wall-clock time is interpreted as ending on the following calendar day.
+A shift whose Clock Out wall-clock time is earlier than its Clock In wall-clock time is interpreted as ending on the following calendar day. Equal Clock In and Clock Out times are invalid rather than being treated as a 24-hour shift.
 
 The scheduled shift belongs to the day on which Clock In is scheduled.
 
@@ -261,6 +265,8 @@ Example:
 The Friday shift begins Friday at 10:00 PM and may continue through Saturday at 6:00 AM. Saturday is not automatically a scheduled shift-start day unless Saturday is included in the configured range.
 
 When evaluating a time after midnight, the engine must first check whether it belongs to the previous day's still-active overnight shift before classifying it as unscheduled work.
+
+For overnight validation, each enabled Break/Lunch wall-clock time must map to the unique occurrence after scheduled Clock In and before scheduled Clock Out. If it cannot be mapped inside that shift span, the schedule is invalid.
 
 ## Allowed Timer Windows
 
@@ -350,6 +356,8 @@ Future reconciliation must not search for new-policy prohibited boundaries befor
 
 This prevents an edit at 10:10 AM that newly introduces a 10:00 AM Break from deleting already-earned time before 10:10.
 
+The same prospective rule applies to current-shift Break/Lunch override changes.
+
 ## Device Time and Timezone
 
 The device's local wall clock and timezone are authoritative.
@@ -365,8 +373,8 @@ The app must refuse to save invalid schedules with concise, specific feedback.
 
 Validation includes:
 
-- Clock In and Clock Out must create a non-zero shift span.
-- Overnight Clock Out is valid.
+- Clock In and Clock Out may not be the same wall-clock time.
+- A Clock Out earlier than Clock In is a valid overnight shift ending the following day.
 - Enabled Break must have a valid time and positive duration.
 - Enabled Lunch must have a valid time and positive duration.
 - Enabled Break/Lunch windows must map inside the shift span.
@@ -492,21 +500,24 @@ Required coverage includes:
 13. Unscheduled-day clock-in requires confirmation and ignores unrelated schedule boundaries.
 14. Overnight scheduled shifts are recognized across midnight.
 15. Wrapped workday ranges such as Friday through Tuesday are recognized.
-16. Friday overnight shift may end Saturday even when Saturday is not a scheduled start day.
-17. Current-shift Break/Lunch overrides survive reload and manual re-clock-in within the same shift.
-18. Current-shift overrides reset after the scheduled shift instance ends.
-19. App resume after crossing a boundary closes the task at the first prohibited boundary, not resume time.
-20. Resume after Break and later Clock Out stops task at Break but also restores Clocked Out state at Clock Out.
-21. Schedule edits are prospective and do not retroactively truncate prior valid labor.
-22. Invalid schedules cannot replace the last valid stored schedule.
-23. Existing Task Logging import/export/session compatibility remains unchanged.
-24. Version sync resolves exactly to `1.0.2` from `package.json`.
-25. Changelog ordering remains newest-first and contains the required v1.0.2 disclosures.
-26. Existing Settings and drawer regression tests continue to pass.
-27. The original nine Pages buttons retain their pre-Settings natural row height.
-28. Full `npm run verify` passes.
-29. Android installer workflow passes, including signing verification.
-30. iPhone unsigned IPA workflow passes.
+16. Same start/end day means one scheduled start day.
+17. Equal Clock In/Clock Out wall-clock times are rejected.
+18. Friday overnight shift may end Saturday even when Saturday is not a scheduled start day.
+19. Current-shift Break/Lunch overrides survive reload and manual re-clock-in within the same shift.
+20. Current-shift overrides reset after the scheduled shift instance ends.
+21. Current-shift override changes are prospective and never auto-restart a stopped task.
+22. App resume after crossing a boundary closes the task at the first prohibited boundary, not resume time.
+23. Resume after Break and later Clock Out stops task at Break but also restores Clocked Out state at Clock Out.
+24. Schedule edits are prospective and do not retroactively truncate prior valid labor.
+25. Invalid schedules cannot replace the last valid stored schedule.
+26. Existing Task Logging import/export/session compatibility remains unchanged.
+27. Version sync resolves exactly to `1.0.2` from `package.json`.
+28. Changelog ordering remains newest-first and contains the required v1.0.2 disclosures.
+29. Existing Settings and drawer regression tests continue to pass.
+30. The original nine Pages buttons retain their pre-Settings natural row height.
+31. Full `npm run verify` passes.
+32. Android installer workflow passes, including signing verification.
+33. iPhone unsigned IPA workflow passes.
 
 ## Deployment Workflow
 
