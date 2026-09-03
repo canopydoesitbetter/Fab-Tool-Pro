@@ -25,17 +25,18 @@ requireMatch(ux,/function openSettingsPage\(/,'Settings navigation behavior is m
 requireMatch(ux,/originalGetActiveTool/,'Settings must temporarily report itself as the active page without changing core navigation state.');
 requireMatch(ux,/pageMenuDrawer\.addEventListener\('click'/,'Settings must return cleanly to normal page navigation.');
 
-// Settings button styling must match the page links while using the existing danger palette and staying pinned at the bottom.
+// Settings button styling must stay isolated from the original nine page buttons.
 for (const marker of ['.fab-settings-drawer-footer','.fab-settings-link','.settings-page','.settings-version-value','.settings-changelog-drawer','.settings-changelog-body']) {
   if (!uxStyles.includes(marker)) throw new Error(`Missing Settings/changelog style: ${marker}`);
 }
 requireMatch(uxStyles,/\.fab-settings-link\s*\{[^}]*background:\s*var\(--danger-bg\)[^}]*color:\s*var\(--danger\)/s,'Settings drawer button must use the established danger/red palette.');
 requireMatch(uxStyles,/\.fab-page-drawer \.cut-list-drawer-body\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column[^}]*overflow:\s*hidden/s,'Pages drawer body must pin Settings outside the independently scrollable tool list.');
+requireMatch(uxStyles,/\.fab-page-drawer \.fab-page-list\s*\{[^}]*align-content:\s*start[^}]*grid-auto-rows:\s*max-content/s,'The nine original Pages buttons must keep their natural pre-Settings row height instead of stretching to fill the drawer.');
 requireMatch(uxStyles,/\.settings-changelog-drawer\s*\{[^}]*left:\s*50%[^}]*top:\s*50%/s,'Changelog overlay must be centered on screen.');
 requireMatch(uxStyles,/\.settings-changelog-body\s*\{[^}]*overflow-y:\s*auto/s,'Changelog content must scroll independently from Settings.');
 
-// The package version is the single canonical source; the browser-readable UX value is generated from it.
-if (pkg.version!==expectedVersion) throw new Error(`package.json must be bumped to ${expectedVersion}; got ${pkg.version}.`);
+// The package version is the single canonical source; this regression must remain on 1.0.1.
+if (pkg.version!==expectedVersion) throw new Error(`package.json must remain ${expectedVersion}; got ${pkg.version}.`);
 if (!existsSync(syncPath)) throw new Error('Missing package-version sync script.');
 const sync=readFileSync(syncPath,'utf8');
 requireMatch(sync,/package\.json/,'Version sync must read package.json as the canonical source.');
@@ -56,4 +57,4 @@ for (const change of ['Added Settings page.','Added permanent Settings access at
   if (!ux.includes(change)) throw new Error(`v1.0.1 changelog is missing: ${change}`);
 }
 
-console.log(`Settings, canonical version ${pkg.version}, and newest-first changelog contract: OK`);
+console.log(`Settings, canonical version ${pkg.version}, unchanged Pages-button sizing, and newest-first changelog contract: OK`);
