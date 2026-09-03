@@ -121,6 +121,8 @@ label[for="fabricatorNotesTitle"] {
 .fab-page-drawer .fab-page-list {
   flex:1 1 auto;
   min-height:0;
+  align-content:start;
+  grid-auto-rows:max-content;
   overflow-y:auto;
   overscroll-behavior:contain;
   padding-right:2px;
