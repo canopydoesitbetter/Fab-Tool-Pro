@@ -2,9 +2,11 @@ name: Implement v1.0.3 Smart Time Input
 
 on:
   push:
-    branches: [ feature/v1.0.3-smart-time-input ]
+    branches:
+      - feature/v1.0.3-smart-time-input
     paths:
       - '.github/workflows/implement-v1.0.3-smart-time.yml'
+      - 'fabrication_pro_capacitor/scripts/apply-v1.0.3-smart-time-fix.py'
   workflow_dispatch:
 
 permissions:
@@ -23,187 +25,16 @@ jobs:
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
 
-      - name: Apply focused v1.0.3 fix
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-
-          root=Path('fabrication_pro_capacitor')
-          ux_path=root/'www'/'ux.js'
-          ux=ux_path.read_text()
-
-          old_time="""  function shiftTimeTo24(value,period) {
-            const match=String(value||'').trim().match(/^(\\d{1,2}):(\\d{2})$/);
-            if (!match) return null;
-            let hour=Number(match[1]);
-            const minute=Number(match[2]);
-            if (hour<1 || hour>12 || minute<0 || minute>59) return null;
-            if (period==='AM') hour=hour===12?0:hour;
-            else if (period==='PM') hour=hour===12?12:hour+12;
-            else return null;
-            return `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
-          }
-"""
-          new_time="""  // @shift-smart-time-start
-          function normalizeShiftTimeEntry(value) {
-            const raw=String(value ?? '').trim();
-            if (!raw) return null;
-            let hourText='';
-            let minuteText='';
-            const colonMatch=raw.match(/^(\\d{1,2}):(\\d{2})$/);
-            if (colonMatch) {
-              hourText=colonMatch[1];
-              minuteText=colonMatch[2];
-            } else if (/^\\d{1,4}$/.test(raw)) {
-              if (raw.length<=2) {
-                hourText=raw;
-                minuteText='00';
-              } else {
-                hourText=raw.slice(0,-2);
-                minuteText=raw.slice(-2);
-              }
-            } else return null;
-            const hour=Number(hourText);
-            const minute=Number(minuteText);
-            if (!Number.isInteger(hour) || hour<1 || hour>12 || !Number.isInteger(minute) || minute<0 || minute>59) return null;
-            return `${hour}:${String(minute).padStart(2,'0')}`;
-          }
-
-          function shiftTimeTo24(value,period) {
-            const normalized=normalizeShiftTimeEntry(value);
-            if (!normalized) return null;
-            const match=normalized.match(/^(\\d{1,2}):(\\d{2})$/);
-            let hour=Number(match[1]);
-            const minute=Number(match[2]);
-            if (period==='AM') hour=hour===12?0:hour;
-            else if (period==='PM') hour=hour===12?12:hour+12;
-            else return null;
-            return `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
-          }
-          // @shift-smart-time-end
-"""
-          if old_time not in ux:
-            raise SystemExit('Expected shiftTimeTo24 block not found')
-          ux=ux.replace(old_time,new_time,1)
-
-          old_decl="""    const shiftScheduleSaveBtn=document.getElementById('shiftScheduleSaveBtn');
-            const shiftScheduleStatus=document.getElementById('shiftScheduleStatus');
-
-            function showShiftScheduleStatus(message,type='ok') {
-"""
-          new_decl="""    const shiftScheduleSaveBtn=document.getElementById('shiftScheduleSaveBtn');
-            const shiftScheduleStatus=document.getElementById('shiftScheduleStatus');
-
-            function bindShiftSmartTimeInput(input) {
-              if (!input) return;
-              input.addEventListener('input',()=>{
-                const raw=String(input.value || '');
-                const clean=raw.replace(/[^\\d:]/g,'').slice(0,5);
-                if (clean!==raw) input.value=clean;
-              });
-              input.addEventListener('blur',()=>{
-                const normalized=normalizeShiftTimeEntry(input.value);
-                if (normalized) input.value=normalized;
-              });
-            }
-            bindShiftSmartTimeInput(shiftClockInTime);
-            bindShiftSmartTimeInput(shiftBreakTime);
-            bindShiftSmartTimeInput(shiftLunchTime);
-            bindShiftSmartTimeInput(shiftClockOutTime);
-
-            function showShiftScheduleStatus(message,type='ok') {
-"""
-          if old_decl not in ux:
-            raise SystemExit('Expected Shift Settings declaration block not found')
-          ux=ux.replace(old_decl,new_decl,1)
-
-          for field in ['shiftClockInTime','shiftBreakTime','shiftLunchTime','shiftClockOutTime']:
-            ux=ux.replace(f"id='{field}' type='text' inputmode='numeric' autocomplete='off'",f"id='{field}' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off'",1)
-
-          form_close="""            <div class='settings-shift-row'>
-              <label for='shiftClockOutTime'>Clock Out</label>
-              <div class='settings-shift-fields settings-shift-time-fields'>
-                <input id='shiftClockOutTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='3:30' aria-label='Clock Out time' />
-                <select id='shiftClockOutPeriod' aria-label='Clock Out AM or PM'><option>AM</option><option>PM</option></select>
-              </div>
-            </div>
-          </div>
-"""
-          form_new=form_close.replace("          </div>\n", "            <span class='hint settings-shift-time-hint'>Phone-friendly time entry: type 730 for 7:30, or 7 for 7:00. No colon needed.</span>\n          </div>\n",1)
-          if form_close not in ux:
-            raise SystemExit('Expected Clock Out form block not found')
-          ux=ux.replace(form_close,form_new,1)
-
-          # Turn the existing current v1.0.2 entry into a fixed historical entry.
-          ux=ux.replace("data-changelog-version='current'>","data-changelog-version='1.0.2'>",1)
-          ux=ux.replace("<span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>","<span class='changelog-version-label'>Version 1.0.2</span>",1)
-          changelog_start="""  function changelogMarkup() {
-            return `
-"""
-          current="""      <article class='changelog-entry changelog-release' data-changelog-version='current'>
-        <div class='changelog-entry-heading'>
-          <div>
-            <span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>
-            <h2>Smart Shift Time Entry</h2>
-          </div>
-        </div>
-        <ul>
-          <li>Shift Schedule time fields are now phone-friendly and accept digits without requiring a colon from the mobile keyboard.</li>
-          <li>Type 730 for 7:30, 1230 for 12:30, or a single hour such as 7 for 7:00; the existing AM/PM selector remains explicit.</li>
-          <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>
-        </ul>
-      </article>
-"""
-          if changelog_start not in ux:
-            raise SystemExit('Changelog start not found')
-          ux=ux.replace(changelog_start,changelog_start+current,1)
-          ux_path.write_text(ux)
-
-          pkg_path=root/'package.json'
-          pkg=json.loads(pkg_path.read_text())
-          if pkg.get('version')!='1.0.2':
-            raise SystemExit(f"Unexpected starting version {pkg.get('version')}")
-          pkg['version']='1.0.3'
-          pkg['scripts']['verify:smart-time']='node scripts/verify-smart-time-input.mjs'
-          verify=pkg['scripts']['verify']
-          if 'npm run verify:smart-time' not in verify:
-            verify=verify.replace('npm run verify:shift-schedule-behavior &&','npm run verify:shift-schedule-behavior && npm run verify:smart-time &&')
-          pkg['scripts']['verify']=verify
-          pkg_path.write_text(json.dumps(pkg,indent=2)+'\n')
-
-          settings_path=root/'scripts'/'verify-settings-changelog.mjs'
-          settings=settings_path.read_text()
-          settings=settings.replace("const expectedVersion='1.0.2';","const expectedVersion='1.0.3';",1)
-          old_order="""const currentIndex=changelogFunction.indexOf("data-changelog-version='current'");
-          const v101Index=changelogFunction.indexOf("data-changelog-version='1.0.1'");
-          const baselineCallIndex=changelogFunction.indexOf('${currentFeaturesChangelogMarkup()}');
-          if (!(currentIndex>=0 && v101Index>currentIndex && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
-"""
-          new_order="""const currentIndex=changelogFunction.indexOf("data-changelog-version='current'");
-          const v102Index=changelogFunction.indexOf("data-changelog-version='1.0.2'");
-          const v101Index=changelogFunction.indexOf("data-changelog-version='1.0.1'");
-          const baselineCallIndex=changelogFunction.indexOf('${currentFeaturesChangelogMarkup()}');
-          if (!(currentIndex>=0 && v102Index>currentIndex && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
-"""
-          if old_order not in settings:
-            raise SystemExit('Expected changelog order verifier not found')
-          settings=settings.replace(old_order,new_order,1)
-          settings=settings.replace("requireMatch(ux,/data-changelog-version='current'[\\s\\S]*?<h2>Shift Schedule &amp; Clock Controls<\\/h2>/,'Current changelog entry must describe Shift Schedule & Clock Controls.');","requireMatch(ux,/data-changelog-version='current'[\\s\\S]*?<h2>Smart Shift Time Entry<\\/h2>/,'Current changelog entry must describe Smart Shift Time Entry.');\nrequireMatch(ux,/data-changelog-version='1.0.2'[\\s\\S]*?<h2>Shift Schedule &amp; Clock Controls<\\/h2>/,'v1.0.2 Shift Schedule changelog entry must be retained.');",1)
-          settings_path.write_text(settings)
-
-          shift_path=root/'scripts'/'verify-shift-schedule.mjs'
-          shift=shift_path.read_text().replace("expect(pkg.version==='1.0.2',`Canonical package version must be 1.0.2; got ${pkg.version}.`);","expect(pkg.version==='1.0.3',`Canonical package version must be 1.0.3; got ${pkg.version}.`);",1)
-          shift_path.write_text(shift)
-          PY
+      - name: Apply focused patch
+        run: python3 fabrication_pro_capacitor/scripts/apply-v1.0.3-smart-time-fix.py
 
       - name: Install dependencies without creating a lockfile
         working-directory: fabrication_pro_capacitor
         run: npm install --ignore-scripts --package-lock=false
 
-      - name: Synchronize canonical version
+      - name: Sync canonical version
         working-directory: fabrication_pro_capacitor
         run: npm run sync:version
 
@@ -219,16 +50,17 @@ jobs:
         working-directory: fabrication_pro_capacitor
         run: npm run verify
 
-      - name: Confirm focused diff and protected identity
+      - name: Confirm protected app identity and patch hygiene
         run: |
           git diff --check
           grep -F '"appId": "com.fabricationpro.app"' fabrication_pro_capacitor/capacitor.config.json
           test "$(node -p "require('./fabrication_pro_capacitor/package.json').version")" = '1.0.3'
 
-      - name: Remove temporary workflow scaffolding
+      - name: Remove temporary scaffolding
         run: |
           rm -f .github/workflows/audit-v1.0.3-smart-time-red.yml
           rm -f .github/workflows/implement-v1.0.3-smart-time.yml
+          rm -f fabrication_pro_capacitor/scripts/apply-v1.0.3-smart-time-fix.py
 
       - name: Commit and push verified fix
         run: |
