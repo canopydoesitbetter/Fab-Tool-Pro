@@ -1,0 +1,27 @@
+name: Audit v1.0.3 Smart Time RED
+
+on:
+  push:
+    branches: [ feature/v1.0.3-smart-time-input ]
+    paths:
+      - 'fabrication_pro_capacitor/scripts/verify-smart-time-input.mjs'
+      - 'fabrication_pro_capacitor/www/ux.js'
+      - '.github/workflows/audit-v1.0.3-smart-time-red.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v1.0.3-smart-time-input
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify regression is RED before implementation
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/verify-smart-time-input.mjs
