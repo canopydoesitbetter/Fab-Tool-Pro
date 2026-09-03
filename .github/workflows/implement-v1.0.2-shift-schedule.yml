@@ -1,0 +1,153 @@
+name: Implement v1.0.2 Shift Schedule
+
+on:
+  push:
+    branches: [ feature/v1.0.2-shift-schedule ]
+    paths:
+      - '.github/workflows/implement-v1.0.2-shift-schedule.yml'
+      - 'scripts/.tmp-v102-*'
+      - 'fabrication_pro_capacitor/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/v1.0.2-shift-schedule
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify expected application base ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 948a784b73765d160a9ed110fefc194ed9bd7220 HEAD
+          git show 948a784b73765d160a9ed110fefc194ed9bd7220:fabrication_pro_capacitor/capacitor.config.json | grep -F '"appId": "com.fabricationpro.app"'
+
+      - name: Install dependencies without creating a lockfile
+        working-directory: fabrication_pro_capacitor
+        run: npm install --ignore-scripts --package-lock=false
+
+      - name: TDD RED - install verifier only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp scripts/.tmp-v102-verify-shift.mjs fabrication_pro_capacitor/scripts/verify-shift-schedule.mjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path='fabrication_pro_capacitor/package.json';
+          const pkg=JSON.parse(fs.readFileSync(path,'utf8'));
+          pkg.scripts['verify:shift-schedule']='node scripts/verify-shift-schedule.mjs';
+          fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');
+          NODE
+          set +e
+          (cd fabrication_pro_capacitor && npm run verify:shift-schedule) > /tmp/shift-red.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/shift-red.log
+          if [ "$status" -eq 0 ]; then
+            echo '::error::TDD RED failed: Shift Schedule verifier unexpectedly passed before implementation.'
+            exit 1
+          fi
+          grep -F 'Shift Schedule pure-core markers are missing from app.js.' /tmp/shift-red.log
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fabrication_pro_capacitor/package.json fabrication_pro_capacitor/scripts/verify-shift-schedule.mjs
+          git commit -m 'test: define shift schedule contract'
+
+      - name: TDD GREEN - apply approved implementation
+        run: python scripts/.tmp-v102-apply.py
+
+      - name: Sync canonical version
+        working-directory: fabrication_pro_capacitor
+        run: npm run sync:version
+
+      - name: Verify JavaScript syntax
+        working-directory: fabrication_pro_capacitor
+        run: |
+          node --check www/app.js
+          node --check www/ux.js
+
+      - name: Run focused Shift Schedule and regression gates
+        working-directory: fabrication_pro_capacitor
+        run: |
+          npm run verify:shift-schedule
+          npm run verify:features
+          npm run verify:ux-polish
+          npm run verify:settings
+          npm run verify:style-cascade
+
+      - name: Run complete compatibility gate
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Verify protected compatibility contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./fabrication_pro_capacitor/package.json').version")" = '1.0.2'
+          test "$(node -p "require('./fabrication_pro_capacitor/capacitor.config.json').appId")" = 'com.fabricationpro.app'
+          grep -F "const TASK_LOG_JOBS_KEY = 'fabricationTaskLogJobsV1';" fabrication_pro_capacitor/www/app.js
+          grep -F "const TASK_LOG_PRESETS_KEY = 'fabricationTaskLogPresetsV1';" fabrication_pro_capacitor/www/app.js
+          grep -F "const TASK_LOG_JOBS_FORMAT = 'FabricationTaskLogJobs';" fabrication_pro_capacitor/www/app.js
+          grep -F "const TASK_LOG_PRESETS_FORMAT = 'FabricationTaskLogPresets';" fabrication_pro_capacitor/www/app.js
+          grep -F 'align-content:start' fabrication_pro_capacitor/www/ux.css
+          grep -F 'grid-auto-rows:max-content' fabrication_pro_capacitor/www/ux.css
+          test ! -e fabrication_pro_capacitor/package-lock.json
+          git diff --check
+
+      - name: Commit verified implementation in scoped groups
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add fabrication_pro_capacitor/www/app.js fabrication_pro_capacitor/scripts/verify-shift-schedule.mjs
+          git commit -m 'feat: add shift schedule timing engine'
+
+          git add fabrication_pro_capacitor/www/index.html fabrication_pro_capacitor/www/ux.js fabrication_pro_capacitor/www/ux.css
+          git commit -m 'feat: add shift clock controls and settings'
+
+          git add fabrication_pro_capacitor/package.json fabrication_pro_capacitor/scripts/verify-settings-changelog.mjs
+          git commit -m 'feat: document v1.0.2 shift schedule'
+
+          git add fabrication_pro_capacitor/README.md
+          git commit -m 'docs: document shift schedule ownership'
+
+      - name: Remove temporary implementation scaffolding
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f scripts/.tmp-v102-*
+          git add -A scripts
+          git commit -m 'chore: remove shift schedule implementation scaffolding'
+
+      - name: Fresh post-commit verification before push
+        working-directory: fabrication_pro_capacitor
+        run: |
+          npm run verify
+          node --check www/app.js
+          node --check www/ux.js
+
+      - name: Confirm clean feature state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          echo "Final feature SHA before push: $(git rev-parse HEAD)"
+          git log --oneline --decorate -10
+
+      - name: Push feature branch only
+        run: git push origin HEAD:feature/v1.0.2-shift-schedule
