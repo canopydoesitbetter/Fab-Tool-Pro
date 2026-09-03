@@ -263,6 +263,17 @@ function configureAndEnable(h,config,atMs) {
   expect(!during.allowed && /Break/.test(during.reason),'Current-shift Break override ON must activate the retained Break window even when the saved default is OFF.');
 }
 
+// A current-shift pause cannot be switched ON when its saved-disabled row has no valid retained time.
+{
+  const h=makeHarness();
+  const blankBreak={...noBreak,break:{enabled:false,time:'',durationMinutes:15}};
+  configureAndEnable(h,blankBreak,localMs(2026,8,31,7));
+  h.api.clockIn(localMs(2026,8,31,8));
+  const result=h.api.setPauseOverride('break',true,localMs(2026,8,31,8,30));
+  expect(!result.ok && /valid Break time and length/.test(result.error || ''),'Current-shift Break override ON must reject a saved-disabled Break that has no valid retained time.');
+  expect(h.api.getState(localMs(2026,8,31,8,30)).runtime.effectiveBreakEnabled===false,'A rejected Break override must leave the effective Break state OFF.');
+}
+
 // Turning a pause ON during its active window is prospective: stop now, never retroactively.
 {
   const h=makeHarness();

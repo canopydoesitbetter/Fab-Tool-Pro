@@ -244,7 +244,7 @@ function shiftCalendarMs(anchorDateMs,dayOffset,minuteOfDay) {
 }
 
 function shiftPauseWindow(anchorDateMs,config,pause) {
-  if (!pause || pause.enabled!==true) return null;
+  if (!pause) return null;
   const clockInMinutes=parseShiftWallTime(config?.clockIn);
   const clockOutMinutes=parseShiftWallTime(config?.clockOut);
   const pauseMinutes=parseShiftWallTime(pause.time);
@@ -755,15 +755,17 @@ function firstShiftProhibitedBoundary(startedAt,nowMs,shift,policy={}) {
     reconcileShiftSchedule(now);
     const shift=shiftCurrentEstablishedInstance(now);
     if (!shift || shiftScheduleState.clock.shiftId!==shift.id) return {ok:false,error:'Current-shift overrides are available after Clock In for a scheduled shift.'};
+    const window=kind==='break'?shift.breakWindow:shift.lunchWindow;
+    if (enabled===true && !window) {
+      const label=kind==='break'?'Break':'Lunch';
+      return {ok:false,error:`Set and save a valid ${label} time and length before enabling it for this shift.`};
+    }
     const wasEnabled=shiftPauseEnabled(kind,shift);
     const field=kind==='break'?'breakEnabled':'lunchEnabled';
     shiftScheduleState.pauseOverrides.shiftId=shift.id;
     shiftScheduleState.pauseOverrides[field]=enabled===true;
     shiftScheduleState.policyEffectiveAt=now;
-    if (!wasEnabled && enabled===true) {
-      const window=kind==='break'?shift.breakWindow:shift.lunchWindow;
-      if (window && now>=window.startMs && now<window.endMs) stopRunningTaskAt(now);
-    }
+    if (!wasEnabled && enabled===true && now>=window.startMs && now<window.endMs) stopRunningTaskAt(now);
     const saved=persistShiftScheduleState();
     dispatchShiftScheduleChange(true);
     return saved ? {ok:true} : {ok:false,error:shiftScheduleStorageError};

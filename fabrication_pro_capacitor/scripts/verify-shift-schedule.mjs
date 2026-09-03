@@ -45,6 +45,8 @@ expect(!core.validateShiftScheduleConfig({...base,clockOut:'07:00'}).ok,'Equal C
 expect(!core.validateShiftScheduleConfig({...base,break:{enabled:true,time:'11:50',durationMinutes:30}}).ok,'Overlapping Break/Lunch must fail.');
 expect(!core.validateShiftScheduleConfig({...base,break:{enabled:true,time:'09:00',durationMinutes:0}}).ok,'Zero-minute Break must fail.');
 expect(core.validateShiftScheduleConfig({...base,break:{enabled:false,time:'',durationMinutes:15},lunch:{enabled:false,time:'',durationMinutes:30}}).ok,'Disabled pauses may keep blank times.');
+const retainedPauseShift=core.buildShiftInstance(localMs(2026,8,31),{...base,break:{enabled:false,time:'09:00',durationMinutes:15}});
+expect(retainedPauseShift?.breakWindow?.startMs===localMs(2026,8,31,9),'A saved-disabled Break with retained valid time must still construct a window for current-shift override ON.');
 
 const overnight={...base,clockIn:'22:00',break:{enabled:true,time:'23:30',durationMinutes:15},lunch:{enabled:true,time:'02:00',durationMinutes:30},clockOut:'06:00'};
 expect(core.validateShiftScheduleConfig(overnight).ok,'Overnight schedule must validate.');

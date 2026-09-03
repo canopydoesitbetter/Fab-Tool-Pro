@@ -632,16 +632,20 @@
       const state=shiftSchedule.getState();
       if (!state.runtime?.currentShiftEstablished) return;
       const result=shiftSchedule.setPauseOverride('break',shiftBreakToggle.checked);
-      if (!result.ok) showShiftScheduleStatus(result.error || 'Unable to change the current Break override.','error');
-      else showShiftScheduleStatus(`Break is ${shiftBreakToggle.checked?'ON':'OFF'} for the current shift only.`,'ok');
+      if (!result.ok) {
+        showShiftScheduleStatus(result.error || 'Unable to change the current Break override.','error');
+        renderShiftScheduleSettings();
+      } else showShiftScheduleStatus(`Break is ${shiftBreakToggle.checked?'ON':'OFF'} for the current shift only.`,'ok');
     });
 
     shiftLunchToggle?.addEventListener('change',()=>{
       const state=shiftSchedule.getState();
       if (!state.runtime?.currentShiftEstablished) return;
       const result=shiftSchedule.setPauseOverride('lunch',shiftLunchToggle.checked);
-      if (!result.ok) showShiftScheduleStatus(result.error || 'Unable to change the current Lunch override.','error');
-      else showShiftScheduleStatus(`Lunch is ${shiftLunchToggle.checked?'ON':'OFF'} for the current shift only.`,'ok');
+      if (!result.ok) {
+        showShiftScheduleStatus(result.error || 'Unable to change the current Lunch override.','error');
+        renderShiftScheduleSettings();
+      } else showShiftScheduleStatus(`Lunch is ${shiftLunchToggle.checked?'ON':'OFF'} for the current shift only.`,'ok');
     });
 
     if (shiftScheduleDetails && shiftSchedule) {
