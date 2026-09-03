@@ -11,8 +11,8 @@ Edit the file that owns the thing you want to change:
 | `www/index.html` | Application markup, visible copy, page/drawer structure, calculator/guide markup |
 | `www/styles.css` | Core application styling and responsive behavior |
 | `www/ux.css` | Focused interaction styling for streamlined management sections and drawer-based Task Logging / Fabricator Notes controls |
-| `www/app.js` | Fabrication tools, saved-data behavior, canonical navigation, shared drawer mechanics, self-tests |
-| `www/ux.js` | Focused Task Logging / Fabricator Notes presentation wiring that delegates data, timers, persistence, and note operations to `app.js` |
+| `www/app.js` | Fabrication tools, saved-data behavior, Shift Schedule timer policy/persistence, canonical navigation, shared drawer mechanics, self-tests |
+| `www/ux.js` | Focused Task Logging / Fabricator Notes / Shift Schedule presentation wiring that delegates data, clock/timer rules, persistence, and note operations to `app.js` |
 | `www/calculator.js` | Basic Calculator behavior and Calculator Guide event wiring |
 | `www/native-compat.js` | Capacitor-only Blob export compatibility |
 
@@ -120,3 +120,5 @@ Generated `android/` and `ios/` projects are build products for this workflow; t
 ## Persistence notes
 
 Fabri-Cadabra uses browser/WebView `localStorage`. In Capacitor, that storage belongs to the installed application and persists across normal restarts and same-identity app updates. Uninstalling the application removes app-local storage, so the built-in JSON exports remain the portable backup/transfer mechanism.
+
+Shift Schedule configuration and its live clock/override state use the isolated `fabricationShiftScheduleV1` localStorage record. This state is a Task Logging guardrail, not a payroll/timecard history or export format.
