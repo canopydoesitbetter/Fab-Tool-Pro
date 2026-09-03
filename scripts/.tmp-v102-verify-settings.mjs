@@ -45,10 +45,12 @@ if (!String(pkg.scripts?.verify || '').includes('npm run verify:shift-schedule')
 
 requireMatch(ux,/openDrawer\('settingsChangelogDrawer'/,'Changelog button must reuse shared modal/drawer focus behavior.');
 requireMatch(ux,/closeDrawer\('settingsChangelogDrawer'/,'Changelog close behavior is missing.');
-const currentIndex=ux.indexOf("data-changelog-version='current'");
-const v101Index=ux.indexOf("data-changelog-version='1.0.1'");
-const v100Index=ux.indexOf("data-changelog-version='1.0.0'");
-if (!(currentIndex>=0 && v101Index>currentIndex && v100Index>v101Index)) throw new Error('Changelog must render v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
+const changelogFunction=ux.match(/function changelogMarkup\(\)\s*\{[\s\S]*?\n  \}\n\n  function installSettingsPage/)?.[0] || '';
+const currentIndex=changelogFunction.indexOf("data-changelog-version='current'");
+const v101Index=changelogFunction.indexOf("data-changelog-version='1.0.1'");
+const baselineCallIndex=changelogFunction.indexOf('${currentFeaturesChangelogMarkup()}');
+if (!(currentIndex>=0 && v101Index>currentIndex && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
+if (!ux.includes("data-changelog-version='1.0.0'")) throw new Error('The v1.0.0 Current Features baseline entry is missing.');
 requireMatch(ux,/data-changelog-version='current'[\s\S]*?<h2>Shift Schedule &amp; Clock Controls<\/h2>/,'Current changelog entry must describe Shift Schedule & Clock Controls.');
 
 for (const heading of ['Task Logging','Fabricator Notes','Checklist','Basic Calculator','Quick Reference','Fastener Spacing','Sheet Optimizer','Saw Optimizer','Aluminum Overhang','App-Wide Features']) {
