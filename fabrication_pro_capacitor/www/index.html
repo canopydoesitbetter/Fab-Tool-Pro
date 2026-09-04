@@ -432,13 +432,12 @@
       </aside>
 
       <div class="tasklog-workspace">
-        <section class="card tasklog-jobs-card">
-          <div class="tasklog-card-head">
-            <h2>Jobs</h2>
-            <span id="taskLogJobCount" class="tasklog-count">0</span>
+        <details id="taskLogJobsDetails" class="card management-details tasklog-jobs-card">
+          <summary class="management-summary"><span>Jobs</span><span class="management-summary-state"><span id="taskLogJobCount" class="tasklog-count">0</span> saved</span></summary>
+          <div class="management-details-body">
+            <div id="taskLogJobList" class="tasklog-job-list" aria-label="Task logging jobs"></div>
           </div>
-          <div id="taskLogJobList" class="tasklog-job-list" aria-label="Task logging jobs"></div>
-        </section>
+        </details>
 
         <section class="card tasklog-editor-card">
           <div id="taskLogEmpty" class="tasklog-empty">Create a job to start logging fabrication time.</div>
