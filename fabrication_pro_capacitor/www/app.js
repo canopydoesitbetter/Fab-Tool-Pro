@@ -189,6 +189,12 @@
   const taskLogEmpty = document.getElementById('taskLogEmpty');
   const taskLogEditor = document.getElementById('taskLogEditor');
   const taskLogJobTitle = document.getElementById('taskLogJobTitle');
+  const taskLogRenameBackdrop = document.getElementById('taskLogRenameBackdrop');
+  const taskLogRenameDialog = document.getElementById('taskLogRenameDialog');
+  const taskLogRenameInput = document.getElementById('taskLogRenameInput');
+  const taskLogRenameCancelBtn = document.getElementById('taskLogRenameCancelBtn');
+  const taskLogRenameApplyBtn = document.getElementById('taskLogRenameApplyBtn');
+  const taskLogRenameStatus = document.getElementById('taskLogRenameStatus');
   const taskLogJobTotal = document.getElementById('taskLogJobTotal');
   const taskLogTaskCount = document.getElementById('taskLogTaskCount');
   const taskLogJobStatusText = document.getElementById('taskLogJobStatusText');
@@ -206,6 +212,24 @@
   let taskLogNextPresetId = 1;
   let taskLogSaveTimer = null;
   let taskLogSelectedPresetIds = new Set();
+
+// @tasklog-job-rename-core-start
+function normalizeTaskLogJobName(value,maxLength=120) {
+  const clean=String(value ?? '').trim().replace(/\s+/g,' ');
+  if (!clean) return null;
+  const limit=Number.isInteger(maxLength) && maxLength>0 ? maxLength : 120;
+  return clean.slice(0,limit);
+}
+
+function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
+  if (!job || typeof job!=='object') return false;
+  const clean=normalizeTaskLogJobName(value,maxLength);
+  if (!clean) return false;
+  job.title=clean;
+  job.updatedAt=String(updatedAt || new Date().toISOString());
+  return true;
+}
+// @tasklog-job-rename-core-end
 
 // @shift-schedule-core-start
 function parseShiftWallTime(value) {
@@ -1196,12 +1220,64 @@ function firstShiftProhibitedBoundary(startedAt,nowMs,shift,policy={}) {
     }
   }
 
+  function setTaskLogRenameDialogOpen(open) {
+    taskLogRenameBackdrop.classList.toggle('open',open);
+    taskLogRenameDialog.classList.toggle('open',open);
+    taskLogRenameBackdrop.setAttribute('aria-hidden',open?'false':'true');
+    taskLogRenameDialog.setAttribute('aria-hidden',open?'false':'true');
+    if (open) {
+      requestAnimationFrame(()=>{
+        taskLogRenameInput.focus({preventScroll:true});
+        taskLogRenameInput.select();
+      });
+    } else {
+      taskLogRenameStatus.textContent='';
+      taskLogRenameStatus.className='status';
+      requestAnimationFrame(()=>taskLogJobTitle.focus({preventScroll:true}));
+    }
+  }
+
+  function openTaskLogRenameDialog() {
+    const job=activeTaskLogJob();
+    if (!job) return;
+    taskLogRenameInput.value=job.title;
+    taskLogRenameStatus.textContent='';
+    taskLogRenameStatus.className='status';
+    setTaskLogRenameDialogOpen(true);
+  }
+
+  function applyTaskLogJobRenameFromDialog() {
+    const job=activeTaskLogJob();
+    if (!job) { setTaskLogRenameDialogOpen(false); return; }
+    if (!applyTaskLogJobRename(job,taskLogRenameInput.value,new Date().toISOString(),MAX_TASK_LOG_NAME)) {
+      taskLogRenameStatus.textContent='Enter a job name before applying the change.';
+      taskLogRenameStatus.className='status error show';
+      taskLogRenameInput.focus({preventScroll:true});
+      return;
+    }
+    persistTaskLogJobs(true);
+    renderTaskLogging();
+    setTaskLogRenameDialogOpen(false);
+    showTaskLogStatus(`Job name changed to ${job.title}.`,'ok');
+  }
+
+  function trapTaskLogRenameFocus(event) {
+    if (event.key!=='Tab' || !taskLogRenameDialog.classList.contains('open')) return;
+    const focusable=[taskLogRenameInput,taskLogRenameCancelBtn,taskLogRenameApplyBtn].filter(el=>el && !el.disabled);
+    if (!focusable.length) { event.preventDefault(); return; }
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if (event.shiftKey && document.activeElement===first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement===last) { event.preventDefault(); first.focus(); }
+  }
+
   function renderTaskLogEditor() {
     const job=activeTaskLogJob();
     taskLogEmpty.style.display=job?'none':'block';
     taskLogEditor.classList.toggle('show',!!job);
     if (!job) return;
-    taskLogJobTitle.value=job.title;
+    taskLogJobTitle.textContent=job.title;
+    taskLogJobTitle.title='Edit job name';
+    taskLogJobTitle.setAttribute('aria-label',`Edit job name: ${job.title}`);
     taskLogTaskCount.textContent=job.tasks.length;
     const running=job.tasks.some(task=>task.running);
     taskLogJobStatusText.textContent=running?'Running':'Stopped';
@@ -1255,7 +1331,7 @@ function firstShiftProhibitedBoundary(startedAt,nowMs,shift,policy={}) {
     taskLogActiveJobId=job.id;
     persistTaskLogJobs(true);
     renderTaskLogging();
-    requestAnimationFrame(()=>{ taskLogJobTitle.focus(); taskLogJobTitle.select(); });
+    requestAnimationFrame(()=>taskLogJobTitle.focus());
   }
 
   function addTaskLogPreset() {
@@ -1512,23 +1588,22 @@ function firstShiftProhibitedBoundary(startedAt,nowMs,shift,policy={}) {
     persistTaskLogJobs(false);
     renderTaskLogging();
   });
-  taskLogJobTitle.addEventListener('input',()=>{
-    const job=activeTaskLogJob();
-    if (!job) return;
-    const value=taskLogJobTitle.value.slice(0,MAX_TASK_LOG_NAME);
-    job.title=value;
-    job.updatedAt=new Date().toISOString();
-    scheduleTaskLogJobsSave();
-    renderTaskLogJobs();
+  taskLogJobTitle.addEventListener('click',openTaskLogRenameDialog);
+  taskLogRenameCancelBtn.addEventListener('click',()=>setTaskLogRenameDialogOpen(false));
+  taskLogRenameApplyBtn.addEventListener('click',applyTaskLogJobRenameFromDialog);
+  taskLogRenameBackdrop.addEventListener('click',()=>setTaskLogRenameDialogOpen(false));
+  taskLogRenameInput.addEventListener('input',()=>{
+    taskLogRenameStatus.textContent='';
+    taskLogRenameStatus.className='status';
   });
-  taskLogJobTitle.addEventListener('blur',()=>{
-    const job=activeTaskLogJob();
-    if (!job) return;
-    const clean=String(job.title||'').trim().replace(/\s+/g,' ');
-    if (!clean) { job.title=`Job ${job.id}`; taskLogJobTitle.value=job.title; }
-    else { job.title=clean; taskLogJobTitle.value=clean; }
-    job.updatedAt=new Date().toISOString();
-    persistTaskLogJobs(true); renderTaskLogJobs();
+  taskLogRenameDialog.addEventListener('keydown',event=>{
+    if (event.key==='Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setTaskLogRenameDialogOpen(false);
+      return;
+    }
+    trapTaskLogRenameFocus(event);
   });
   taskLogPresetSelect.addEventListener('change',()=>{ taskLogAddTaskBtn.disabled=!taskLogPresetSelect.value; });
   taskLogAddTaskBtn.addEventListener('click',addPresetToActiveTaskLogJob);

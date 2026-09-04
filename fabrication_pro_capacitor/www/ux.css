@@ -517,3 +517,117 @@ label[for="fabricatorNotesTitle"] {
   .settings-shift-pause-fields > input[type='text'],
   .settings-shift-time-fields input { max-width:none; flex:1 1 110px; }
 }
+
+
+/* ---------------- Task Logging confirmed job rename ---------------- */
+.tasklog-job-title-button {
+  width:100%;
+  min-height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 13px;
+  border:2px solid var(--input-border);
+  border-radius:12px;
+  background:var(--input);
+  color:var(--text);
+  font-size:1.08rem;
+  font-weight:850;
+  text-align:left;
+}
+.tasklog-job-title-button::after {
+  content:'Edit';
+  flex:0 0 auto;
+  color:var(--accent);
+  font-size:.74rem;
+  font-weight:950;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+}
+.tasklog-job-title-button:focus-visible {
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent),0 3px 0 var(--button-edge),var(--button-depth);
+}
+.tasklog-rename-backdrop {
+  position:fixed;
+  inset:0;
+  z-index:240;
+  background:rgba(3,12,20,.62);
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .18s ease,visibility .18s ease;
+}
+.tasklog-rename-backdrop.open {
+  opacity:1;
+  visibility:visible;
+}
+.tasklog-rename-dialog {
+  position:fixed;
+  left:50%;
+  top:50%;
+  z-index:250;
+  width:min(520px,calc(100vw - 28px));
+  max-height:calc(100vh - 28px);
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--card);
+  color:var(--text);
+  box-shadow:0 24px 70px rgba(0,0,0,.38);
+  transform:translate(-50%,-46%) scale(.97);
+  opacity:0;
+  visibility:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  transition:transform .18s ease,opacity .18s ease,visibility .18s ease;
+}
+.tasklog-rename-dialog.open {
+  transform:translate(-50%,-50%) scale(1);
+  opacity:1;
+  visibility:visible;
+}
+.tasklog-rename-panel h2 {
+  margin:0 0 7px;
+  color:var(--accent);
+  font-size:1.2rem;
+}
+.tasklog-rename-panel > p {
+  margin:0 0 16px;
+  color:var(--muted);
+  font-size:.88rem;
+  line-height:1.42;
+}
+.tasklog-rename-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:14px;
+}
+.tasklog-rename-actions .btn {
+  width:100%;
+  min-width:0;
+}
+@media (max-width:480px) {
+  .tasklog-rename-dialog {
+    width:calc(100vw - 20px);
+    padding:15px;
+    border-radius:15px;
+  }
+  .tasklog-rename-actions {
+    grid-template-columns:1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tasklog-rename-backdrop,
+  .tasklog-rename-dialog {
+    transition:none;
+  }
+}
+@media print {
+  #taskLogRenameBackdrop,
+  #taskLogRenameDialog {
+    display:none !important;
+  }
+}

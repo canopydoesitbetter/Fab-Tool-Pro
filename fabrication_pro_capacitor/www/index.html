@@ -402,6 +402,21 @@
         </div>
       </details>
 
+      <div id="taskLogRenameBackdrop" class="tasklog-rename-backdrop" aria-hidden="true"></div>
+      <section id="taskLogRenameDialog" class="tasklog-rename-dialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="taskLogRenameTitle">
+        <div class="tasklog-rename-panel">
+          <h2 id="taskLogRenameTitle">Edit Job Name</h2>
+          <p>Enter the new Job # / Name below. The current job will not change until you confirm it.</p>
+          <label for="taskLogRenameInput">Job # / Name</label>
+          <input id="taskLogRenameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: 26-0814-01" />
+          <div id="taskLogRenameStatus" class="status" role="status" aria-live="polite"></div>
+          <div class="tasklog-rename-actions">
+            <button id="taskLogRenameCancelBtn" class="btn secondary" type="button">Cancel</button>
+            <button id="taskLogRenameApplyBtn" class="btn" type="button">Apply Name Change</button>
+          </div>
+        </div>
+      </section>
+
       <div id="taskLogPresetBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
       <aside id="taskLogPresetDrawer" class="cut-list-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="taskLogPresetDrawerTitle">
         <div class="cut-list-drawer-head">
@@ -444,7 +459,7 @@
           <div id="taskLogEditor" class="tasklog-editor-fields">
             <div>
               <label for="taskLogJobTitle">Job # / Name</label>
-              <input id="taskLogJobTitle" class="tasklog-job-title" type="text" maxlength="120" autocomplete="off" placeholder="Example: 26-0814-01" />
+              <button id="taskLogJobTitle" class="tasklog-job-title tasklog-job-title-button" type="button" aria-haspopup="dialog" aria-controls="taskLogRenameDialog">Job</button>
             </div>
 
             <div class="tasklog-summary">

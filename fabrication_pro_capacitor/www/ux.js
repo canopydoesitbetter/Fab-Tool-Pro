@@ -349,6 +349,7 @@
           <li>Type 730 for 7:30, 1230 for 12:30, or a single hour such as 7 for 7:00; the existing AM/PM selector remains explicit.</li>
           <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>
           <li>The Task Logging Jobs panel is now collapsible and starts closed by default, matching Task Logging Management while preserving the same saved jobs, totals, running indicators, and job-selection behavior.</li>
+          <li>Job # / Name now opens a dedicated rename overlay. The job name changes only after pressing Apply Name Change, with Cancel and outside-dismiss leaving the existing name untouched.</li>
         </ul>
       </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.2'>
