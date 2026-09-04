@@ -14,63 +14,28 @@ jobs:
   implement:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: feature/v1.0.4-collapsible-jobs
           fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Make Jobs panel collapsible
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('fabrication_pro_capacitor/www/index.html')
-          s=p.read_text()
-          old='''        <section class="card tasklog-jobs-card">
-          <div class="tasklog-card-head">
-            <h2>Jobs</h2>
-            <span id="taskLogJobCount" class="tasklog-count">0</span>
-          </div>
-          <div id="taskLogJobList" class="tasklog-job-list" aria-label="Task logging jobs"></div>
-        </section>'''
-          new='''        <details id="taskLogJobsDetails" class="card management-details tasklog-jobs-card">
-          <summary class="management-summary"><span>Jobs</span><span class="management-summary-state"><span id="taskLogJobCount" class="tasklog-count">0</span> saved</span></summary>
-          <div class="management-details-body">
-            <div id="taskLogJobList" class="tasklog-job-list" aria-label="Task logging jobs"></div>
-          </div>
-        </details>'''
-          if old not in s:
-            raise SystemExit('Task Logging Jobs card not found')
-          p.write_text(s.replace(old,new,1))
-          PY
-
-      - name: Install dependencies
+      - name: Apply patch
+        run: python3 .github/scripts/patch-collapsible-jobs.py
+      - name: Install
         working-directory: fabrication_pro_capacitor
         run: npm install --ignore-scripts --package-lock=false
-
-      - name: Verify focused UX regression
+      - name: Verify focused regression
         working-directory: fabrication_pro_capacitor
         run: npm run verify:ux-polish
-
-      - name: Run complete verification
+      - name: Verify complete app
         working-directory: fabrication_pro_capacitor
         run: npm run verify
-
       - name: Check diff
-        run: |
-          git diff --check
-          grep -F '"appId": "com.fabricationpro.app"' fabrication_pro_capacitor/capacitor.config.json
-
-      - name: Remove temporary workflows
-        run: |
-          rm -f .github/workflows/audit-v1.0.4-collapsible-jobs-red.yml
-          rm -f .github/workflows/implement-v1.0.4-collapsible-jobs.yml
-
+        run: git diff --check
+      - name: Clean temporary scaffolding
+        run: rm -f .github/workflows/audit-v1.0.4-collapsible-jobs-red.yml .github/workflows/implement-v1.0.4-collapsible-jobs.yml .github/scripts/patch-collapsible-jobs.py
       - name: Commit verified patch
         run: |
           git config user.name 'github-actions[bot]'
