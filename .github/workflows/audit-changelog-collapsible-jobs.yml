@@ -29,14 +29,11 @@ jobs:
           from pathlib import Path
           path=Path('fabrication_pro_capacitor/www/ux.js')
           text=path.read_text()
-          old="""          <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>
-        </ul>"""
-          new="""          <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>
-          <li>The Task Logging Jobs panel is now collapsible and starts closed by default, matching Task Logging Management while preserving the same saved jobs, totals, running indicators, and job-selection behavior.</li>
-        </ul>"""
+          old='          <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>'
+          extra='          <li>The Task Logging Jobs panel is now collapsible and starts closed by default, matching Task Logging Management while preserving the same saved jobs, totals, running indicators, and job-selection behavior.</li>'
           if old not in text:
               raise SystemExit('Expected v1.0.3 changelog insertion point was not found')
-          path.write_text(text.replace(old,new,1))
+          path.write_text(text.replace(old, old+'\n'+extra, 1))
           PY
       - name: Install dependencies
         working-directory: fabrication_pro_capacitor
