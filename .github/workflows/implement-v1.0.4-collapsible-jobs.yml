@@ -1,11 +1,11 @@
-name: Implement v1.0.4 Collapsible Jobs
+name: Implement Collapsible Task Logging Jobs
 
 on:
   push:
-    branches: [ feature/v1.0.4-collapsible-jobs ]
+    branches:
+      - feature/v1.0.4-collapsible-jobs
     paths:
-      - '.github/workflows/implement-v1.0.4-collapsible-jobs.yml'
-  workflow_dispatch:
+      - .github/workflows/implement-v1.0.4-collapsible-jobs.yml
 
 permissions:
   contents: write
@@ -14,27 +14,23 @@ jobs:
   implement:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout feature branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: feature/v1.0.4-collapsible-jobs
           fetch-depth: 0
 
-      - name: Setup Node 22
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Apply focused v1.0.4 patch
+      - name: Make Jobs panel collapsible
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import json
-
-          root=Path('fabrication_pro_capacitor')
-
-          index_path=root/'www'/'index.html'
-          html=index_path.read_text()
+          p=Path('fabrication_pro_capacitor/www/index.html')
+          s=p.read_text()
           old='''        <section class="card tasklog-jobs-card">
           <div class="tasklog-card-head">
             <h2>Jobs</h2>
@@ -48,113 +44,34 @@ jobs:
             <div id="taskLogJobList" class="tasklog-job-list" aria-label="Task logging jobs"></div>
           </div>
         </details>'''
-          if old not in html:
-            raise SystemExit('Expected Task Logging Jobs card not found')
-          html=html.replace(old,new,1)
-          index_path.write_text(html)
-
-          ux_path=root/'www'/'ux.js'
-          ux=ux_path.read_text()
-          marker="""  function changelogMarkup() {
-    return `
-"""
-          current="""      <article class='changelog-entry changelog-release' data-changelog-version='current'>
-        <div class='changelog-entry-heading'>
-          <div>
-            <span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>
-            <h2>Collapsible Task Logging Jobs</h2>
-          </div>
-        </div>
-        <ul>
-          <li>The Task Logging Jobs panel is now collapsible and starts closed by default, matching Task Logging Management so the active job workspace stays easier to reach on phones.</li>
-          <li>Opening Jobs still shows the same saved jobs, live job count, running indicators, totals, and job-selection behavior with no timer or storage changes.</li>
-        </ul>
-      </article>
-"""
-          if marker not in ux:
-            raise SystemExit('Changelog insertion point not found')
-          ux=ux.replace("data-changelog-version='current'>","data-changelog-version='1.0.3'>",1)
-          ux=ux.replace("<span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>","<span class='changelog-version-label'>Version 1.0.3</span>",1)
-          ux=ux.replace(marker,marker+current,1)
-          ux_path.write_text(ux)
-
-          pkg_path=root/'package.json'
-          pkg=json.loads(pkg_path.read_text())
-          if pkg.get('version')!='1.0.3':
-            raise SystemExit(f"Unexpected starting version {pkg.get('version')}")
-          pkg['version']='1.0.4'
-          pkg_path.write_text(json.dumps(pkg,indent=2)+'\n')
-
-          settings_path=root/'scripts'/'verify-settings-changelog.mjs'
-          settings=settings_path.read_text()
-          settings=settings.replace("const expectedVersion='1.0.3';","const expectedVersion='1.0.4';",1)
-          old_order="""const currentIndex=changelogFunction.indexOf("data-changelog-version='current'");
-const v102Index=changelogFunction.indexOf("data-changelog-version='1.0.2'");
-const v101Index=changelogFunction.indexOf("data-changelog-version='1.0.1'");
-const baselineCallIndex=changelogFunction.indexOf('${currentFeaturesChangelogMarkup()}');
-if (!(currentIndex>=0 && v102Index>currentIndex && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
-"""
-          new_order="""const currentIndex=changelogFunction.indexOf("data-changelog-version='current'");
-const v103Index=changelogFunction.indexOf("data-changelog-version='1.0.3'");
-const v102Index=changelogFunction.indexOf("data-changelog-version='1.0.2'");
-const v101Index=changelogFunction.indexOf("data-changelog-version='1.0.1'");
-const baselineCallIndex=changelogFunction.indexOf('${currentFeaturesChangelogMarkup()}');
-if (!(currentIndex>=0 && v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.4, then v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
-"""
-          if old_order not in settings:
-            raise SystemExit('Expected changelog order verifier not found')
-          settings=settings.replace(old_order,new_order,1)
-          old_current="requireMatch(ux,/data-changelog-version='current'[\\s\\S]*?<h2>Smart Shift Time Entry<\\/h2>/,'Current changelog entry must describe Smart Shift Time Entry.');"
-          new_current="requireMatch(ux,/data-changelog-version='current'[\\s\\S]*?<h2>Collapsible Task Logging Jobs<\\/h2>/,'Current changelog entry must describe Collapsible Task Logging Jobs.');\nrequireMatch(ux,/data-changelog-version='1.0.3'[\\s\\S]*?<h2>Smart Shift Time Entry<\\/h2>/,'v1.0.3 Smart Shift Time Entry changelog entry must be retained.');"
-          if old_current not in settings:
-            raise SystemExit('Expected current changelog verifier not found')
-          settings=settings.replace(old_current,new_current,1)
-          settings_path.write_text(settings)
-
-          shift_path=root/'scripts'/'verify-shift-schedule.mjs'
-          shift=shift_path.read_text()
-          old="expect(pkg.version==='1.0.3',`Canonical package version must be 1.0.3; got ${pkg.version}.`);"
-          new="expect(pkg.version==='1.0.4',`Canonical package version must be 1.0.4; got ${pkg.version}.`);"
-          if old not in shift:
-            raise SystemExit('Expected Shift Schedule release-version assertion not found')
-          shift=shift.replace(old,new,1)
-          shift_path.write_text(shift)
+          if old not in s:
+            raise SystemExit('Task Logging Jobs card not found')
+          p.write_text(s.replace(old,new,1))
           PY
 
-      - name: Install dependencies without creating a lockfile
+      - name: Install dependencies
         working-directory: fabrication_pro_capacitor
         run: npm install --ignore-scripts --package-lock=false
 
-      - name: Sync canonical version
-        working-directory: fabrication_pro_capacitor
-        run: npm run sync:version
-
-      - name: Verify collapsible Jobs GREEN
+      - name: Verify focused UX regression
         working-directory: fabrication_pro_capacitor
         run: npm run verify:ux-polish
 
-      - name: Verify HTML and JavaScript contracts
-        working-directory: fabrication_pro_capacitor
-        run: |
-          node --check www/ux.js
-          node --check www/app.js
-
-      - name: Run complete repository verification
+      - name: Run complete verification
         working-directory: fabrication_pro_capacitor
         run: npm run verify
 
-      - name: Confirm protected identity and focused release
+      - name: Check diff
         run: |
           git diff --check
           grep -F '"appId": "com.fabricationpro.app"' fabrication_pro_capacitor/capacitor.config.json
-          test "$(node -p "require('./fabrication_pro_capacitor/package.json').version")" = '1.0.4'
 
-      - name: Remove temporary workflow scaffolding
+      - name: Remove temporary workflows
         run: |
           rm -f .github/workflows/audit-v1.0.4-collapsible-jobs-red.yml
           rm -f .github/workflows/implement-v1.0.4-collapsible-jobs.yml
 
-      - name: Commit and push verified fix
+      - name: Commit verified patch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
