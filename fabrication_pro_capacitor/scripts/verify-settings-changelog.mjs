@@ -54,7 +54,7 @@ if (!(currentIndex>=0 && v102Index>currentIndex && v101Index>v102Index && baseli
 if (!ux.includes("data-changelog-version='1.0.0'")) throw new Error('The v1.0.0 Current Features baseline entry is missing.');
 requireMatch(ux,/data-changelog-version='current'[\s\S]*?<h2>Smart Shift Time Entry<\/h2>/,'Current changelog entry must describe Smart Shift Time Entry.');
 requireMatch(ux,/data-changelog-version='1.0.2'[\s\S]*?<h2>Shift Schedule &amp; Clock Controls<\/h2>/,'v1.0.2 Shift Schedule changelog entry must be retained.');
-for (const concept of ['phone-friendly','730 for 7:30','AM/PM selector','impossible times']) { if (!ux.includes(concept)) throw new Error(`v1.0.3 changelog is missing required concept: ${concept}`); }
+for (const concept of ['phone-friendly','730 for 7:30','AM/PM selector','impossible times','Task Logging Jobs panel is now collapsible']) { if (!ux.includes(concept)) throw new Error(`v1.0.3 changelog is missing required concept: ${concept}`); }
 
 for (const heading of ['Task Logging','Fabricator Notes','Checklist','Basic Calculator','Quick Reference','Fastener Spacing','Sheet Optimizer','Saw Optimizer','Aluminum Overhang','App-Wide Features']) {
   if (!ux.includes(`<h3>${heading}</h3>`)) throw new Error(`Current Features changelog is missing section: ${heading}`);
