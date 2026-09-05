@@ -1,0 +1,23 @@
+name: Audit v1.0.4 App Branding RED
+
+on:
+  push:
+    branches: [ feature/v1.0.4-app-branding ]
+    paths:
+      - 'fabrication_pro_capacitor/scripts/verify-app-branding.mjs'
+      - '.github/workflows/audit-v104-branding-red.yml'
+  workflow_dispatch:
+
+jobs:
+  verify-red:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify branding contract fails before implementation
+        run: node scripts/verify-app-branding.mjs
