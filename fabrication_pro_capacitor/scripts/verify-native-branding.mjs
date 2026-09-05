@@ -47,10 +47,13 @@ need(nativeCompat,"classList.add('is-leaving')",'Native launch presentation fade
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 if(pkg.version!=='1.0.4')throw new Error(`Expected package version 1.0.4; found ${pkg.version}.`);
 need(String(pkg.scripts['native:brand']||''),'apply-native-branding.mjs','native:brand script missing.');
+need(String(pkg.scripts['verify:branding-generator']||''),'verify-branding-generator.mjs','branding generator regression script missing.');
 need(String(pkg.scripts['verify:native-branding']||''),'verify-native-branding.mjs','native branding verifier script missing.');
+need(String(pkg.scripts.verify||''),'npm run verify:branding-generator','Aggregate verification must include branding generator regression coverage.');
 need(String(pkg.scripts.verify||''),'npm run verify:native-branding','Aggregate verification must include native branding.');
 const apply=readFileSync(join(root,'scripts','apply-native-branding.mjs'),'utf8');
-for(const marker of ['@capacitor/assets@3.0.5','--assetPath','icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'])need(apply,marker,`Native branding generator is missing ${marker}.`);
+for(const marker of ['@capacitor/assets@3.0.5',"const stagingPath=join(root,'assets');",'copyFileSync(join(assetPath,name),join(stagingPath,name))','captureGeneratedIconState','assertGeneratedIconChanged','icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'])need(apply,marker,`Native branding generator is missing ${marker}.`);
+if(apply.includes("'--assetPath'"))throw new Error('Native branding generator must not use the ignored --assetPath option.');
 const init=readFileSync(join(root,'scripts','native-init.mjs'),'utf8');
 need(init,"run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);",'native:init must apply Fabri-Cadabra branding.');
 const ux=readFileSync(join(root,'www','ux.js'),'utf8');
