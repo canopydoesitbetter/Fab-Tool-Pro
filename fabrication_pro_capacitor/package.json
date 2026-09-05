@@ -24,7 +24,7 @@
     "verify:settings": "node scripts/verify-settings-changelog.mjs",
     "verify:style-cascade": "node scripts/verify-style-cascade.mjs",
     "verify:native-shim": "node scripts/verify-native-shim.mjs",
-    "verify": "npm run sync:version && npm run verify:web && npm run verify:features && npm run verify:ux-polish && npm run verify:settings && npm run verify:shift-schedule && npm run verify:shift-schedule-behavior && npm run verify:smart-time && npm run verify:tasklog-job-rename && npm run verify:style-cascade && npm run verify:native-shim && npm run verify:native-branding && npm run verify:ios-privacy && npm run verify:android-signing",
+    "verify": "npm run sync:version && npm run verify:web && npm run verify:features && npm run verify:ux-polish && npm run verify:settings && npm run verify:shift-schedule && npm run verify:shift-schedule-behavior && npm run verify:smart-time && npm run verify:tasklog-job-rename && npm run verify:style-cascade && npm run verify:native-shim && npm run verify:branding-generator && npm run verify:native-branding && npm run verify:ios-privacy && npm run verify:android-signing",
     "verify:ios-privacy": "node scripts/verify-ios-privacy.mjs",
     "verify:android-signing": "node scripts/verify-android-signing.mjs",
     "verify:shift-schedule": "node scripts/verify-shift-schedule.mjs",
@@ -32,6 +32,7 @@
     "verify:smart-time": "node scripts/verify-smart-time-input.mjs",
     "verify:tasklog-job-rename": "node scripts/verify-tasklog-job-rename.mjs",
     "native:brand": "node scripts/apply-native-branding.mjs",
+    "verify:branding-generator": "node scripts/verify-branding-generator.mjs",
     "verify:native-branding": "node scripts/verify-native-branding.mjs"
   },
   "dependencies": {
