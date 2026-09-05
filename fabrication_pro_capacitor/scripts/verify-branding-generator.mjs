@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const root=process.cwd();
-const source=readFileSync(join(root,'scripts','apply-native-branding.mjs'),'utf8');
+const applyPath=join(root,'scripts','apply-native-branding.mjs');
+const source=readFileSync(applyPath,'utf8');
+const syntax=spawnSync(process.execPath,['--check',applyPath],{encoding:'utf8'});
+if(syntax.status!==0) throw new Error(`Native branding generator must parse successfully.\n${syntax.stderr||syntax.stdout}`);
 const need=(needle,message)=>{if(!source.includes(needle)) throw new Error(message);};
 const reject=(needle,message)=>{if(source.includes(needle)) throw new Error(message);};
 
@@ -12,4 +16,4 @@ need('captureGeneratedIconState','Branding generator must snapshot native launch
 need('assertGeneratedIconChanged','Branding generator must fail if native launcher resources were not actually replaced.');
 reject("'--assetPath'",'Do not rely on the ignored --assetPath argument; production logs proved it did not reach the generator.');
 
-console.log('Native branding generator failure-detection contract: OK');
+console.log('Native branding generator syntax and failure-detection contract: OK');
