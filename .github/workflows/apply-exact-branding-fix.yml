@@ -19,26 +19,82 @@ jobs:
           ref: fix/v1.0.4-exact-branding
           fetch-depth: 0
 
-      - name: Reconstruct exact approved artwork
+      - name: Install image tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+
+      - name: Reconstruct and install approved artwork
         run: |
           set -euo pipefail
           ROOT="$GITHUB_WORKSPACE/fabrication_pro_capacitor"
           PAYLOAD="$ROOT/branding_payload"
           ASSETS="$ROOT/assets/native-branding"
+          mkdir -p "$ASSETS"
 
-          cat "$PAYLOAD"/icon.part*.txt | base64 -d > "$ASSETS/icon-only.jpg"
+          cat "$PAYLOAD"/icon.part*.txt | base64 -d > /tmp/fabri-approved-icon.jpg
+          cat "$PAYLOAD"/launch.part*.txt | base64 -d > /tmp/fabri-approved-launch.jpg
+
+          echo '3f7af0e41ffc023c99f7cc82f7e1e54d80320500c5d76ddd6f4d474eef455edc  /tmp/fabri-approved-icon.jpg' | sha256sum -c -
+          echo '02ae8ac4dce94d44aee86dcc62db3f9d95cb930cf44689b9e946ef36d2ae3959  /tmp/fabri-approved-launch.jpg' | sha256sum -c -
+
+          cp /tmp/fabri-approved-icon.jpg "$ASSETS/approved-icon-source.jpg"
+          cp /tmp/fabri-approved-launch.jpg "$ASSETS/approved-launch-source.jpg"
+          cp /tmp/fabri-approved-launch.jpg "$ROOT/www/launch-screen.jpg"
+
+          convert /tmp/fabri-approved-icon.jpg -resize 1024x1024! -filter Lanczos -strip -quality 94 "$ASSETS/icon-only.jpg"
           cp "$ASSETS/icon-only.jpg" "$ASSETS/icon-foreground.jpg"
+          convert -size 1024x1024 xc:'#080313' -strip -quality 94 "$ASSETS/icon-background.jpg"
 
-          cat "$PAYLOAD"/splash.part*.txt | base64 -d > "$ASSETS/splash.jpg"
+          convert /tmp/fabri-approved-launch.jpg -resize '2732x2732' -background '#05020d' -gravity center -extent 2732x2732 -filter Lanczos -strip -quality 94 "$ASSETS/splash.jpg"
           cp "$ASSETS/splash.jpg" "$ASSETS/splash-dark.jpg"
 
-          echo '19b5ab326ccc93f3c2abfab6ba82d1386855ea827a4da9acbfe005a0617fa818  '"$ASSETS/icon-only.jpg" | sha256sum -c -
-          echo 'cae10da52a653af5cf0cae565086a51e652e01e3124dd48a8a5f6b6e79c0e77b  '"$ASSETS/splash.jpg" | sha256sum -c -
+          identify "$ASSETS/icon-only.jpg" "$ASSETS/splash.jpg" "$ROOT/www/launch-screen.jpg"
 
-          cmp "$ASSETS/icon-only.jpg" "$ASSETS/icon-foreground.jpg"
-          cmp "$ASSETS/splash.jpg" "$ASSETS/splash-dark.jpg"
+      - name: Install native-only launch presentation and regression checks
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('fabrication_pro_capacitor')
 
-      - name: Verify repo and native branding generation
+          p=root/'www/index.html'
+          s=p.read_text()
+          marker='<body>\n'
+          overlay='''<body>\n  <div id="nativeLaunchScreen" class="native-launch-screen" hidden aria-hidden="true">\n    <img src="launch-screen.jpg" alt="" />\n  </div>\n'''
+          if 'id="nativeLaunchScreen"' not in s:
+              if marker not in s: raise SystemExit('index.html body marker not found')
+              s=s.replace(marker,overlay,1)
+          p.write_text(s)
+
+          p=root/'www/ux.css'
+          s=p.read_text()
+          css='''\n\n/* Native-only Fabri-Cadabra launch artwork. Hidden in browsers; native-compat.js reveals it only inside Capacitor. */\n.native-launch-screen {\n  position:fixed;\n  inset:0;\n  z-index:100000;\n  display:grid;\n  place-items:center;\n  overflow:hidden;\n  background:#05020d;\n  opacity:1;\n  transition:opacity .25s ease;\n}\n.native-launch-screen[hidden] { display:none; }\n.native-launch-screen img {\n  width:100%;\n  height:100%;\n  object-fit:cover;\n}\n.native-launch-screen.is-leaving {\n  opacity:0;\n  pointer-events:none;\n}\n'''
+          if '.native-launch-screen {' not in s:
+              s += css
+          p.write_text(s)
+
+          p=root/'www/native-compat.js'
+          s=p.read_text()
+          anchor="  if (!isNative) return;\n"
+          code='''  if (!isNative) return;\n\n  // Show the approved full Fabri-Cadabra launch artwork after the OS splash.\n  // This guarantees the intended portrait launch screen is visible on modern Android/iOS.\n  const nativeLaunchScreen = document.getElementById('nativeLaunchScreen');\n  if (nativeLaunchScreen) {\n    nativeLaunchScreen.hidden = false;\n    window.setTimeout(() => {\n      nativeLaunchScreen.classList.add('is-leaving');\n      window.setTimeout(() => nativeLaunchScreen.remove(), 260);\n    }, 1200);\n  }\n'''
+          if 'const nativeLaunchScreen' not in s:
+              if anchor not in s: raise SystemExit('native-compat native guard not found')
+              s=s.replace(anchor,code,1)
+          p.write_text(s)
+
+          p=root/'scripts/verify-native-branding.mjs'
+          s=p.read_text()
+          if "createHash" not in s:
+              s=s.replace("import { join } from 'node:path';", "import { join } from 'node:path';\nimport { createHash } from 'node:crypto';")
+          addition='''\nconst approvedIcon=join(root,'assets','native-branding','approved-icon-source.jpg');\nconst approvedLaunch=join(root,'assets','native-branding','approved-launch-source.jpg');\nconst webLaunch=join(root,'www','launch-screen.jpg');\nfor(const path of [approvedIcon,approvedLaunch,webLaunch]) if(!existsSync(path)) throw new Error(`Missing approved branding source: ${path}`);\nconst sha256=path=>createHash('sha256').update(readFileSync(path)).digest('hex');\nif(sha256(approvedIcon)!=='3f7af0e41ffc023c99f7cc82f7e1e54d80320500c5d76ddd6f4d474eef455edc') throw new Error('Approved Fabri-Cadabra icon source does not match the user-supplied artwork.');\nif(sha256(approvedLaunch)!=='02ae8ac4dce94d44aee86dcc62db3f9d95cb930cf44689b9e946ef36d2ae3959') throw new Error('Approved Fabri-Cadabra launch source does not match the user-supplied artwork.');\nif(sha256(webLaunch)!==sha256(approvedLaunch)) throw new Error('Native launch overlay must use the approved launch artwork exactly.');\nconst index=readFileSync(join(root,'www','index.html'),'utf8');\nneed(index,'id="nativeLaunchScreen"','Native launch screen element is missing.');\nneed(index,'src="launch-screen.jpg"','Native launch screen must use the approved launch artwork.');\nconst css=readFileSync(join(root,'www','ux.css'),'utf8');\nneed(css,'.native-launch-screen {','Native launch screen styling is missing.');\nconst nativeCompat=readFileSync(join(root,'www','native-compat.js'),'utf8');\nneed(nativeCompat,"if (!isNative) return;",'Launch artwork must remain native-only.');\nneed(nativeCompat,"const nativeLaunchScreen",'Native launch presentation is missing.');\nneed(nativeCompat,"classList.add('is-leaving')",'Native launch presentation fade-out is missing.');\n'''
+          marker="const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));"
+          if 'Approved Fabri-Cadabra icon source' not in s:
+              if marker not in s: raise SystemExit('native branding verifier marker not found')
+              s=s.replace(marker,addition+'\n'+marker,1)
+          p.write_text(s)
+          PY
+
+      - name: Verify repo and Android native branding generation
         working-directory: fabrication_pro_capacitor
         run: |
           npm install --ignore-scripts
@@ -46,15 +102,19 @@ jobs:
           npx cap add android
           npx cap sync android
           npm run native:brand -- --android
+          test -f android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          test -f android/app/src/main/res/drawable/splash.png || test -f android/app/src/main/res/drawable-port-xxxhdpi/splash.png
 
-      - name: Commit corrected native branding assets
+      - name: Commit corrected app branding only
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add fabrication_pro_capacitor/assets/native-branding/icon-only.jpg \
-                  fabrication_pro_capacitor/assets/native-branding/icon-foreground.jpg \
-                  fabrication_pro_capacitor/assets/native-branding/splash.jpg \
-                  fabrication_pro_capacitor/assets/native-branding/splash-dark.jpg
-          git commit -m 'fix: apply exact approved Fabri-Cadabra icon and launch artwork'
+          git add fabrication_pro_capacitor/assets/native-branding \
+                  fabrication_pro_capacitor/www/launch-screen.jpg \
+                  fabrication_pro_capacitor/www/index.html \
+                  fabrication_pro_capacitor/www/ux.css \
+                  fabrication_pro_capacitor/www/native-compat.js \
+                  fabrication_pro_capacitor/scripts/verify-native-branding.mjs
+          git commit -m 'fix: apply approved Fabri-Cadabra icon and launch artwork'
           git push origin HEAD:fix/v1.0.4-exact-branding
