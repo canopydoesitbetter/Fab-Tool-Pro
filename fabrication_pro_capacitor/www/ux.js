@@ -1,5 +1,5 @@
 (() => {
-  const FABRI_CADABRA_VERSION='1.0.3'; // @generated from package.json by scripts/sync-app-version.mjs
+  const FABRI_CADABRA_VERSION='1.0.4'; // @generated from package.json by scripts/sync-app-version.mjs
 
   function moveStatusOutsideManagement(detailsId,statusId) {
     const details=document.getElementById(detailsId);
@@ -338,9 +338,22 @@
   function changelogMarkup() {
     return `
       <article class='changelog-entry changelog-release' data-changelog-version='current'>
+  <div class='changelog-entry-heading'>
+    <div>
+      <span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>
+      <h2>Fabri-Cadabra Branding Refresh</h2>
+    </div>
+  </div>
+  <ul>
+    <li>Added the new Fabri-Cadabra launcher icon on Android and iPhone, replacing the default Capacitor branding.</li>
+    <li>Added a branded launch screen with the Fabri-Cadabra logo centered and the app name directly underneath.</li>
+    <li>Native branding now travels through the same repeatable Capacitor installer pipeline used for production builds.</li>
+  </ul>
+</article>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.3'>
         <div class='changelog-entry-heading'>
           <div>
-            <span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>
+            <span class='changelog-version-label'>Version 1.0.3</span>
             <h2>Smart Shift Time Entry</h2>
           </div>
         </div>

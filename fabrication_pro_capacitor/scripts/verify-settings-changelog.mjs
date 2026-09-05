@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
-const expectedVersion='1.0.3';
+const expectedVersion='1.0.4';
 const uxPath=join(root,'www','ux.js');
 const uxStylesPath=join(root,'www','ux.css');
 const packagePath=join(root,'package.json');
@@ -47,12 +47,14 @@ requireMatch(ux,/openDrawer\('settingsChangelogDrawer'/,'Changelog button must r
 requireMatch(ux,/closeDrawer\('settingsChangelogDrawer'/,'Changelog close behavior is missing.');
 const changelogFunction=ux.match(/function changelogMarkup\(\)\s*\{[\s\S]*?\n  \}\n\n  function installSettingsPage/)?.[0] || '';
 const currentIndex=changelogFunction.indexOf("data-changelog-version='current'");
+const v103Index=changelogFunction.indexOf("data-changelog-version='1.0.3'");
 const v102Index=changelogFunction.indexOf("data-changelog-version='1.0.2'");
 const v101Index=changelogFunction.indexOf("data-changelog-version='1.0.1'");
 const baselineCallIndex=changelogFunction.indexOf('${currentFeaturesChangelogMarkup()}');
-if (!(currentIndex>=0 && v102Index>currentIndex && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
+if (!(currentIndex>=0 && v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.4, then v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');
 if (!ux.includes("data-changelog-version='1.0.0'")) throw new Error('The v1.0.0 Current Features baseline entry is missing.');
-requireMatch(ux,/data-changelog-version='current'[\s\S]*?<h2>Smart Shift Time Entry<\/h2>/,'Current changelog entry must describe Smart Shift Time Entry.');
+requireMatch(ux,/data-changelog-version='current'[\s\S]*?<h2>Fabri-Cadabra Branding Refresh<\/h2>/,'Current changelog entry must describe the v1.0.4 branding refresh.');
+requireMatch(ux,/data-changelog-version='1.0.3'[\s\S]*?<h2>Smart Shift Time Entry<\/h2>/,'v1.0.3 Smart Shift Time Entry changelog entry must be retained.');
 requireMatch(ux,/data-changelog-version='1.0.2'[\s\S]*?<h2>Shift Schedule &amp; Clock Controls<\/h2>/,'v1.0.2 Shift Schedule changelog entry must be retained.');
 for (const concept of ['phone-friendly','730 for 7:30','AM/PM selector','impossible times','Task Logging Jobs panel is now collapsible','Job # / Name now opens a dedicated rename overlay']) { if (!ux.includes(concept)) throw new Error(`v1.0.3 changelog is missing required concept: ${concept}`); }
 

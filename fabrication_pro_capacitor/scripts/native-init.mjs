@@ -27,6 +27,7 @@ if (!existsSync(join(root, 'node_modules', '@capacitor', 'cli'))) {
 if (!existsSync(join(root, 'android'))) cap('add', 'android');
 if (!existsSync(join(root, 'ios'))) cap('add', 'ios');
 cap('sync');
+run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);
 
 try {
   const privacy = installIosPrivacyManifest(root);

@@ -40,6 +40,7 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          npm run native:brand -- --android
 
       - name: Verify Android launcher name
         run: |
@@ -151,6 +152,7 @@ jobs:
         run: |
           npx cap add ios
           npx cap sync ios
+          npm run native:brand -- --ios
 
       - name: Verify iOS display name
         run: |
