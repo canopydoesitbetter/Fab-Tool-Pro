@@ -1,3 +1,4 @@
+# Rerun after advancing version-sensitive regression checks to v1.0.4.
 name: Finish v1.0.4 Native Branding
 
 on:
