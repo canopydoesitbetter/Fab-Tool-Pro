@@ -71,7 +71,7 @@ function installFullAndroidSplash(){
   mkdirSync(nodpiDir,{recursive:true});
   const launchImage=join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg');
   const cropper=join(root,'scripts','CropAndroidLaunchImage.java');
-  const cropResult=spawnSync('java',[cropper,join(assetPath,'splash.jpg'),launchImage],{cwd:root,stdio:'inherit',shell:false});
+  const cropResult=spawnSync('java',['-Djava.awt.headless=true',cropper,join(assetPath,'splash.jpg'),launchImage],{cwd:root,stdio:'inherit',shell:false});
   if(cropResult.status!==0) throw new Error(`Fabri-Cadabra Android launch artwork crop failed with status ${cropResult.status ?? 'unknown'}.`);
   writeFileSync(join(drawableDir,'splash.xml'),FULL_ANDROID_SPLASH_XML);
 }
