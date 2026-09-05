@@ -7,14 +7,11 @@ const root=process.cwd();
 const assetPath=join(root,'assets','native-branding');
 const stagingPath=join(root,'assets');
 const required=['icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'];
-const LIGHTWEIGHT_ANDROID_SPLASH_XML=`<?xml version="1.0" encoding="utf-8"?>
+const FULL_ANDROID_SPLASH_XML=`<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
   <item>
-    <shape android:shape="rectangle">
-      <solid android:color="#080210" />
-    </shape>
+    <bitmap android:src="@drawable/fabri_cadabra_launch" android:gravity="fill" />
   </item>
-  <item android:gravity="center" android:drawable="@mipmap/ic_launcher" />
 </layer-list>
 `;
 
@@ -58,31 +55,35 @@ function assertGeneratedIconChanged(platform,before){
   }
 }
 
-function installLightweightAndroidSplash(){
+function installFullAndroidSplash(){
   const resDir=join(root,'android','app','src','main','res');
-  if(!existsSync(resDir)) throw new Error('Android resources are missing; cannot install lightweight Fabri-Cadabra splash.');
+  if(!existsSync(resDir)) throw new Error('Android resources are missing; cannot install Fabri-Cadabra splash.');
   for(const entry of readdirSync(resDir,{withFileTypes:true})){
     if(!entry.isDirectory() || !entry.name.startsWith('drawable')) continue;
     const drawableVariant=join(resDir,entry.name);
     for(const file of readdirSync(drawableVariant,{withFileTypes:true})){
-      if(file.isFile() && /^splash\.(?:png|jpe?g|webp|xml)$/i.test(file.name)){
-        rmSync(join(drawableVariant,file.name),{force:true});
-      }
+      if(file.isFile() && /^splash\.(?:png|jpe?g|webp|xml)$/i.test(file.name)) rmSync(join(drawableVariant,file.name),{force:true});
     }
   }
   const drawableDir=join(resDir,'drawable');
+  const nodpiDir=join(resDir,'drawable-nodpi');
   mkdirSync(drawableDir,{recursive:true});
-  writeFileSync(join(drawableDir,'splash.xml'),LIGHTWEIGHT_ANDROID_SPLASH_XML);
+  mkdirSync(nodpiDir,{recursive:true});
+  const launchImage=join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg');
+  copyFileSync(join(assetPath,'splash.jpg'),launchImage);
+  writeFileSync(join(drawableDir,'splash.xml'),FULL_ANDROID_SPLASH_XML);
 }
 
-function assertNoRasterAndroidSplash(){
+function assertSingleAndroidSplash(){
   const resDir=join(root,'android','app','src','main','res');
-  const rasterSplash=walkFiles(resDir).filter(path=>/[\\/]drawable[^\\/]*[\\/]splash\.(?:png|jpe?g|webp)$/i.test(path));
-  if(rasterSplash.length){
-    throw new Error(`Large Android raster splash resources remain after optimization: ${rasterSplash.map(path=>relative(resDir,path)).join(', ')}`);
+  const generatedRaster=walkFiles(resDir).filter(path=>/[\\/]drawable[^\\/]*[\\/]splash\.(?:png|jpe?g|webp)$/i.test(path));
+  if(generatedRaster.length){
+    throw new Error(`Redundant Android raster splash resources remain: ${generatedRaster.map(path=>relative(resDir,path)).join(', ')}`);
   }
+  const launchImage=join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg');
   const splashXml=join(resDir,'drawable','splash.xml');
-  if(!existsSync(splashXml)) throw new Error('Lightweight Android splash.xml was not installed.');
+  if(!existsSync(launchImage)) throw new Error('Full Fabri-Cadabra Android launch artwork was not installed.');
+  if(!existsSync(splashXml)) throw new Error('Android splash.xml was not installed.');
 }
 
 const platforms=[];
@@ -118,7 +119,7 @@ try{
 if(result?.status!==0) process.exit(result?.status??1);
 for(const platform of platforms) assertGeneratedIconChanged(platform,before.get(platform));
 if(platforms.includes('android')){
-  installLightweightAndroidSplash();
-  assertNoRasterAndroidSplash();
+  installFullAndroidSplash();
+  assertSingleAndroidSplash();
 }
-console.log('Fabri-Cadabra native icon generated, launcher replacement verified, and Android splash packaging optimized.');
+console.log('Fabri-Cadabra native icon generated, launcher replacement verified, and full Android splash artwork installed without redundant density variants.');
