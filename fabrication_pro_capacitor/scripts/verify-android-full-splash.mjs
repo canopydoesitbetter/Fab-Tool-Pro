@@ -10,6 +10,7 @@ const need=(needle,message)=>{ if(!generator.includes(needle)) throw new Error(m
 need('FULL_ANDROID_SPLASH_XML','Android branding must install the full branded artwork splash drawable.');
 need("join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg')",'Android branding must install exactly one density-independent full launch image.');
 need('CropAndroidLaunchImage.java','Android branding must crop the canonical square source back to the true portrait artwork before packaging.');
+need("'-Djava.awt.headless=true'",'Android splash cropper must run in Java headless mode on CI/Linux.');
 need('@drawable/fabri_cadabra_launch','Android startup drawable must render the full branded launch artwork.');
 need('android:gravity="fill"','Android startup drawable must fill the launch window with the full artwork.');
 
