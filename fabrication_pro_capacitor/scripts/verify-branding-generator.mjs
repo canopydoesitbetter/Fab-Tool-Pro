@@ -13,13 +13,14 @@ const reject=(needle,message)=>{if(source.includes(needle)) throw new Error(mess
 need("const stagingPath=join(root,'assets');",'Branding generator must stage approved sources in the root assets directory that @capacitor/assets discovers.');
 need('captureGeneratedIconState','Branding generator must snapshot native launcher resources before generation.');
 need('assertGeneratedIconChanged','Branding generator must fail if native launcher resources were not actually replaced.');
-need('installLightweightAndroidSplash','Android branding must replace generated raster splash variants with one lightweight native drawable.');
+need('installFullAndroidSplash','Android branding must replace generated splash variants with one full branded launch image.');
 need("entry.name.startsWith('drawable')",'Android splash optimizer must inspect all drawable density/night directories.');
 need("/^splash\\.(?:png|jpe?g|webp|xml)$/i",'Android splash optimizer must remove every generated splash resource variant.');
-need("writeFileSync(join(drawableDir,'splash.xml'),LIGHTWEIGHT_ANDROID_SPLASH_XML);",'Android splash optimizer must install one XML splash resource.');
-need('@mipmap/ic_launcher','Lightweight Android splash must reuse the verified launcher icon instead of embedding another large bitmap.');
-need('#080210','Lightweight Android splash must preserve the dark Fabri-Cadabra launch background.');
-need('assertNoRasterAndroidSplash','Android branding must verify no raster splash images remain before Gradle packaging.');
+need("writeFileSync(join(drawableDir,'splash.xml'),FULL_ANDROID_SPLASH_XML);",'Android branding must install one XML splash resource.');
+need("copyFileSync(join(assetPath,'splash.jpg'),launchImage)",'Android branding must use the full approved Fabri-Cadabra artwork with app name.');
+need('@drawable/fabri_cadabra_launch','Android splash XML must reference the full branded launch image.');
+need('assertSingleAndroidSplash','Android branding must verify one optimized branded splash before Gradle packaging.');
+reject('android:drawable="@mipmap/ic_launcher"','Android splash must not use the small launcher icon.');
 reject("'--assetPath'",'Do not rely on the ignored --assetPath argument; production logs proved it did not reach the generator.');
 
-console.log('Native branding generator syntax, launcher replacement, and slim Android splash contract: OK');
+console.log('Native branding generator syntax, launcher replacement, and full Android splash contract: OK');
