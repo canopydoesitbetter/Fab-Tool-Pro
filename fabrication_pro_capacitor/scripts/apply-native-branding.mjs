@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -7,6 +7,17 @@ const root=process.cwd();
 const assetPath=join(root,'assets','native-branding');
 const stagingPath=join(root,'assets');
 const required=['icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'];
+const LIGHTWEIGHT_ANDROID_SPLASH_XML=`<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item>
+    <shape android:shape="rectangle">
+      <solid android:color="#080210" />
+    </shape>
+  </item>
+  <item android:gravity="center" android:drawable="@mipmap/ic_launcher" />
+</layer-list>
+`;
+
 for(const name of required){
   if(!existsSync(join(assetPath,name))){
     console.error(`Missing Fabri-Cadabra native branding asset: ${name}`);
@@ -47,6 +58,33 @@ function assertGeneratedIconChanged(platform,before){
   }
 }
 
+function installLightweightAndroidSplash(){
+  const resDir=join(root,'android','app','src','main','res');
+  if(!existsSync(resDir)) throw new Error('Android resources are missing; cannot install lightweight Fabri-Cadabra splash.');
+  for(const entry of readdirSync(resDir,{withFileTypes:true})){
+    if(!entry.isDirectory() || !entry.name.startsWith('drawable')) continue;
+    const drawableVariant=join(resDir,entry.name);
+    for(const file of readdirSync(drawableVariant,{withFileTypes:true})){
+      if(file.isFile() && /^splash\.(?:png|jpe?g|webp|xml)$/i.test(file.name)){
+        rmSync(join(drawableVariant,file.name),{force:true});
+      }
+    }
+  }
+  const drawableDir=join(resDir,'drawable');
+  mkdirSync(drawableDir,{recursive:true});
+  writeFileSync(join(drawableDir,'splash.xml'),LIGHTWEIGHT_ANDROID_SPLASH_XML);
+}
+
+function assertNoRasterAndroidSplash(){
+  const resDir=join(root,'android','app','src','main','res');
+  const rasterSplash=walkFiles(resDir).filter(path=>/[\\/]drawable[^\\/]*[\\/]splash\.(?:png|jpe?g|webp)$/i.test(path));
+  if(rasterSplash.length){
+    throw new Error(`Large Android raster splash resources remain after optimization: ${rasterSplash.map(path=>relative(resDir,path)).join(', ')}`);
+  }
+  const splashXml=join(resDir,'drawable','splash.xml');
+  if(!existsSync(splashXml)) throw new Error('Lightweight Android splash.xml was not installed.');
+}
+
 const platforms=[];
 if(process.argv.includes('--android')) platforms.push('android');
 if(process.argv.includes('--ios')) platforms.push('ios');
@@ -79,4 +117,8 @@ try{
 
 if(result?.status!==0) process.exit(result?.status??1);
 for(const platform of platforms) assertGeneratedIconChanged(platform,before.get(platform));
-console.log('Fabri-Cadabra native icon and launch screen generated and launcher replacement verified.');
+if(platforms.includes('android')){
+  installLightweightAndroidSplash();
+  assertNoRasterAndroidSplash();
+}
+console.log('Fabri-Cadabra native icon generated, launcher replacement verified, and Android splash packaging optimized.');
