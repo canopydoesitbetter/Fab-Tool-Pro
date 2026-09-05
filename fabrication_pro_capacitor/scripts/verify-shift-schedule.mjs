@@ -100,6 +100,6 @@ expect(ux.includes('Overtime will continue until you manually clock out.'),'Over
 expect(ux.includes('Today is not one of your scheduled workdays.'),'Unscheduled-work confirmation is missing.');
 expect(pkg.scripts?.['verify:shift-schedule']==='node scripts/verify-shift-schedule.mjs','package.json must expose the Shift Schedule verifier.');
 expect(String(pkg.scripts?.verify || '').includes('npm run verify:shift-schedule'),'Aggregate verification must include the Shift Schedule verifier.');
-expect(pkg.version==='1.0.3',`Canonical package version must be 1.0.3; got ${pkg.version}.`);
+expect(pkg.version==='1.0.4',`Canonical package version must be 1.0.4; got ${pkg.version}.`);
 
 console.log('Shift Schedule engine, persistence, UI, exact-boundary integration, and release contract: OK');
