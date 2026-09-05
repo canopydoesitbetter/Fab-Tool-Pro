@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 const root=process.cwd();
 const need=(source,needle,message)=>{if(!source.includes(needle))throw new Error(message)};
 function jpegDimensions(buffer){
@@ -23,6 +24,26 @@ for(const [name,w,h] of [['icon-only.jpg',1024,1024],['icon-foreground.jpg',1024
   const d=jpegDimensions(readFileSync(path));
   if(d.width<w||d.height<h)throw new Error(`${name} must be at least ${w}x${h}; found ${d.width}x${d.height}.`);
 }
+
+const approvedIcon=join(root,'assets','native-branding','approved-icon-source.jpg');
+const approvedLaunch=join(root,'assets','native-branding','approved-launch-source.jpg');
+const webLaunch=join(root,'www','launch-screen.jpg');
+for(const path of [approvedIcon,approvedLaunch,webLaunch]) if(!existsSync(path)) throw new Error(`Missing approved branding source: ${path}`);
+const sha256=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
+if(sha256(approvedIcon)!=='3f7af0e41ffc023c99f7cc82f7e1e54d80320500c5d76ddd6f4d474eef455edc') throw new Error('Approved Fabri-Cadabra icon source does not match the user-supplied artwork.');
+if(sha256(approvedLaunch)!=='02ae8ac4dce94d44aee86dcc62db3f9d95cb930cf44689b9e946ef36d2ae3959') throw new Error('Approved Fabri-Cadabra launch source does not match the user-supplied artwork.');
+if(sha256(webLaunch)!==sha256(approvedLaunch)) throw new Error('Native launch overlay must use the approved launch artwork exactly.');
+const index=readFileSync(join(root,'www','index.html'),'utf8');
+need(index,'id="nativeLaunchScreen"','Native launch screen element is missing.');
+need(index,'src="launch-screen.jpg"','Native launch screen must use the approved launch artwork.');
+const css=readFileSync(join(root,'www','ux.css'),'utf8');
+need(css,'.native-launch-screen {','Native launch screen styling is missing.');
+const nativeCompat=readFileSync(join(root,'www','native-compat.js'),'utf8');
+need(nativeCompat,"if (!isNative) return;",'Launch artwork must remain native-only.');
+need(nativeCompat,"const nativeLaunchScreen",'Native launch presentation is missing.');
+need(nativeCompat,"typeof document !== 'undefined'",'Native launch presentation must tolerate headless verification.');
+need(nativeCompat,"classList.add('is-leaving')",'Native launch presentation fade-out is missing.');
+
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 if(pkg.version!=='1.0.4')throw new Error(`Expected package version 1.0.4; found ${pkg.version}.`);
 need(String(pkg.scripts['native:brand']||''),'apply-native-branding.mjs','native:brand script missing.');

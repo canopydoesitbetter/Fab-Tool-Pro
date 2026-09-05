@@ -18,6 +18,19 @@
   ));
   if (!isNative) return;
 
+  // Show the approved full Fabri-Cadabra launch artwork after the OS splash.
+  // This guarantees the intended portrait launch screen is visible on modern Android/iOS.
+  const nativeLaunchScreen = typeof document !== 'undefined'
+    ? document.getElementById('nativeLaunchScreen')
+    : null;
+  if (nativeLaunchScreen) {
+    nativeLaunchScreen.hidden = false;
+    window.setTimeout(() => {
+      nativeLaunchScreen.classList.add('is-leaving');
+      window.setTimeout(() => nativeLaunchScreen.remove(), 260);
+    }, 1200);
+  }
+
   const plugins = cap.Plugins || {};
   const Filesystem = plugins.Filesystem;
   const Share = plugins.Share;
