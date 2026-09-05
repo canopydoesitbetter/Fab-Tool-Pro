@@ -1,0 +1,218 @@
+name: Finish v1.0.4 Native Branding
+
+on:
+  push:
+    branches: [ feature/v1.0.4-native-branding-release10 ]
+    paths:
+      - '.github/workflows/finish-v104-branding.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v1.0.4-native-branding-release10
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install image tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+
+      - name: Verify direct binary source and generate production branding
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/fabrication_pro_capacitor"
+          ASSETS="$ROOT/assets/native-branding"
+          SOURCE="$ASSETS/source.jpg"
+          echo '1b395c0c411ca8c0cd68bf54b56b848a169ac74e2596f5216accee421ea04be1  '"$SOURCE" | sha256sum -c -
+          identify "$SOURCE"
+
+          convert "$SOURCE" -resize 1024x1024! -strip -quality 92 "$ASSETS/icon-only.jpg"
+          cp "$ASSETS/icon-only.jpg" "$ASSETS/icon-foreground.jpg"
+          convert -size 1024x1024 xc:'#080313' -strip -quality 92 "$ASSETS/icon-background.jpg"
+
+          convert "$ASSETS/icon-only.jpg" -resize '2732x2732^' -gravity center -extent 2732x2732 -blur 0x90 -fill '#05020d' -colorize 58 /tmp/fabri-splash-bg.jpg
+          convert "$ASSETS/icon-only.jpg" -resize 1220x1220 /tmp/fabri-splash-logo.png
+          convert /tmp/fabri-splash-bg.jpg /tmp/fabri-splash-logo.png \
+            -gravity center -geometry +0-300 -composite \
+            -font DejaVu-Serif -pointsize 190 -fill '#f7f1ff' \
+            -stroke '#6c2bc0' -strokewidth 3 \
+            -gravity center -annotate +0+620 'Fabri-Cadabra' \
+            -strip -quality 90 "$ASSETS/splash.jpg"
+          cp "$ASSETS/splash.jpg" "$ASSETS/splash-dark.jpg"
+          identify "$ASSETS/icon-only.jpg" "$ASSETS/icon-foreground.jpg" "$ASSETS/icon-background.jpg" "$ASSETS/splash.jpg" "$ASSETS/splash-dark.jpg"
+          rm "$SOURCE"
+
+      - name: Add repeatable Capacitor branding command
+        run: |
+          cat > fabrication_pro_capacitor/scripts/apply-native-branding.mjs <<'EOF'
+          import { existsSync } from 'node:fs';
+          import { join } from 'node:path';
+          import { spawnSync } from 'node:child_process';
+
+          const root=process.cwd();
+          const assetPath=join(root,'assets','native-branding');
+          const required=['icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'];
+          for(const name of required){
+            if(!existsSync(join(assetPath,name))){
+              console.error(`Missing Fabri-Cadabra native branding asset: ${name}`);
+              process.exit(1);
+            }
+          }
+          const args=['--yes','@capacitor/assets@3.0.5','generate','--assetPath',assetPath];
+          if(process.argv.includes('--android')) args.push('--android');
+          if(process.argv.includes('--ios')) args.push('--ios');
+          const executable=process.platform==='win32'?'npx.cmd':'npx';
+          const result=spawnSync(executable,args,{cwd:root,stdio:'inherit',shell:false});
+          if(result.status!==0) process.exit(result.status??1);
+          console.log('Fabri-Cadabra native icon and launch screen generated.');
+          EOF
+
+      - name: Update v1.0.4 release metadata and build wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('fabrication_pro_capacitor')
+
+          p=root/'package.json'
+          pkg=json.loads(p.read_text())
+          pkg['version']='1.0.4'
+          pkg['scripts']['native:brand']='node scripts/apply-native-branding.mjs'
+          pkg['scripts']['verify:native-branding']='node scripts/verify-native-branding.mjs'
+          if 'npm run verify:native-branding' not in pkg['scripts']['verify']:
+              pkg['scripts']['verify']=pkg['scripts']['verify'].replace('npm run verify:native-shim &&','npm run verify:native-shim && npm run verify:native-branding &&')
+          p.write_text(json.dumps(pkg,indent=2)+'\n')
+
+          p=root/'scripts/native-init.mjs'
+          s=p.read_text()
+          brand="run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);"
+          if brand not in s:
+              s=s.replace("cap('sync');", "cap('sync');\n"+brand)
+          p.write_text(s)
+
+          p=root/'www/ux.js'
+          s=p.read_text()
+          s=s.replace("const FABRI_CADABRA_VERSION='1.0.3';", "const FABRI_CADABRA_VERSION='1.0.4';")
+          start=s.index("      <article class='changelog-entry changelog-release' data-changelog-version='current'>")
+          end=s.index("      <article class='changelog-entry changelog-release' data-changelog-version='1.0.2'>",start)
+          old=s[start:end]
+          historical=old.replace("data-changelog-version='current'","data-changelog-version='1.0.3'",1).replace("Version ${FABRI_CADABRA_VERSION}","Version 1.0.3",1)
+          current="""      <article class='changelog-entry changelog-release' data-changelog-version='current'>
+            <div class='changelog-entry-heading'>
+              <div>
+                <span class='changelog-version-label'>Version ${FABRI_CADABRA_VERSION}</span>
+                <h2>Fabri-Cadabra Branding Refresh</h2>
+              </div>
+            </div>
+            <ul>
+              <li>Added the new Fabri-Cadabra launcher icon on Android and iPhone, replacing the default Capacitor branding.</li>
+              <li>Added a branded launch screen with the Fabri-Cadabra logo centered and the app name directly underneath.</li>
+              <li>Native branding now travels through the same repeatable Capacitor installer pipeline used for production builds.</li>
+            </ul>
+          </article>
+          """
+          p.write_text(s[:start]+current+historical+s[end:])
+
+          p=root/'scripts/verify-settings-changelog.mjs'
+          s=p.read_text()
+          s=s.replace("const expectedVersion='1.0.3';","const expectedVersion='1.0.4';")
+          s=s.replace("const v102Index=changelogFunction.indexOf(\"data-changelog-version='1.0.2'\");", "const v103Index=changelogFunction.indexOf(\"data-changelog-version='1.0.3'\");\nconst v102Index=changelogFunction.indexOf(\"data-changelog-version='1.0.2'\");")
+          s=s.replace("if (!(currentIndex>=0 && v102Index>currentIndex && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');", "if (!(currentIndex>=0 && v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineCallIndex>v101Index)) throw new Error('Changelog renderer must output v1.0.4, then v1.0.3, then v1.0.2, then v1.0.1, then the v1.0.0 baseline.');")
+          s=s.replace("requireMatch(ux,/data-changelog-version='current'[\\s\\S]*?<h2>Smart Shift Time Entry<\\/h2>/,'Current changelog entry must describe Smart Shift Time Entry.');", "requireMatch(ux,/data-changelog-version='current'[\\s\\S]*?<h2>Fabri-Cadabra Branding Refresh<\\/h2>/,'Current changelog entry must describe the v1.0.4 branding refresh.');\nrequireMatch(ux,/data-changelog-version='1.0.3'[\\s\\S]*?<h2>Smart Shift Time Entry<\\/h2>/,'v1.0.3 Smart Shift Time Entry changelog entry must be retained.');")
+          p.write_text(s)
+
+          p=Path('.github/workflows/build-phone-installers.yml')
+          s=p.read_text()
+          if 'npm run native:brand -- --android' not in s:
+              s=s.replace('          npx cap sync android\n','          npx cap sync android\n          npm run native:brand -- --android\n')
+          if 'npm run native:brand -- --ios' not in s:
+              s=s.replace('          npx cap sync ios\n','          npx cap sync ios\n          npm run native:brand -- --ios\n')
+          p.write_text(s)
+          PY
+
+      - name: Install final native branding regression
+        run: |
+          cat > fabrication_pro_capacitor/scripts/verify-native-branding.mjs <<'EOF'
+          import { existsSync, readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const root=process.cwd();
+          const need=(source,needle,message)=>{if(!source.includes(needle))throw new Error(message)};
+          function jpegDimensions(buffer){
+            if(buffer[0]!==0xff||buffer[1]!==0xd8)throw new Error('Expected JPEG native branding source.');
+            let offset=2;
+            while(offset+9<buffer.length){
+              if(buffer[offset]!==0xff){offset++;continue}
+              const marker=buffer[offset+1];
+              if(marker===0xd8||marker===0xd9){offset+=2;continue}
+              if(offset+4>buffer.length)break;
+              const length=buffer.readUInt16BE(offset+2);
+              if(length<2||offset+2+length>buffer.length)break;
+              if([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker))return{height:buffer.readUInt16BE(offset+5),width:buffer.readUInt16BE(offset+7)};
+              offset+=2+length;
+            }
+            throw new Error('Could not determine branding JPEG dimensions.');
+          }
+          for(const [name,w,h] of [['icon-only.jpg',1024,1024],['icon-foreground.jpg',1024,1024],['icon-background.jpg',1024,1024],['splash.jpg',2732,2732],['splash-dark.jpg',2732,2732]]){
+            const path=join(root,'assets','native-branding',name);
+            if(!existsSync(path))throw new Error(`Missing native branding asset: ${name}`);
+            const d=jpegDimensions(readFileSync(path));
+            if(d.width<w||d.height<h)throw new Error(`${name} must be at least ${w}x${h}; found ${d.width}x${d.height}.`);
+          }
+          const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+          if(pkg.version!=='1.0.4')throw new Error(`Expected package version 1.0.4; found ${pkg.version}.`);
+          need(String(pkg.scripts['native:brand']||''),'apply-native-branding.mjs','native:brand script missing.');
+          need(String(pkg.scripts['verify:native-branding']||''),'verify-native-branding.mjs','native branding verifier script missing.');
+          need(String(pkg.scripts.verify||''),'npm run verify:native-branding','Aggregate verification must include native branding.');
+          const apply=readFileSync(join(root,'scripts','apply-native-branding.mjs'),'utf8');
+          for(const marker of ['@capacitor/assets@3.0.5','--assetPath','icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'])need(apply,marker,`Native branding generator is missing ${marker}.`);
+          const init=readFileSync(join(root,'scripts','native-init.mjs'),'utf8');
+          need(init,"run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);",'native:init must apply Fabri-Cadabra branding.');
+          const ux=readFileSync(join(root,'www','ux.js'),'utf8');
+          need(ux,"const FABRI_CADABRA_VERSION='1.0.4';",'Browser version marker must be 1.0.4.');
+          need(ux,"data-changelog-version='1.0.3'",'v1.0.3 changelog history must remain.');
+          need(ux,'new Fabri-Cadabra launcher icon','v1.0.4 changelog must disclose launcher icon.');
+          need(ux,'branded launch screen','v1.0.4 changelog must disclose launch screen.');
+          const wf=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
+          need(wf,'npm run native:brand -- --android','Android installer must generate branding.');
+          need(wf,'npm run native:brand -- --ios','iPhone installer must generate branding.');
+          console.log('Fabri-Cadabra v1.0.4 native branding contract: OK');
+          EOF
+
+      - name: Run focused branding verification
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify:native-branding
+
+      - name: Run full Fabri-Cadabra verification
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Smoke-test Android native asset generation
+        working-directory: fabrication_pro_capacitor
+        run: |
+          npm install --ignore-scripts
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+          npm run native:brand -- --android
+          test -f android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || test -f android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp
+
+      - name: Commit verified v1.0.4 branding
+        run: |
+          rm -f .github/workflows/finish-v104-branding.yml
+          rm -rf fabrication_pro_capacitor/android
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: add Fabri-Cadabra native branding for v1.0.4'
+          git push origin HEAD:feature/v1.0.4-native-branding-release10
