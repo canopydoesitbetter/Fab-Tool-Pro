@@ -17,10 +17,12 @@ need('installFullAndroidSplash','Android branding must replace generated splash 
 need("entry.name.startsWith('drawable')",'Android splash optimizer must inspect all drawable density/night directories.');
 need("/^splash\\.(?:png|jpe?g|webp|xml)$/i",'Android splash optimizer must remove every generated splash resource variant.');
 need("writeFileSync(join(drawableDir,'splash.xml'),FULL_ANDROID_SPLASH_XML);",'Android branding must install one XML splash resource.');
-need("copyFileSync(join(assetPath,'splash.jpg'),launchImage)",'Android branding must use the full approved Fabri-Cadabra artwork with app name.');
+need('CropAndroidLaunchImage.java','Android branding must crop the canonical splash to the approved full portrait composition.');
+need("'-Djava.awt.headless=true'",'Android portrait crop must be safe on headless CI runners.');
 need('@drawable/fabri_cadabra_launch','Android splash XML must reference the full branded launch image.');
 need('assertSingleAndroidSplash','Android branding must verify one optimized branded splash before Gradle packaging.');
+reject("copyFileSync(join(assetPath,'splash.jpg'),launchImage)",'Android branding must not package the square padded source directly.');
 reject('android:drawable="@mipmap/ic_launcher"','Android splash must not use the small launcher icon.');
 reject("'--assetPath'",'Do not rely on the ignored --assetPath argument; production logs proved it did not reach the generator.');
 
-console.log('Native branding generator syntax, launcher replacement, and full Android splash contract: OK');
+console.log('Native branding generator syntax, launcher replacement, portrait crop, and full Android splash contract: OK');
