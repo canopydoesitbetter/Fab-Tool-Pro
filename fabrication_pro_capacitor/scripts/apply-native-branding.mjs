@@ -70,7 +70,9 @@ function installFullAndroidSplash(){
   mkdirSync(drawableDir,{recursive:true});
   mkdirSync(nodpiDir,{recursive:true});
   const launchImage=join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg');
-  copyFileSync(join(assetPath,'splash.jpg'),launchImage);
+  const cropper=join(root,'scripts','CropAndroidLaunchImage.java');
+  const cropResult=spawnSync('java',[cropper,join(assetPath,'splash.jpg'),launchImage],{cwd:root,stdio:'inherit',shell:false});
+  if(cropResult.status!==0) throw new Error(`Fabri-Cadabra Android launch artwork crop failed with status ${cropResult.status ?? 'unknown'}.`);
   writeFileSync(join(drawableDir,'splash.xml'),FULL_ANDROID_SPLASH_XML);
 }
 
@@ -122,4 +124,4 @@ if(platforms.includes('android')){
   installFullAndroidSplash();
   assertSingleAndroidSplash();
 }
-console.log('Fabri-Cadabra native icon generated, launcher replacement verified, and full Android splash artwork installed without redundant density variants.');
+console.log('Fabri-Cadabra native icon generated, launcher replacement verified, and true portrait Android splash artwork installed without redundant density variants.');
