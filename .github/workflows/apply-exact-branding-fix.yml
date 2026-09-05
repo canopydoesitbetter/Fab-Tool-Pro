@@ -1,0 +1,60 @@
+name: Apply exact Fabri-Cadabra branding correction
+
+on:
+  push:
+    branches: [ fix/v1.0.4-exact-branding ]
+    paths:
+      - 'fabrication_pro_capacitor/branding_payload/ready.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-branding:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout correction branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/v1.0.4-exact-branding
+          fetch-depth: 0
+
+      - name: Reconstruct exact approved artwork
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/fabrication_pro_capacitor"
+          PAYLOAD="$ROOT/branding_payload"
+          ASSETS="$ROOT/assets/native-branding"
+
+          cat "$PAYLOAD"/icon.part*.txt | base64 -d > "$ASSETS/icon-only.jpg"
+          cp "$ASSETS/icon-only.jpg" "$ASSETS/icon-foreground.jpg"
+
+          cat "$PAYLOAD"/splash.part*.txt | base64 -d > "$ASSETS/splash.jpg"
+          cp "$ASSETS/splash.jpg" "$ASSETS/splash-dark.jpg"
+
+          echo '19b5ab326ccc93f3c2abfab6ba82d1386855ea827a4da9acbfe005a0617fa818  '"$ASSETS/icon-only.jpg" | sha256sum -c -
+          echo 'cae10da52a653af5cf0cae565086a51e652e01e3124dd48a8a5f6b6e79c0e77b  '"$ASSETS/splash.jpg" | sha256sum -c -
+
+          cmp "$ASSETS/icon-only.jpg" "$ASSETS/icon-foreground.jpg"
+          cmp "$ASSETS/splash.jpg" "$ASSETS/splash-dark.jpg"
+
+      - name: Verify repo and native branding generation
+        working-directory: fabrication_pro_capacitor
+        run: |
+          npm install --ignore-scripts
+          npm run verify
+          npx cap add android
+          npx cap sync android
+          npm run native:brand -- --android
+
+      - name: Commit corrected native branding assets
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fabrication_pro_capacitor/assets/native-branding/icon-only.jpg \
+                  fabrication_pro_capacitor/assets/native-branding/icon-foreground.jpg \
+                  fabrication_pro_capacitor/assets/native-branding/splash.jpg \
+                  fabrication_pro_capacitor/assets/native-branding/splash-dark.jpg
+          git commit -m 'fix: apply exact approved Fabri-Cadabra icon and launch artwork'
+          git push origin HEAD:fix/v1.0.4-exact-branding
