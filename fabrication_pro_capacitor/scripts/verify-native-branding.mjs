@@ -30,8 +30,8 @@ const approvedLaunch=join(root,'assets','native-branding','approved-launch-sourc
 const webLaunch=join(root,'www','launch-screen.jpg');
 for(const path of [approvedIcon,approvedLaunch,webLaunch]) if(!existsSync(path)) throw new Error(`Missing approved branding source: ${path}`);
 const sha256=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
-if(sha256(approvedIcon)!=='3f7af0e41ffc023c99f7cc82f7e1e54d80320500c5d76ddd6f4d474eef455edc') throw new Error('Approved Fabri-Cadabra icon source does not match the user-supplied artwork.');
-if(sha256(approvedLaunch)!=='02ae8ac4dce94d44aee86dcc62db3f9d95cb930cf44689b9e946ef36d2ae3959') throw new Error('Approved Fabri-Cadabra launch source does not match the user-supplied artwork.');
+if(sha256(approvedIcon)!=='c68fffb7295442beab5e76fda39e9259790c0597ae6e4f8a81f99d6ef9e7fa0f') throw new Error('Approved Fabri-Cadabra icon source does not match the user-supplied artwork.');
+if(sha256(approvedLaunch)!=='062915bc702c1fea308a5622356cf1037c5fec2d9dc0ccf3875c79b38a6e406c') throw new Error('Approved Fabri-Cadabra launch source does not match the user-supplied artwork.');
 if(sha256(webLaunch)!==sha256(approvedLaunch)) throw new Error('Native launch overlay must use the approved launch artwork exactly.');
 const index=readFileSync(join(root,'www','index.html'),'utf8');
 need(index,'id="nativeLaunchScreen"','Native launch screen element is missing.');
