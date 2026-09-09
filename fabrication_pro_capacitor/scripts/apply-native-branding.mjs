@@ -6,7 +6,8 @@ import { spawnSync } from 'node:child_process';
 const root=process.cwd();
 const assetPath=join(root,'assets','native-branding');
 const stagingPath=join(root,'assets');
-const required=['icon-only.jpg','icon-foreground.jpg','icon-background.jpg','splash.jpg','splash-dark.jpg'];
+const iconSources=['icon-only.jpg','icon-foreground.jpg','icon-background.jpg'];
+const approvedLaunchPath=join(assetPath,'approved-launch-source.jpg');
 const FULL_ANDROID_SPLASH_XML=`<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
   <item>
@@ -15,11 +16,15 @@ const FULL_ANDROID_SPLASH_XML=`<?xml version="1.0" encoding="utf-8"?>
 </layer-list>
 `;
 
-for(const name of required){
+for(const name of iconSources){
   if(!existsSync(join(assetPath,name))){
     console.error(`Missing Fabri-Cadabra native branding asset: ${name}`);
     process.exit(1);
   }
+}
+if(!existsSync(approvedLaunchPath)){
+  console.error('Missing approved Fabri-Cadabra launch artwork.');
+  process.exit(1);
 }
 
 function hashFile(path){
@@ -55,6 +60,12 @@ function assertGeneratedIconChanged(platform,before){
   }
 }
 
+function prepareSquareSplash(output){
+  const preparer=join(root,'scripts','PrepareSquareSplash.java');
+  const result=spawnSync('java',['-Djava.awt.headless=true',preparer,approvedLaunchPath,output],{cwd:root,stdio:'inherit',shell:false});
+  if(result.status!==0) throw new Error(`Fabri-Cadabra square splash preparation failed with status ${result.status ?? 'unknown'}.`);
+}
+
 function installFullAndroidSplash(){
   const resDir=join(root,'android','app','src','main','res');
   if(!existsSync(resDir)) throw new Error('Android resources are missing; cannot install Fabri-Cadabra splash.');
@@ -69,10 +80,8 @@ function installFullAndroidSplash(){
   const nodpiDir=join(resDir,'drawable-nodpi');
   mkdirSync(drawableDir,{recursive:true});
   mkdirSync(nodpiDir,{recursive:true});
-  const launchImage=join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg');
-  const cropper=join(root,'scripts','CropAndroidLaunchImage.java');
-  const cropResult=spawnSync('java',['-Djava.awt.headless=true',cropper,join(assetPath,'splash.jpg'),launchImage],{cwd:root,stdio:'inherit',shell:false});
-  if(cropResult.status!==0) throw new Error(`Fabri-Cadabra Android launch artwork crop failed with status ${cropResult.status ?? 'unknown'}.`);
+  const launchImage=join(nodpiDir,'fabri_cadabra_launch.jpg');
+  copyFileSync(approvedLaunchPath,launchImage);
   writeFileSync(join(drawableDir,'splash.xml'),FULL_ANDROID_SPLASH_XML);
 }
 
@@ -85,6 +94,7 @@ function assertSingleAndroidSplash(){
   const launchImage=join(resDir,'drawable-nodpi','fabri_cadabra_launch.jpg');
   const splashXml=join(resDir,'drawable','splash.xml');
   if(!existsSync(launchImage)) throw new Error('Full Fabri-Cadabra Android launch artwork was not installed.');
+  if(hashFile(launchImage)!==hashFile(approvedLaunchPath)) throw new Error('Android launch artwork must match the approved portrait source exactly.');
   if(!existsSync(splashXml)) throw new Error('Android splash.xml was not installed.');
 }
 
@@ -97,12 +107,15 @@ if(platforms.length===0){
 }
 const before=new Map(platforms.map(platform=>[platform,captureGeneratedIconState(platform)]));
 
+const stagedNames=[...iconSources,'splash.jpg','splash-dark.jpg'];
 const backups=new Map();
-for(const name of required){
+for(const name of stagedNames){
   const target=join(stagingPath,name);
   backups.set(target,existsSync(target)?readFileSync(target):null);
-  copyFileSync(join(assetPath,name),join(stagingPath,name));
 }
+for(const name of iconSources) copyFileSync(join(assetPath,name),join(stagingPath,name));
+prepareSquareSplash(join(stagingPath,'splash.jpg'));
+copyFileSync(join(stagingPath,'splash.jpg'),join(stagingPath,'splash-dark.jpg'));
 
 let result;
 try{
@@ -124,4 +137,4 @@ if(platforms.includes('android')){
   installFullAndroidSplash();
   assertSingleAndroidSplash();
 }
-console.log('Fabri-Cadabra native icon generated, launcher replacement verified, and true portrait Android splash artwork installed without redundant density variants.');
+console.log('Fabri-Cadabra native icons generated from the approved icon artwork, iOS splash assets prepared from the approved portrait launch art, and Android launch artwork installed byte-for-byte without redundant density variants.');
