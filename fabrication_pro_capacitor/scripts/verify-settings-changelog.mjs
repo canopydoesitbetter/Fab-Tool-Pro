@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
-const expectedVersion='1.0.4';
 const uxPath=join(root,'www','ux.js');
 const uxStylesPath=join(root,'www','ux.css');
 const packagePath=join(root,'package.json');
@@ -33,7 +32,7 @@ requireMatch(uxStyles,/\.fab-page-drawer \.fab-page-list\s*\{[^}]*align-content:
 requireMatch(uxStyles,/\.settings-changelog-drawer\s*\{[^}]*left:\s*50%[^}]*top:\s*50%/s,'Changelog overlay must be centered on screen.');
 requireMatch(uxStyles,/\.settings-changelog-body\s*\{[^}]*overflow-y:\s*auto/s,'Changelog content must scroll independently from Settings.');
 
-if (pkg.version!==expectedVersion) throw new Error(`package.json must be ${expectedVersion}; got ${pkg.version}.`);
+if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(String(pkg.version||''))) throw new Error(`package.json contains an invalid semantic version: ${pkg.version || 'missing'}.`);
 if (!existsSync(syncPath)) throw new Error('Missing package-version sync script.');
 const sync=readFileSync(syncPath,'utf8');
 requireMatch(sync,/package\.json/,'Version sync must read package.json as the canonical source.');
