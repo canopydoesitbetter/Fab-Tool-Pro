@@ -1,7 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { acceptNextDialog, captureJsonDownload, openApp } from './helpers.mjs';
 
+async function openTaskLogManagement(page) {
+  const details = page.locator('#taskLogManagementDetails');
+  if (!(await details.evaluate(element => element.open))) {
+    await details.locator('> summary').click();
+  }
+  await expect(details).toHaveAttribute('open', '');
+}
+
 async function createJob(page, title = 'E2E Job') {
+  await openTaskLogManagement(page);
   await page.locator('#taskLogNewJobBtn').click();
   await expect(page.locator('#taskLogJobTitle')).toHaveText('Job 1');
   await page.locator('#taskLogJobTitle').click();
@@ -32,6 +41,14 @@ async function createJobWithTasks(page, names = ['Cut', 'Assemble']) {
   for (const name of names) await addPreset(page, name);
   await assignAllPresets(page);
   for (const name of names) await expect(page.locator('.tasklog-task-row', { hasText: name })).toBeVisible();
+}
+
+async function setToggle(page, inputSelector, checked) {
+  const input = page.locator(inputSelector);
+  if ((await input.isChecked()) === checked) return;
+  const id = inputSelector.replace(/^#/, '');
+  await page.locator(`label[for="${id}"]`).click();
+  await expect(input).toBeChecked({ checked });
 }
 
 test('Task Logging creates, renames, and deletes a job through the UI', async ({ page }) => {
@@ -89,9 +106,10 @@ test('Running task recovers from persisted absolute start time after reload', as
 
   await page.reload();
   await expect(page.locator('#tool-tasklog')).toHaveClass(/\bactive\b/);
-  await expect(page.locator('.tasklog-task-row', { hasText: 'Recovery' }).locator('[data-tasklog-timer-action="stop"]')).toBeVisible();
+  const restored = page.locator('.tasklog-task-row', { hasText: 'Recovery' });
+  await expect(restored.locator('[data-tasklog-timer-action="stop"]')).toBeVisible();
   await page.clock.fastForward('00:35');
-  await expect(page.locator('.tasklog-task-row', { hasText: 'Recovery' }).locator('[data-tasklog-timer]')).toHaveText('00:01:40');
+  await expect(restored.locator('[data-tasklog-timer]')).toHaveText('00:01:40');
 });
 
 test('Starting another task leaves exactly one running task', async ({ page }) => {
@@ -125,12 +143,13 @@ test('Shift Schedule UI enables real clock in and clock out wiring', async ({ pa
   await page.locator('#shiftClockInPeriod').selectOption('AM');
   await page.locator('#shiftClockOutTime').fill('5');
   await page.locator('#shiftClockOutPeriod').selectOption('PM');
-  if (await page.locator('#shiftBreakToggle').isChecked()) await page.locator('#shiftBreakToggle').uncheck();
-  if (await page.locator('#shiftLunchToggle').isChecked()) await page.locator('#shiftLunchToggle').uncheck();
+  await setToggle(page, '#shiftBreakToggle', false);
+  await setToggle(page, '#shiftLunchToggle', false);
   await page.locator('#shiftScheduleSaveBtn').click();
 
   acceptNextDialog(page, 'Enable Shift Schedule');
-  await page.locator('#shiftScheduleMasterToggle').check();
+  await page.locator('label[for="shiftScheduleMasterToggle"]').click();
+  await expect(page.locator('#shiftScheduleMasterToggle')).toBeChecked();
   await expect(page.locator('#shiftScheduleMasterState')).toHaveText('ENABLED');
   await expect(page.locator('#shiftClockBtn')).toBeEnabled();
   await expect(page.locator('#shiftClockBtn')).toHaveText('CLOCK IN');
@@ -174,7 +193,7 @@ test('Preset export and import restore the preset library independently', async 
   const exported = await captureJsonDownload(page, () => page.locator('#taskLogExportPresetsBtn').click());
   expect(exported.json.taskLogPresets).toBeTruthy();
 
-  acceptNextDialog(page, 'Delete preset Portable Preset');
+  acceptNextDialog(page, 'Delete preset task');
   await page.locator('#taskLogPresetList').getByRole('button', { name: 'Delete preset Portable Preset' }).click();
   await expect(page.locator('#taskLogPresetList')).not.toContainText('Portable Preset');
 
