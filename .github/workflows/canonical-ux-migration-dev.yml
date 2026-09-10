@@ -58,6 +58,13 @@ jobs:
               raise SystemExit(f'Expected one retired-asset guard line, found {len(guard_matches)}')
           lines[guard_matches[0]]=guard_replacement
 
+          footer_old="html=html.replace(footerMarker,settingsPanel+footerMarker);"
+          footer_new="html=html.replace(footerMarker,'    </section>\\n\\n'+settingsPanel+footerMarker);"
+          footer_matches=[i for i,line in enumerate(lines) if footer_old in line]
+          if len(footer_matches)!=1:
+              raise SystemExit(f'Expected one Settings/footer insertion line, found {len(footer_matches)}')
+          lines[footer_matches[0]]=lines[footer_matches[0]].replace(footer_old,footer_new)
+
           path.write_text('\n'.join(lines)+'\n')
           PY
 
@@ -87,23 +94,19 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           html=Path('www/index.html').read_text()
-          markers={
-              'settings_section': '<section id="tool-settings"',
-              'settings_heading': '<h2>Settings</h2>',
-              'shift_details': "id='shiftScheduleDetails'",
-              'footer': '<div class="footer">Designed by Canopy.</div>',
-              'main_close': '</main>',
-          }
-          for name, marker in markers.items():
-              print(f'{name}: {html.find(marker)}')
-          start=html.find('<section id="tool-settings"')
+          settings=html.find('<section id="tool-settings"')
+          heading=html.find('<h2>Settings</h2>')
+          shift=html.find("id='shiftScheduleDetails'")
           footer=html.find('<div class="footer">Designed by Canopy.</div>')
-          print(f'settings section bytes: {footer-start if start >= 0 and footer >= 0 else -1}')
-          if start >= 0:
-              print('--- SETTINGS PREFIX ---')
-              print(html[start:start+1800])
-              print('--- SETTINGS SUFFIX ---')
-              print(html[max(start, footer-1200):footer+100])
+          calculator=html.find('<section id="tool-calculator"')
+          calculator_status=html.find('id="calculatorStatus"',calculator)
+          print(f'calculator={calculator} calculator_status={calculator_status} settings={settings} heading={heading} shift={shift} footer={footer}')
+          if not (calculator >= 0 and calculator_status > calculator and settings > calculator_status and heading > settings and shift > settings and footer > shift):
+              raise SystemExit('Canonical Settings structure is not ordered as expected.')
+          between=html[calculator_status:settings]
+          if between.count('</section>') < 2:
+              raise SystemExit('Basic Calculator outer tool panel is not closed before Settings.')
+          print('Canonical Settings is a sibling after the closed Basic Calculator tool panel.')
           PY
 
       - name: Verify canonical source
