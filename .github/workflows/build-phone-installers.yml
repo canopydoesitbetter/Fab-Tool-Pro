@@ -9,8 +9,49 @@ on:
       - 'fabrication_pro_capacitor/**'
 
 jobs:
+  browser-regression:
+    name: Browser Regression Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Fabri-Cadabra source and build configuration
+        run: npm run verify
+
+      - name: Run browser regression tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fabri-Cadabra-Playwright-Diagnostics
+          path: |
+            fabrication_pro_capacitor/playwright-report/
+            fabrication_pro_capacitor/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
   android-apk:
     name: Android Permanently Signed APK
+    needs: browser-regression
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -150,6 +191,7 @@ jobs:
 
   ios-unsigned-ipa:
     name: iPhone IPA for SideStore or AltStore
+    needs: browser-regression
     runs-on: macos-15
     defaults:
       run:
