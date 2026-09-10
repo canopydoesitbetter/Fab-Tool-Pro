@@ -52,12 +52,13 @@ test('Sheet Optimizer export/import round trip restores the job and still optimi
   await page.locator('#optimizerSaveJobBtn').click();
 
   const exported = await captureJsonDownload(page, () => page.locator('#optimizerExportJobBtn').click());
-  expect(exported.json).toBeTruthy();
+  expect(exported.json.fabricationOptimizerJob.jobNumber).toBe('E2E-100');
 
   acceptNextDialog(page, 'Clear the current optimizer job');
   await page.locator('#optimizerClearBtn').click();
   await expect(page.locator('#optimizerJobNumber')).toHaveValue('');
 
+  acceptNextDialog(page, 'already exists on this device');
   await page.locator('#optimizerImportFile').setInputFiles(exported.path);
   await expect(page.locator('#optimizerJobNumber')).toHaveValue('E2E-100');
   await page.locator('#optimizerCutListMenuBtn').click();
