@@ -14,19 +14,18 @@ Approved direction for Audit Item #3.
 ## Problem
 `www/ux.js` and `www/ux.css` currently form a second UI implementation layered on top of the canonical app. `ux.js` performs post-render DOM relocation, rewrites Task Logging controls after render, uses a `MutationObserver` to keep those rewrites alive, injects the Settings/Changelog interface dynamically, and binds Notes/Shift Schedule behavior outside the primary application script. This makes the rendered UI depend on two scripts agreeing after load.
 
-Audit Item #3 removes that split ownership. The browser must receive the final approved structure directly from `index.html`; application behavior must bind once from canonical code; final styles must live in the canonical stylesheet. No script should need to repair, relocate, or reinterpret already-rendered controls.
+Audit Item #3 removes that split ownership. The browser must receive the final approved static structure directly from `index.html`; application behavior and dynamic render output must be produced correctly the first time by canonical code; final styles must live in the canonical stylesheet. No script should need to repair, relocate, or reinterpret already-rendered controls.
 
 ## Approved End State
 1. `www/index.html` contains the final static markup for:
    - Task Logging status placement
-   - Task Logging assigned-preset remove controls as rendered by the canonical renderer contract
    - Fabricator Notes Topics button in its final editor position
    - Settings page
    - Shift Schedule settings controls
    - Changelog backdrop/drawer and changelog content
    - Settings navigation entry at the bottom of the Pages drawer
 2. `www/app.js` owns all runtime behavior currently split across `app.js` and `ux.js`:
-   - Task Logging assigned-preset removal behavior
+   - Task Logging assigned-preset renderer semantics and removal behavior
    - Notes Topics drawer behavior
    - Shift Clock presentation and confirmations
    - Shift Schedule settings form behavior
@@ -36,7 +35,7 @@ Audit Item #3 removes that split ownership. The browser must receive the final a
 3. `www/styles.css` owns the approved styles currently in `www/ux.css`.
 4. `www/ux.js` and `www/ux.css` are deleted and removed from `index.html`.
 5. No `MutationObserver` exists for Task Logging repair.
-6. No app-owned element is relocated after initial page render.
+6. No pre-existing app UI control is relocated after initial page render as part of this migrated interface.
 7. Existing visible UI, persistence formats, business logic, navigation semantics, native identity, and import/export formats remain unchanged.
 
 ## Architecture and Ownership
@@ -44,7 +43,7 @@ Audit Item #3 removes that split ownership. The browser must receive the final a
 ### Canonical HTML
 Static controls that always exist are authored directly in `index.html`. This includes Settings and Changelog markup that `ux.js` currently creates with `document.createElement()` / `innerHTML`, and the Notes Topics launcher that is currently moved with `insertBefore()`.
 
-The current Task Logging and Notes status elements are moved in source markup to their intended final locations so there is no `moveStatusOutsideManagement()` runtime pass.
+The current Task Logging and Notes status elements are placed in their intended final source locations so there is no `moveStatusOutsideManagement()` runtime pass.
 
 The Pages drawer contains the Settings footer/button in source markup. Settings becomes a normal tool panel known to the primary navigation system instead of temporarily overriding `getActiveTool()`.
 
@@ -57,7 +56,7 @@ Task Logging's preset renderer directly emits the correct assigned-row remove co
 
 Notes Topics drawer handlers are bound directly against final-source markup. No button relocation is performed.
 
-Shift Clock and Shift Schedule settings UI functions move into the appropriate Shift Schedule section of `app.js`, using the existing `window.FabriCadabraApp.shiftSchedule` engine or, preferably during the merge, direct local function access where possible without changing public behavior. The existing `fabrication:shift-schedule-change` event remains unless removing it is clearly safe and covered by tests.
+Shift Clock and Shift Schedule settings UI functions move into the appropriate Shift Schedule section of `app.js`, using the existing Shift Schedule engine directly where practical without changing its public behavior. The existing `fabrication:shift-schedule-change` event remains unless removing it is clearly safe and covered by tests.
 
 Settings/Changelog handlers reuse the existing shared drawer primitives (`openDrawer`, `closeDrawer`, focus trap, Escape, backdrop, return focus). No second drawer implementation is introduced.
 
@@ -69,7 +68,7 @@ All selectors from `ux.css` that still describe approved UI are merged into `sty
 ## Browser Version Handling
 `sync-app-version.mjs` currently writes a generated `FABRI_CADABRA_VERSION` constant into `ux.js`. Because `ux.js` is deleted, the generated browser-version marker moves to canonical code.
 
-For this audit item, package.json remains the authoritative version source and the existing sync command remains behaviorally equivalent. The generated marker may live in `app.js`; Settings and the current Changelog entry will display that value from canonical markup/behavior. This audit does not attempt the later Audit #9 read-only-verification refactor.
+For this audit item, `package.json` remains the authoritative version source and the existing sync command remains behaviorally equivalent. The generated marker will live in `app.js`; Settings and the current Changelog entry will display that value from canonical markup/behavior. This audit does not attempt the later Audit #9 read-only-verification refactor.
 
 ## Changelog Handling
 The changelog content is static product copy and does not need to be generated as a large JavaScript template at runtime. Move the existing changelog structure into `index.html` so it is present at initial render. `app.js` should only update the current-version display where required and manage drawer behavior.
@@ -110,7 +109,7 @@ Implementation is migration-first and regression-guarded:
 4. Run the full 28-test Playwright suite after `ux.js`/`ux.css` removal.
 5. Confirm no browser console errors caused by missing late-injected elements.
 6. Confirm `MutationObserver` is not used to repair Task Logging behavior.
-7. Confirm no relocation code (`insertBefore`, `after`, `appendChild` used to move existing UI controls after load) remains for the migrated interface.
+7. Confirm no relocation code (`insertBefore`, `after`, or equivalent DOM movement of pre-existing UI controls after load) remains for the migrated interface. Dynamic rendering of rows/results into their intended containers remains allowed.
 8. Stage the exact verified commit to `work` and require Browser Regression Tests, Android, and iOS success.
 9. Verify Android package/version/signing and iOS bundle/version.
 10. Promote that exact staging SHA to `main`, verify the production installer workflow and Pages deployment, then mark Audit Item #3 complete.
@@ -139,9 +138,9 @@ Implementation is migration-first and regression-guarded:
 ## Success Criteria
 Audit Item #3 is complete only when all of the following are true:
 - `www/ux.js` and `www/ux.css` are absent and no longer referenced.
-- Final intended UI exists directly in source markup and canonical render functions.
+- Final intended static UI exists directly in source markup and dynamic controls are rendered correctly by canonical render functions on first render.
 - No Task Logging `MutationObserver` repair exists.
-- No migrated control is relocated after page initialization.
+- No migrated pre-existing UI control is relocated after page initialization.
 - Settings uses normal canonical navigation rather than overriding `getActiveTool()`.
 - All static verification passes.
 - All 28 Playwright browser regression tests pass with the same visible behavior.
