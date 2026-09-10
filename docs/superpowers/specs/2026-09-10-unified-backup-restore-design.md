@@ -235,6 +235,21 @@ The recovery snapshot represents the entire app-owned **persistent** state, not 
 
 Automatic recovery does not preserve a transient unsaved Sheet Optimizer workspace because that workspace is not persistent state. If a Sheet Optimizer import would discard dirty unsaved work, the existing destructive confirmation remains and the UI must make clear that the user should `Save Job` or `Export Job File` first if that unsaved workspace needs to be recoverable.
 
+### Restoring the recovery snapshot
+
+`Restore Last Recovery Snapshot` uses a deliberate swap-style sequence so it cannot destroy the snapshot it is about to restore:
+
+1. read and validate the current `latest` recovery snapshot fully into memory
+2. ask the user to confirm recovery restore
+3. build the current persistent app state as a new recovery payload
+4. replace IndexedDB `latest` with that current-state payload using reason `before-recovery-restore`
+5. apply the previously-read recovery payload through the same validated transaction-style localStorage replacement path used by normal full restore
+6. reload on success
+
+This means the recovery button also leaves an undo point containing the state that existed immediately before the recovery restore.
+
+If the localStorage replacement fails, the in-memory transaction rollback still applies. The newly written IndexedDB recovery record is retained so the user does not lose the pre-recovery-restore state.
+
 ### Snapshot failure behavior
 
 A protected destructive operation must not silently continue if its recovery snapshot cannot be created. The operation stops and reports that automatic recovery protection could not be created, recommending a manual full backup before retrying.
@@ -338,6 +353,7 @@ It must verify at minimum:
 - no use of `localStorage.clear()` in the backup/restore implementation
 - recovery snapshot uses IndexedDB
 - full restore contains prevalidation and rollback paths
+- recovery-snapshot restore reads its source before replacing `latest`
 - Shift restore sanitization exists
 - Task running-timer restore uses the safe finalization path
 
@@ -371,6 +387,7 @@ Add recovery-snapshot coverage:
 3. verify Settings reports a recovery snapshot
 4. invoke `Restore Last Recovery Snapshot`
 5. verify the pre-import persistent app state returns after reload
+6. verify a new `before-recovery-restore` snapshot exists so the recovery restore itself can be undone
 
 Add invalid-backup coverage proving malformed/unsupported files change no persistent state.
 
@@ -409,7 +426,7 @@ Audit #4 is complete only when:
 - saved Sheet Optimizer jobs restore
 - theme and Quick Reference preferences restore
 - automatic recovery snapshots protect destructive imports and full restore
-- a user can restore the latest recovery snapshot from Settings
+- a user can restore the latest recovery snapshot from Settings without destroying the rollback source
 - existing feature-specific import/export tools still work
 - static verification and the full browser regression suite pass
 - staging and production native/web release gates pass on the exact promoted SHA
