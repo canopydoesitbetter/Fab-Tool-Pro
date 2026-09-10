@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root=path.resolve(import.meta.dirname,'..');
-const ux=fs.readFileSync(path.join(root,'www','ux.js'),'utf8');
+const app=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
+const html=fs.readFileSync(path.join(root,'www','index.html'),'utf8');
 
 function expect(condition,message) {
   if (!condition) throw new Error(message);
@@ -11,10 +12,10 @@ function expect(condition,message) {
 function loadSmartTimeCore() {
   const start='// @shift-smart-time-start';
   const end='// @shift-smart-time-end';
-  const from=ux.indexOf(start);
-  const to=ux.indexOf(end);
-  expect(from>=0 && to>from,'Smart Shift time parser markers are missing from ux.js.');
-  const block=ux.slice(from+start.length,to);
+  const from=app.indexOf(start);
+  const to=app.indexOf(end);
+  expect(from>=0 && to>from,'Smart Shift time parser markers are missing from app.js.');
+  const block=app.slice(from+start.length,to);
   return new Function(`${block}\nreturn {normalizeShiftTimeEntry,shiftTimeTo24};`)();
 }
 
@@ -49,8 +50,8 @@ expect(core.shiftTimeTo24('1375','AM')===null,'Impossible time must be rejected.
 expect(core.shiftTimeTo24('730','XX')===null,'Invalid AM/PM value must be rejected.');
 
 for (const id of ['shiftClockInTime','shiftBreakTime','shiftLunchTime','shiftClockOutTime']) {
-  expect(ux.includes(`bindShiftSmartTimeInput(${id})`),`${id} must use smart phone time normalization.`);
+  expect(app.includes(`bindShiftSmartTimeInput(${id})`),`${id} must use smart phone time normalization.`);
 }
-expect(ux.includes('No colon needed.'),'Settings must tell phone users that no colon is needed.');
+expect(html.includes('No colon needed.'),'Settings must tell phone users that no colon is needed.');
 
 console.log('Smart Shift time entry behavior: OK');
