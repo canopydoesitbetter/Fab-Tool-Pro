@@ -52,7 +52,7 @@ jobs:
               raise SystemExit(f'Expected one template regex line, found {len(regex_matches)}')
           lines[regex_matches[0]]=regex_replacement
 
-          guard_replacement=r'''  if (source.includes("www','ux.js") || source.includes("www','ux.css") || source.includes('www/ux.js') || source.includes('www/ux.css')) throw new Error(`${name} still references a retired UX asset.`);'''
+          guard_replacement=r'''  if (source.includes("readFileSync(join(root,'www','ux.js')") || source.includes("readFileSync(join(root,'www','ux.css')") || source.includes("readFileSync(path.join(root,'www','ux.js')") || source.includes("readFileSync(path.join(root,'www','ux.css')")) throw new Error(`${name} still reads a retired UX asset.`);'''
           guard_matches=[i for i,line in enumerate(lines) if 'still references a retired UX asset' in line]
           if len(guard_matches)!=1:
               raise SystemExit(f'Expected one retired-asset guard line, found {len(guard_matches)}')
