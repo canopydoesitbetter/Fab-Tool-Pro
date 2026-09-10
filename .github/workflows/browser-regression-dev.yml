@@ -55,8 +55,8 @@ jobs:
       - name: Run existing verification
         run: npm run verify
 
-      - name: Run Notes and Checklist diagnostic suite
-        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/notes-checklist.spec.mjs --workers=1 --timeout=12000 --retries=0
+      - name: Run calculator and reference diagnostic suite
+        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/tools.spec.mjs --workers=1 --timeout=12000 --retries=0
 
       - name: Upload Playwright diagnostics on failure
         if: failure()
