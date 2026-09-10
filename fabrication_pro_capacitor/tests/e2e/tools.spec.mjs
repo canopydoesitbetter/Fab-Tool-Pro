@@ -53,6 +53,8 @@ test('Quick Reference changes tables, highlights a gauge value, and persists dec
   await gaugeCell.click();
   await expect(gaugeCell).toHaveClass(/\bis-selected\b/);
 
+  await page.locator('#quickReferenceSelect').selectOption('fraction-addition');
+  await expect(page.locator('.quick-ref-display-mode')).toBeVisible();
   const mode = page.locator('#quickReferenceDecimalMode');
   if (!(await mode.isChecked())) await page.locator('label[for="quickReferenceDecimalMode"]').click();
   await expect(mode).toBeChecked();
@@ -60,8 +62,9 @@ test('Quick Reference changes tables, highlights a gauge value, and persists dec
 
   await page.reload();
   await openTool(page, 'Quick Reference', '#tool-reference');
-  await expect(page.locator('#quickReferenceSelect')).toHaveValue('gauge-thickness');
+  await expect(page.locator('#quickReferenceSelect')).toHaveValue('fraction-addition');
   await expect(page.locator('#quickReferenceDecimalMode')).toBeChecked();
+  await expect(page.locator('#quickReferenceDecimalLabel')).toHaveClass(/\bactive\b/);
 });
 
 test('Fastener Spacing returns the known 100 inch fixture', async ({ page }) => {
