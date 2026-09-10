@@ -5,8 +5,7 @@ import vm from 'node:vm';
 const root=process.cwd();
 const index=readFileSync(join(root,'www','index.html'),'utf8');
 const app=readFileSync(join(root,'www','app.js'),'utf8');
-const ux=readFileSync(join(root,'www','ux.js'),'utf8');
-const uxStyles=readFileSync(join(root,'www','ux.css'),'utf8');
+const styles=readFileSync(join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 
 function requireMatch(source,pattern,message) {
@@ -50,9 +49,9 @@ for (const required of [
   if (!app.includes(required)) throw new Error(`Rename interaction contract is missing: ${required}`);
 }
 for (const marker of ['.tasklog-job-title-button','.tasklog-rename-backdrop','.tasklog-rename-dialog','.tasklog-rename-actions']) {
-  if (!uxStyles.includes(marker)) throw new Error(`Missing Task Logging rename style: ${marker}`);
+  if (!styles.includes(marker)) throw new Error(`Missing Task Logging rename style: ${marker}`);
 }
-if (!ux.includes('Job # / Name now opens a dedicated rename overlay')) throw new Error('v1.0.3 changelog must disclose the confirmed job-name rename flow.');
+if (!index.includes('Job # / Name now opens a dedicated rename overlay')) throw new Error('v1.0.3 changelog must disclose the confirmed job-name rename flow.');
 if (!String(pkg.scripts?.['verify:tasklog-job-rename'] || '').includes('verify-tasklog-job-rename.mjs')) throw new Error('package.json must expose verify:tasklog-job-rename.');
 if (!String(pkg.scripts?.verify || '').includes('npm run verify:tasklog-job-rename')) throw new Error('Aggregate npm run verify must include the Task Logging rename regression test.');
 
