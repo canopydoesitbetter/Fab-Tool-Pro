@@ -53,7 +53,8 @@ need(nativeCompat,"typeof document !== 'undefined'",'Native launch presentation 
 need(nativeCompat,"classList.add('is-leaving')",'Native launch presentation fade-out is missing.');
 
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
-if(pkg.version!=='1.0.4')throw new Error(`Expected package version 1.0.4; found ${pkg.version}.`);
+const version=String(pkg.version||'').trim();
+if(!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version))throw new Error(`Invalid package version: ${version||'missing'}.`);
 need(String(pkg.scripts['native:brand']||''),'apply-native-branding.mjs','native:brand script missing.');
 need(String(pkg.scripts['verify:branding-generator']||''),'verify-branding-generator.mjs','branding generator regression script missing.');
 need(String(pkg.scripts['verify:native-branding']||''),'verify-native-branding.mjs','native branding verifier script missing.');
@@ -65,11 +66,11 @@ if(apply.includes("'--assetPath'"))throw new Error('Native branding generator mu
 const init=readFileSync(join(root,'scripts','native-init.mjs'),'utf8');
 need(init,"run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);",'native:init must apply Fabri-Cadabra branding.');
 const ux=readFileSync(join(root,'www','ux.js'),'utf8');
-need(ux,"const FABRI_CADABRA_VERSION='1.0.4';",'Browser version marker must be 1.0.4.');
+need(ux,`const FABRI_CADABRA_VERSION='${version}';`,'Browser version marker must match package.json.');
 need(ux,"data-changelog-version='1.0.3'",'v1.0.3 changelog history must remain.');
 need(ux,'new Fabri-Cadabra launcher icon','v1.0.4 changelog must disclose launcher icon.');
 need(ux,'branded launch screen','v1.0.4 changelog must disclose launch screen.');
 const wf=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
 need(wf,'npm run native:brand -- --android','Android installer must generate branding.');
 need(wf,'npm run native:brand -- --ios','iPhone installer must generate branding.');
-console.log('Fabri-Cadabra v1.0.4 exact native branding contract: OK');
+console.log(`Fabri-Cadabra v${version} exact native branding contract: OK`);
