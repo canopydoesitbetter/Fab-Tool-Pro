@@ -43,7 +43,7 @@ if(sha256(webLaunch)!==sha256(approvedLaunch)) throw new Error('Native launch ov
 const index=readFileSync(join(root,'www','index.html'),'utf8');
 need(index,'id="nativeLaunchScreen"','Native launch screen element is missing.');
 need(index,'src="launch-screen.jpg"','Native launch screen must use the approved launch artwork.');
-const css=readFileSync(join(root,'www','ux.css'),'utf8');
+const css=readFileSync(join(root,'www','styles.css'),'utf8');
 need(css,'.native-launch-screen {','Native launch screen styling is missing.');
 need(css,'object-fit:cover','Native launch artwork must cover the device launch viewport.');
 const nativeCompat=readFileSync(join(root,'www','native-compat.js'),'utf8');
@@ -65,11 +65,11 @@ for(const marker of ['@capacitor/assets@3.0.5',"const stagingPath=join(root,'ass
 if(apply.includes("'--assetPath'"))throw new Error('Native branding generator must not use the ignored --assetPath option.');
 const init=readFileSync(join(root,'scripts','native-init.mjs'),'utf8');
 need(init,"run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);",'native:init must apply Fabri-Cadabra branding.');
-const ux=readFileSync(join(root,'www','ux.js'),'utf8');
-need(ux,`const FABRI_CADABRA_VERSION='${version}';`,'Browser version marker must match package.json.');
-need(ux,"data-changelog-version='1.0.3'",'v1.0.3 changelog history must remain.');
-need(ux,'new Fabri-Cadabra launcher icon','v1.0.4 changelog must disclose launcher icon.');
-need(ux,'branded launch screen','v1.0.4 changelog must disclose launch screen.');
+const app=readFileSync(join(root,'www','app.js'),'utf8');
+need(app,`const FABRI_CADABRA_VERSION='${version}';`,'Browser version marker must match package.json.');
+need(index,"data-changelog-version='1.0.3'",'v1.0.3 changelog history must remain.');
+need(index,'new Fabri-Cadabra launcher icon','v1.0.4 changelog must disclose launcher icon.');
+need(index,'branded launch screen','v1.0.4 changelog must disclose launch screen.');
 const wf=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
 need(wf,'npm run native:brand -- --android','Android installer must generate branding.');
 need(wf,'npm run native:brand -- --ios','iPhone installer must generate branding.');
