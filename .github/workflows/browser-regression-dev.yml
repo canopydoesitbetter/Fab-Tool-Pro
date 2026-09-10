@@ -55,8 +55,8 @@ jobs:
       - name: Run existing verification
         run: npm run verify
 
-      - name: Run browser smoke test
-        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/navigation.spec.mjs
+      - name: Run current browser regression suite
+        run: npm run test:e2e
 
       - name: Upload Playwright diagnostics on failure
         if: failure()
