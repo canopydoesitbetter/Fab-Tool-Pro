@@ -4,7 +4,7 @@
 
 **Goal:** Add a deterministic Playwright browser regression suite that drives the shipped Fabri-Cadabra web app through real DOM interactions and blocks Android/iOS installer publication when critical user journeys fail.
 
-**Architecture:** Playwright serves `fabrication_pro_capacitor/www/` through a dependency-free local Node HTTP server. Desktop Chromium covers the complete approved user journeys; a targeted touch/mobile Chromium project covers responsive navigation, drawers, core interaction usability, and overflow invariants. Existing source/contract verifiers stay intact and run before the new browser gate.
+**Architecture:** Playwright serves `fabrication_pro_capacitor/www/` through a dependency-free local Node HTTP server. Desktop Chromium covers the complete approved user journeys; a targeted touch/mobile Chromium project covers responsive navigation, drawers, core interaction usability, and overflow invariants. Existing source/contract verifiers remain intact and execute before the new browser gate.
 
 **Tech Stack:** Node.js 22, `@playwright/test` 1.63.0, Chromium, GitHub Actions, existing static HTML/CSS/JavaScript/Capacitor app.
 
@@ -13,41 +13,42 @@
 ## Global Constraints
 
 - Keep `com.fabricationpro.app` unchanged.
-- Do not modify native branding, Android signing, timer timestamp architecture, or storage formats.
-- Do not refactor application code simply to make tests easier.
-- Tests must drive visible controls and browser behavior rather than call internal app helpers.
-- Use fresh browser contexts/localStorage isolation for tests.
-- Use Playwright Clock for deterministic time-sensitive browser tests; do not add multi-second/minute sleeps.
-- Keep Chromium as the only browser target in this audit item.
+- Do not alter native branding, Android signing, timer timestamp architecture, or persisted storage formats.
+- Do not refactor application code merely to make tests easier.
+- Drive visible controls and browser behavior; do not call internal app helpers from tests.
+- Use a fresh Playwright browser context per test so localStorage and browser clock state cannot leak.
+- Use Playwright Clock for time-sensitive browser tests; do not use long sleeps.
+- Chromium is the only browser target for this audit item.
 - Preserve all existing `npm run verify` checks.
-- If a browser test exposes a genuine existing user-facing defect, diagnose it separately and make the smallest necessary fix with a failing regression test first.
-- Stage the final implementation on `work`; only promote the exact staging-verified SHA to `main`.
+- Derive the expected displayed app version from `package.json`; do not hard-code a release number into browser tests.
+- If a browser test proves a genuine existing user-facing defect, diagnose it separately and make the smallest necessary fix with a failing regression test first.
+- Stage the final implementation on `work`; promote only the exact staging-verified SHA to `main`.
 
 ## File Responsibility Map
 
 **Create**
-- `fabrication_pro_capacitor/playwright.config.mjs` — Playwright projects, reporters, retries, browser diagnostics, and web-server lifecycle.
+- `fabrication_pro_capacitor/playwright.config.mjs` — Playwright projects, retries, reporters, diagnostics, and web-server lifecycle.
 - `fabrication_pro_capacitor/scripts/serve-e2e.mjs` — dependency-free static server rooted strictly at `www/`.
-- `fabrication_pro_capacitor/tests/e2e/helpers.mjs` — shared navigation, dialog, download, import, and layout helpers.
-- `fabrication_pro_capacitor/tests/e2e/navigation.spec.mjs` — app launch, all pages, Settings, theme, Pages drawer/focus behavior.
-- `fabrication_pro_capacitor/tests/e2e/tasklog-shift.spec.mjs` — Task Logging CRUD/presets/timers/reload recovery, Shift Clock, Task Logging job/preset backups.
+- `fabrication_pro_capacitor/tests/e2e/helpers.mjs` — shared navigation, dialog, download/import, and layout helpers.
+- `fabrication_pro_capacitor/tests/e2e/navigation.spec.mjs` — launch, every page, Settings, theme, Pages drawer/focus behavior.
+- `fabrication_pro_capacitor/tests/e2e/tasklog-shift.spec.mjs` — Task Logging CRUD/presets/timers/reload recovery, Shift Clock, jobs/presets backups.
 - `fabrication_pro_capacitor/tests/e2e/notes-checklist.spec.mjs` — Notes CRUD/formatting/backups and Checklist CRUD/completion/reorder/backups.
-- `fabrication_pro_capacitor/tests/e2e/tools.spec.mjs` — Basic Calculator, Quick Reference, Fastener Spacing, Aluminum Overhang.
-- `fabrication_pro_capacitor/tests/e2e/optimizers.spec.mjs` — Sheet Optimizer and Saw Optimizer runs and backup round trips.
+- `fabrication_pro_capacitor/tests/e2e/tools.spec.mjs` — Calculator, Quick Reference, Fastener Spacing, Aluminum Overhang.
+- `fabrication_pro_capacitor/tests/e2e/optimizers.spec.mjs` — Sheet Optimizer and Saw Optimizer basic runs and backup round trips.
 - `fabrication_pro_capacitor/tests/e2e/mobile.spec.mjs` — mobile viewport/touch/overflow/navigation/drawer/core-flow checks.
 
 **Modify**
 - `fabrication_pro_capacitor/package.json` — Playwright dev dependency and e2e scripts.
-- `fabrication_pro_capacitor/package-lock.json` — regenerate for Playwright and synchronize root package metadata to version 1.0.5.
-- `.gitignore` — ignore Playwright generated `playwright-report/` and `test-results/` directories.
-- `.github/workflows/build-phone-installers.yml` — add browser regression gate and make native jobs depend on it.
-- `fabrication_pro_capacitor/README.md` — concise local browser-test commands/setup.
+- `fabrication_pro_capacitor/package-lock.json` — regenerate for Playwright and synchronize root metadata with package version.
+- `.gitignore` — ignore Playwright output directories.
+- `.github/workflows/build-phone-installers.yml` — add browser regression gate and native dependencies.
+- `fabrication_pro_capacitor/README.md` — concise local browser-test setup/commands.
 
 ---
 
 ## Task 1 — Establish the Playwright Harness and Static Server
 
-- [ ] **1.1 Add the first deliberately failing smoke test** in `tests/e2e/navigation.spec.mjs` before the Playwright config/server exists:
+- [ ] **1.1 Add the first failing smoke test** in `tests/e2e/navigation.spec.mjs` before config/server implementation:
 
 ```js
 import { test, expect } from '@playwright/test';
@@ -56,18 +57,18 @@ test('Fabri-Cadabra launches into Task Logging', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle('Fabri-Cadabra');
   await expect(page.locator('#tool-tasklog')).toHaveClass(/active/);
-  await expect(page.getByRole('heading', { name: 'Task Logging' })).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Task Logging'})).toBeVisible();
 });
 ```
 
-- [ ] **1.2 Add package scripts and Playwright dependency** in `fabrication_pro_capacitor/package.json`:
+- [ ] **1.2 Add package scripts and dependency** to `package.json`:
 
 ```json
 "test:e2e": "playwright test",
 "test:e2e:ui": "playwright test --ui"
 ```
 
-Add exactly:
+and exactly:
 
 ```json
 "@playwright/test": "1.63.0"
@@ -75,17 +76,15 @@ Add exactly:
 
 under `devDependencies`.
 
-- [ ] **1.3 Regenerate `package-lock.json`** from `fabrication_pro_capacitor/` with Node 22/npm, not by hand:
+- [ ] **1.3 Regenerate the lockfile** from `fabrication_pro_capacitor/`:
 
 ```bash
 npm install --package-lock-only
 ```
 
-Verify both root package entries now report `1.0.5` and the exact Playwright dependency is locked.
+Verify root lockfile package metadata matches `package.json` and Playwright is locked at 1.63.0.
 
-- [ ] **1.4 Create `scripts/serve-e2e.mjs`** using only built-in Node modules. Requirements: bind `127.0.0.1:4173`; serve only `www/`; map `/` to `index.html`; decode URL safely; reject traversal outside the resolved `www` root; return 404 for missing files; send appropriate content types for HTML/JS/CSS/JSON/JPG/PNG/SVG/ICO; close cleanly on SIGTERM/SIGINT.
-
-Core server shape:
+- [ ] **1.4 Create `scripts/serve-e2e.mjs`** using only built-in Node modules. It must bind `127.0.0.1:4173`, serve only `www/`, map `/` to `index.html`, reject traversal, return 404 for missing files, set MIME types, and close cleanly on SIGTERM/SIGINT.
 
 ```js
 import { createServer } from 'node:http';
@@ -96,9 +95,26 @@ import { fileURLToPath } from 'node:url';
 const root=resolve(fileURLToPath(new URL('../www/',import.meta.url)));
 const host='127.0.0.1';
 const port=4173;
+const mime=new Map([
+  ['.html','text/html; charset=utf-8'],
+  ['.js','text/javascript; charset=utf-8'],
+  ['.css','text/css; charset=utf-8'],
+  ['.json','application/json; charset=utf-8'],
+  ['.jpg','image/jpeg'],
+  ['.jpeg','image/jpeg'],
+  ['.png','image/png'],
+  ['.svg','image/svg+xml'],
+  ['.ico','image/x-icon']
+]);
 
 const server=createServer((req,res)=>{
-  const pathname=decodeURIComponent(new URL(req.url || '/',`http://${host}:${port}`).pathname);
+  let pathname;
+  try {
+    pathname=decodeURIComponent(new URL(req.url || '/',`http://${host}:${port}`).pathname);
+  } catch {
+    res.writeHead(400).end('Bad request');
+    return;
+  }
   const relative=pathname==='/'?'index.html':pathname.replace(/^\/+/, '');
   const target=resolve(root,relative);
   if (target!==root && !target.startsWith(root+sep)) {
@@ -111,14 +127,17 @@ const server=createServer((req,res)=>{
     res.writeHead(404).end('Not found');
     return;
   }
-  // Set MIME type from extname(target), then pipe createReadStream(target).
+  res.writeHead(200,{'Content-Type':mime.get(extname(target).toLowerCase()) || 'application/octet-stream'});
+  createReadStream(target).pipe(res);
 });
 
 server.listen(port,host);
-for (const signal of ['SIGINT','SIGTERM']) process.on(signal,()=>server.close(()=>process.exit(0)));
+for (const signal of ['SIGINT','SIGTERM']) {
+  process.on(signal,()=>server.close(()=>process.exit(0)));
+}
 ```
 
-- [ ] **1.5 Create `playwright.config.mjs`** with a desktop project and a mobile-tagged project:
+- [ ] **1.5 Create `playwright.config.mjs`**:
 
 ```js
 import { defineConfig } from '@playwright/test';
@@ -149,16 +168,8 @@ export default defineConfig({
     reuseExistingServer:!CI
   },
   projects:[
-    {
-      name:'desktop-chromium',
-      grepInvert:/@mobile/,
-      use:{viewport:{width:1440,height:1000}}
-    },
-    {
-      name:'mobile-chromium',
-      grep:/@mobile/,
-      use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}
-    }
+    {name:'desktop-chromium',grepInvert:/@mobile/,use:{viewport:{width:1440,height:1000}}},
+    {name:'mobile-chromium',grep:/@mobile/,use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}}
   ]
 });
 ```
@@ -170,35 +181,21 @@ fabrication_pro_capacitor/playwright-report/
 fabrication_pro_capacitor/test-results/
 ```
 
-- [ ] **1.7 Install Chromium locally for verification** and run the smoke test:
+- [ ] **1.7 Install Chromium and prove the smoke test**:
 
 ```bash
 npx playwright install chromium
 npm run test:e2e -- --project=desktop-chromium tests/e2e/navigation.spec.mjs
-```
-
-Expected: smoke test passes against the actual `www/` app.
-
-- [ ] **1.8 Run the existing static verification**:
-
-```bash
 npm run verify
 ```
 
-Expected: all existing verifiers still pass.
-
-- [ ] **1.9 Commit the harness** with a focused commit such as:
-
-```bash
-git add fabrication_pro_capacitor/package.json fabrication_pro_capacitor/package-lock.json fabrication_pro_capacitor/playwright.config.mjs fabrication_pro_capacitor/scripts/serve-e2e.mjs fabrication_pro_capacitor/tests/e2e/navigation.spec.mjs .gitignore
-git commit -m "test: add Playwright browser harness"
-```
+- [ ] **1.8 Commit the harness** with a focused commit such as `test: add Playwright browser harness`.
 
 ---
 
 ## Task 2 — Navigation, Settings, Theme, Drawers, and Mobile Layout
 
-- [ ] **2.1 Create shared helpers** in `tests/e2e/helpers.mjs` that operate only through DOM/browser APIs:
+- [ ] **2.1 Create `tests/e2e/helpers.mjs`**:
 
 ```js
 import { expect } from '@playwright/test';
@@ -229,8 +226,8 @@ export async function captureJsonDownload(page,trigger) {
   expect(path).toBeTruthy();
   const raw=await readFile(path,'utf8');
   expect(raw.trim().length).toBeGreaterThan(2);
-  expect(()=>JSON.parse(raw)).not.toThrow();
-  return {download,path,raw,json:JSON.parse(raw)};
+  const json=JSON.parse(raw);
+  return {download,path,raw,json};
 }
 
 export async function expectNoHorizontalOverflow(page,tolerance=1) {
@@ -239,7 +236,7 @@ export async function expectNoHorizontalOverflow(page,tolerance=1) {
 }
 ```
 
-- [ ] **2.2 Expand `navigation.spec.mjs` with failing tests first** for all tool destinations. Iterate the visible labels and assert the corresponding panel is active/visible:
+- [ ] **2.2 Expand `navigation.spec.mjs` with failing tests first** covering these real Pages entries and panels:
 
 ```js
 const tools=[
@@ -255,21 +252,28 @@ const tools=[
 ];
 ```
 
-Also assert the drawer closes after selection.
+For each selection, assert the chosen panel is active/visible and the Pages drawer closes.
 
-- [ ] **2.3 Add Settings coverage** by opening the Pages drawer, clicking its dynamically installed Settings button, asserting `#tool-settings` active and `#settingsVersionValue` equals package version `1.0.5`.
+- [ ] **2.3 Add Settings coverage without hard-coding release version**. Read `package.json` from the Node test process and assert `#settingsVersionValue` equals `pkg.version` after clicking the dynamically installed Settings button.
 
-- [ ] **2.4 Add theme behavior test**: capture initial `document.documentElement.dataset.theme`, click `#themeToggle`, assert opposite theme and changed accessible label, reload, then assert persisted theme remains.
+Example:
 
-- [ ] **2.5 Add Pages drawer focus/accessibility test**: trigger via `#pageMenuBtn`, assert `aria-expanded=true`, drawer `aria-hidden=false`, and close button receives focus; use keyboard Tab/Shift+Tab at the focus boundaries to prove focus remains inside; press Escape and assert drawer closed, attributes restored, and focus returns to `#pageMenuBtn`. Separately cover backdrop and explicit close-button closing.
+```js
+import { readFile } from 'node:fs/promises';
+const pkg=JSON.parse(await readFile(new URL('../../package.json',import.meta.url),'utf8'));
+```
 
-- [ ] **2.6 Add one feature-drawer focus test** using Calculator Guide or Notes Topics to prove generic drawer behavior is wired beyond Pages.
+- [ ] **2.4 Add theme persistence test**: capture `document.documentElement.dataset.theme`, click `#themeToggle`, assert the opposite theme and accessible label, reload, assert the selected theme persists.
 
-- [ ] **2.7 Create `mobile.spec.mjs` tagged `@mobile`**. At `390x844`, verify launch, Pages button usability, drawer navigation, theme toggle, a data-entry flow, and a drawer-heavy interaction. For each relevant state assert page-level horizontal overflow is <=1px.
+- [ ] **2.5 Add Pages drawer focus/accessibility test**: assert trigger `aria-expanded`, drawer `aria-hidden`, focus entering the drawer, Tab/Shift+Tab containment at boundaries, Escape closing, and focus returning to `#pageMenuBtn`. Cover backdrop close and explicit close button separately.
 
-- [ ] **2.8 Add a targeted `360x800` narrow-width test** using `test.use({viewport:{width:360,height:800}})` and assert the document and representative active tool/cards/controls do not exceed the usable viewport width.
+- [ ] **2.6 Add a feature-drawer focus test** using Calculator Guide or Notes Topics so generic drawer behavior is proven outside Pages.
 
-- [ ] **2.9 Run just navigation/mobile tests**, resolve test assumptions rather than changing app behavior unless an actual defect is proven:
+- [ ] **2.7 Create `mobile.spec.mjs` with `@mobile` in every mobile test title**. At `390x844`, verify app launch, Pages navigation, theme toggle, one data-entry flow, one drawer-heavy interaction, and <=1px page-level horizontal overflow.
+
+- [ ] **2.8 Add a targeted `360x800` narrow-width test** with `test.use({viewport:{width:360,height:800}})` and assert document plus representative active cards/controls fit the usable width.
+
+- [ ] **2.9 Run focused coverage**:
 
 ```bash
 npm run test:e2e -- tests/e2e/navigation.spec.mjs tests/e2e/mobile.spec.mjs
@@ -281,29 +285,28 @@ npm run test:e2e -- tests/e2e/navigation.spec.mjs tests/e2e/mobile.spec.mjs
 
 ## Task 3 — Task Logging, Timer Recovery, Shift Clock, and Task Backups
 
-- [ ] **3.1 Add failing Task Logging CRUD tests** in `tasklog-shift.spec.mjs`: click `#taskLogNewJobBtn`; assert `Job 1`; open `#taskLogJobTitle` rename dialog; fill `#taskLogRenameInput`; apply; assert new visible name; delete via `#taskLogDeleteJobBtn` and accept the real confirmation dialog; assert empty state returns.
+- [ ] **3.1 Add failing Task Logging CRUD tests** in `tasklog-shift.spec.mjs`: click `#taskLogNewJobBtn`; assert default `Job 1`; open rename via `#taskLogJobTitle`; fill `#taskLogRenameInput`; apply via `#taskLogRenameApplyBtn`; assert new visible name; delete via `#taskLogDeleteJobBtn`, accept the real confirmation dialog, and assert empty state.
 
-- [ ] **3.2 Add preset assignment/removal tests**: create two presets through `#taskLogPresetName`/`#taskLogAddPresetBtn`; select via `[data-tasklog-select-preset]`; use Select All and `#taskLogAddSelectedPresetsBtn`; assert task rows appear; reopen Preset Tasks drawer and remove an assigned preset via its visible remove control; assert task disappears without deleting the preset library entry.
+- [ ] **3.2 Add preset assignment/removal tests**: create two presets with `#taskLogPresetName`/`#taskLogAddPresetBtn`; select using `[data-tasklog-select-preset]`; use Select All and `#taskLogAddSelectedPresetsBtn`; assert task rows appear; reopen Preset Tasks and remove an assigned task through the real visible remove control; assert the assigned task disappears without deleting the library preset.
 
-- [ ] **3.3 Add timer start/stop test**: create job/preset/task, click the real `[data-tasklog-timer-action="start"]`, use Playwright Clock to advance deterministic elapsed time, assert running banner/time visibly changes, stop through the task button or `#taskLogStopActiveBtn`, and assert accumulated time/session state is visible.
+- [ ] **3.3 Add timer start/stop test**: start through `[data-tasklog-timer-action="start"]`; advance deterministic time with Playwright Clock; assert running banner/time changes; stop through the task button or `#taskLogStopActiveBtn`; assert accumulated time/session state is visible.
 
-- [ ] **3.4 Add timer recovery-after-reload regression**. Install a fixed browser clock before app state is created, start a task, advance the clock, reload the document without clearing localStorage, advance again, and assert the running timer reflects total elapsed time from the persisted absolute start timestamp rather than resetting on reload.
+- [ ] **3.4 Add timer recovery-after-reload regression**: install a fixed Playwright clock before creating state, start a task, advance time, reload without clearing localStorage, advance again, and assert the visible timer reflects total elapsed time from the persisted start timestamp rather than resetting.
 
-- [ ] **3.5 Add one-active-task behavior**: assign two tasks, start first, then start second; assert first stops and second becomes the only running task.
+- [ ] **3.5 Add one-active-task test**: assign two tasks, start the first, then start the second; assert the first stops and only the second is running.
 
-- [ ] **3.6 Add Shift Clock browser wiring tests**: open Settings; verify disabled schedule leaves `#shiftClockBtn` disabled; configure/enable a valid schedule via the actual Settings controls and `#shiftScheduleSaveBtn`; use a fixed Playwright clock aligned to the schedule; return to app/header; accept clock-in confirmation; assert `CLOCK OUT`; accept clock-out confirmation; assert clocked-out state. Keep deeper edge-boundary logic in existing unit/static schedule verifier.
+- [ ] **3.6 Add Shift Clock browser wiring test**: open Settings, confirm disabled schedule means `#shiftClockBtn` disabled, configure/enable a valid schedule using `#shiftScheduleMasterToggle`, day/time controls, and `#shiftScheduleSaveBtn`, align Playwright Clock to the schedule, accept the real clock-in dialog, assert `CLOCK OUT`, accept clock-out, and assert clocked-out state. Do not duplicate pure boundary math already covered by existing shift verifiers.
 
-- [ ] **3.7 Add Task Logging jobs export/import round trip**: create/rename job and task state; export via `#taskLogExportJobsBtn`; parse captured JSON; delete local job using UI; import the downloaded JSON via `#taskLogImportJobsFile.setInputFiles(path)` or the actual file chooser; assert restored visible job/task/time state.
+- [ ] **3.7 Add Task Logging jobs export/import round trip** using `#taskLogExportJobsBtn` and `#taskLogImportJobsFile`: create meaningful job/task state, capture and parse export JSON, delete local job through UI, import the downloaded file through the file input, and assert restored visible state.
 
-- [ ] **3.8 Add presets export/import round trip** similarly using `#taskLogExportPresetsBtn`, `#taskLogImportPresetsBtn`, and `#taskLogImportPresetsFile`; verify presets return independently of jobs.
+- [ ] **3.8 Add presets export/import round trip** using `#taskLogExportPresetsBtn` and `#taskLogImportPresetsFile`; verify presets restore independently from jobs.
 
-- [ ] **3.9 Run this spec repeatedly enough to catch clock/dialog flakiness**:
+- [ ] **3.9 Run focused and repeat checks**:
 
 ```bash
 npm run test:e2e -- --project=desktop-chromium tests/e2e/tasklog-shift.spec.mjs
+npm run test:e2e -- --project=desktop-chromium tests/e2e/tasklog-shift.spec.mjs --repeat-each=2
 ```
-
-Then run once with `--repeat-each=2` before committing.
 
 - [ ] **3.10 Commit Task Logging/Shift coverage**.
 
@@ -311,19 +314,19 @@ Then run once with `--repeat-each=2` before committing.
 
 ## Task 4 — Fabricator Notes and Checklist User Journeys
 
-- [ ] **4.1 Add Notes CRUD test** in `notes-checklist.spec.mjs`: navigate to Fabricator Notes; click `#fabricatorNotesNewBtn`; edit `#fabricatorNotesTitle`; type into `#fabricatorNotesContent`; navigate topics through the real Topics drawer; assert persistence; delete with real confirmation and assert empty state.
+- [ ] **4.1 Add Notes CRUD test** in `notes-checklist.spec.mjs`: navigate to Fabricator Notes; click `#fabricatorNotesNewBtn`; edit `#fabricatorNotesTitle`; type into `#fabricatorNotesContent`; use the real Topics drawer to switch/select; assert persistence; delete via `#fabricatorNotesDeleteBtn` with its real confirmation flow; assert empty state.
 
-- [ ] **4.2 Add Notes formatting test** using the contenteditable and real toolbar buttons `[data-notes-command="bold"]`, `italic`, `underline`. Create/select text through browser keyboard/selection operations, invoke each toolbar control, and assert stored/rendered content contains the expected allowed rich-text element/formatting rather than merely checking button existence.
+- [ ] **4.2 Add Notes formatting test** using the contenteditable and actual `[data-notes-command="bold"]`, `italic`, and `underline` toolbar buttons. Select text with browser keyboard/selection operations, invoke formatting, and assert the rendered/stored content contains the expected allowed rich-text elements rather than merely checking button state.
 
-- [ ] **4.3 Add Notes backup round trip**: create formatted note; capture `#fabricatorNotesExportBtn` download; delete local topic; import through `#fabricatorNotesImportFile`; verify title, text, and formatting restored.
+- [ ] **4.3 Add Notes backup round trip**: create a formatted note; capture `#fabricatorNotesExportBtn`; delete local topic; import through `#fabricatorNotesImportFile`; verify title, text, and formatting restore.
 
-- [ ] **4.4 Add Checklist CRUD/completion test**: create topic via `#checklistNewTopicBtn`; edit `#checklistTitle`; add at least three items through `#checklistNewItem`/`#checklistAddItemBtn`; toggle completion through the actual checkbox/control; assert `#checklistProgressText` changes; uncheck and assert it reverses.
+- [ ] **4.4 Add Checklist CRUD/completion test**: create topic via `#checklistNewTopicBtn`; edit `#checklistTitle`; add at least three items using `#checklistNewItem`/`#checklistAddItemBtn`; complete/uncomplete through real item controls; assert `#checklistProgressText` changes both directions.
 
-- [ ] **4.5 Add Checklist reorder test**: perform the app's actual draggable/touch-compatible reorder interaction on `#checklistItems`; assert visible item order changed and survives a reload. Do not directly mutate storage or dispatch internal reorder functions.
+- [ ] **4.5 Add Checklist reorder test**: perform the app's actual draggable/touch-compatible reorder interaction inside `#checklistItems`; assert visible order changes and survives reload. Never mutate storage or invoke internal reorder functions directly.
 
-- [ ] **4.6 Add Checklist delete and backup round trip**: export through `#checklistExportBtn`; delete topic via `#checklistDeleteTopicBtn`; import through `#checklistImportFile`; verify item order and completion state restore.
+- [ ] **4.6 Add Checklist delete and backup round trip**: capture `#checklistExportBtn`; delete via `#checklistDeleteTopicBtn`; import through `#checklistImportFile`; assert item order and completion state restore.
 
-- [ ] **4.7 Run and repeat the spec**:
+- [ ] **4.7 Run focused spec**:
 
 ```bash
 npm run test:e2e -- --project=desktop-chromium tests/e2e/notes-checklist.spec.mjs
@@ -335,17 +338,17 @@ npm run test:e2e -- --project=desktop-chromium tests/e2e/notes-checklist.spec.mj
 
 ## Task 5 — Calculators and Quick Reference
 
-- [ ] **5.1 Add Basic Calculator test** in `tools.spec.mjs`: navigate to calculator; click digit 7, `+`, digit 5, equals and assert `#calculatorDisplay` is `12`; clear; enter 9 and invoke `sqrt`, assert `3`. Add one keyboard-path assertion (for example typing `8*4` + Enter yields `32`) while Calculator is active.
+- [ ] **5.1 Add Basic Calculator test** in `tools.spec.mjs`: click 7, `+`, 5, `=` and assert `#calculatorDisplay` is `12`; clear, enter 9, click `[data-calc-action="sqrt"]`, assert `3`; additionally prove keyboard input while Calculator is active, e.g. `8*4` + Enter => `32`.
 
-- [ ] **5.2 Add Quick Reference interaction test**: choose `gauge-thickness` or another non-default value through `#quickReferenceSelect`; assert title/badge/table changes; toggle `#quickReferenceDecimalMode`; assert visible table representation changes and preference persists after reload; click/select a real table cell/section and assert its highlighted/selected state becomes visible.
+- [ ] **5.2 Add Quick Reference interaction test**: select a non-default table through `#quickReferenceSelect`; assert title/badge/table update; toggle `#quickReferenceDecimalMode`; assert visible table representation changes and persists after reload; select/highlight a real table cell/section and assert visible selected state.
 
-- [ ] **5.3 Add Fastener Spacing known fixture**: fill `#maxSpacing=24`, `#fastenerLength=100`, click `#fastenerCalculateBtn`; assert 5 spaces, 6 fasteners, and visible 20-inch spacing/locations according to current rendered format.
+- [ ] **5.3 Add Fastener Spacing known fixture**: fill `#maxSpacing` with 24 and `#fastenerLength` with 100; click `#fastenerCalculateBtn`; assert 5 spaces, 6 fasteners, and visible 20-inch spacing/locations in the current rendered format.
 
-- [ ] **5.4 Add Aluminum Overhang known fixture**: fill long side 100 and short side 84, click `#overhangCalculateBtn`; assert non-empty `#longResult`/`#shortResult` and the exact expected visible finished/cut dimensions derived from the current calculator behavior. The expected values belong in the test, not an implementation helper.
+- [ ] **5.4 Add Aluminum Overhang known fixture**: fill `#longSide=100`, `#shortSide=84`, click `#overhangCalculateBtn`; assert non-empty `#longResult` and `#shortResult` plus exact expected visible cut dimensions observed from current correct calculator output. The expected values live in the test, not an app helper.
 
-- [ ] **5.5 Cover Calculator Guide drawer once if it was not already the feature-drawer used by Task 2**, verifying open/close/focus through UI.
+- [ ] **5.5 If Task 2 used Notes Topics as its feature drawer, also exercise Calculator Guide `#calculatorGuideBtn`/`#calculatorGuideDrawer` here for normal open/close behavior.**
 
-- [ ] **5.6 Run the tool spec and existing static feature verifiers**:
+- [ ] **5.6 Run browser and existing feature verification**:
 
 ```bash
 npm run test:e2e -- --project=desktop-chromium tests/e2e/tools.spec.mjs
@@ -358,17 +361,17 @@ npm run verify:features
 
 ## Task 6 — Sheet Optimizer and Saw Optimizer
 
-- [ ] **6.1 Add Sheet Optimizer basic-run test** in `optimizers.spec.mjs`: navigate to Sheet Optimizer; select Exterior Panel; fill label `E2E Panel`, width `22`, height `30`, qty `1`; click `#optimizerAddBtn`; assert the part appears in the Cut List/user-visible job state; click `#optimizerRunBtn`; assert `#optimizerMaterialTotals` and `#optimizerSheets` show a real material/sheet result.
+- [ ] **6.1 Add Sheet Optimizer basic-run test** in `optimizers.spec.mjs`: select Exterior Panel; fill label `E2E Panel`, width `22`, height `30`, qty `1`; click `#optimizerAddBtn`; assert the part appears through the user-visible Cut List/job state; click `#optimizerRunBtn`; assert `#optimizerMaterialTotals` and `#optimizerSheets` show a material/sheet result.
 
-- [ ] **6.2 Add Sheet Optimizer save/export/import round trip**: set a job number, save through `#optimizerSaveJobBtn`, export via `#optimizerExportJobBtn`, capture/validate JSON, clear/delete supported local state through UI, import through `#optimizerImportFile`, then assert job number/part data can be loaded/restored and optimization still runs.
+- [ ] **6.2 Add Sheet Optimizer save/export/import round trip**: set a job number; save through `#optimizerSaveJobBtn`; export with `#optimizerExportJobBtn`; capture/validate JSON; clear/delete supported local state through UI; import through `#optimizerImportFile`; assert job number/part data restore and optimization still runs.
 
-- [ ] **6.3 Inspect the current Saw Optimizer DOM at implementation time** only to resolve its exact existing control IDs; do not add test-only selectors. Create a deterministic one-part or two-part fixture using visible stock-length/part-label/length/quantity controls, run optimization, and assert visible tube/cut/offcut results.
+- [ ] **6.3 Resolve the existing Saw Optimizer selectors from current markup before writing its spec, without modifying markup.** The already-confirmed controls include `#sawCutListMenuBtn`, `#sawExportJobBtn`, `#sawImportJobBtn`, `#sawImportFile`, and `#sawJobFileStatus`. Use the existing visible stock-length, part-label, length, quantity, add, and optimize controls to create a deterministic one- or two-part job; assert visible tube/cut/offcut results. Selector discovery is read-only and must not introduce test-only IDs.
 
-- [ ] **6.4 Add Saw Optimizer export/import round trip** using existing `#sawExportJobBtn`, `#sawImportJobBtn`, `#sawImportFile`, and `#sawJobFileStatus`; verify imported parts and stock settings are restored visibly and can be re-optimized.
+- [ ] **6.4 Add Saw Optimizer export/import round trip**: capture export via `#sawExportJobBtn`, clear supported local job state through UI, import via `#sawImportFile`, verify stock/parts restore visibly, and rerun optimization.
 
-- [ ] **6.5 Assert both optimizer drawers remain usable** after results exist: open Cut List / Part List, verify real content, close normally.
+- [ ] **6.5 Verify both optimizer drawers remain usable after results exist**: Sheet Cut List and Saw Part List open, contain real job content, and close normally.
 
-- [ ] **6.6 Run optimizer spec twice** to detect nondeterministic optimizer/UI timing issues:
+- [ ] **6.6 Run twice for determinism**:
 
 ```bash
 npm run test:e2e -- --project=desktop-chromium tests/e2e/optimizers.spec.mjs --repeat-each=2
@@ -380,7 +383,7 @@ npm run test:e2e -- --project=desktop-chromium tests/e2e/optimizers.spec.mjs --r
 
 ## Task 7 — CI Release Gate, Documentation, Full Verification, and Promotion
 
-- [ ] **7.1 Add a dedicated `browser-regression` job** near the top of `.github/workflows/build-phone-installers.yml`:
+- [ ] **7.1 Add `browser-regression` to `.github/workflows/build-phone-installers.yml`**:
 
 ```yaml
   browser-regression:
@@ -424,7 +427,7 @@ npm run test:e2e -- --project=desktop-chromium tests/e2e/optimizers.spec.mjs --r
           retention-days: 14
 ```
 
-- [ ] **7.2 Make both native jobs depend on the browser gate**:
+- [ ] **7.2 Make native jobs depend on the browser gate**:
 
 ```yaml
   android-apk:
@@ -434,9 +437,9 @@ npm run test:e2e -- --project=desktop-chromium tests/e2e/optimizers.spec.mjs --r
     needs: browser-regression
 ```
 
-Do not remove their existing signing/version/package checks. Native jobs may retain their existing static `npm run verify` for defense-in-depth; they must not rerun `test:e2e`.
+Keep existing native signing/version/package checks unchanged. Native jobs may retain their existing static `npm run verify` defense-in-depth, but must not rerun e2e.
 
-- [ ] **7.3 Update `fabrication_pro_capacitor/README.md`** with concise local instructions:
+- [ ] **7.3 Update `fabrication_pro_capacitor/README.md`** with:
 
 ```bash
 npm ci
@@ -445,9 +448,9 @@ npm run test:e2e
 npm run test:e2e:ui
 ```
 
-Explain in one paragraph that e2e tests serve the shipped `www/` locally and never use production user data.
+Explain briefly that tests serve shipped `www/` locally in isolated browser contexts and never use production user data.
 
-- [ ] **7.4 Run complete local verification from a clean dependency install state**:
+- [ ] **7.4 Run full clean verification**:
 
 ```bash
 rm -rf node_modules
@@ -457,46 +460,44 @@ npm run verify
 npm run test:e2e
 ```
 
-Expected: all static and browser suites pass. Inspect that no generated reports/results are tracked.
+Confirm no generated report/result files are tracked.
 
-- [ ] **7.5 Compare the feature branch against baseline `e1a461b6268d7bac8cf888035ea558e3e0dc66a2`**. Confirm only approved test infrastructure, lockfile/README/workflow, design/plan docs, and any regression-proven minimal app fix are present. Confirm `capacitor.config.json` still has `com.fabricationpro.app`.
+- [ ] **7.5 Compare feature branch against baseline `e1a461b6268d7bac8cf888035ea558e3e0dc66a2`**. Only approved test infrastructure, dependency metadata, workflow/README, design/plan docs, and any regression-proven minimal app fix may differ. Reconfirm `capacitor.config.json` still contains `com.fabricationpro.app`.
 
-- [ ] **7.6 Commit final CI/docs changes** and ensure the feature branch is clean.
+- [ ] **7.6 Commit final CI/docs changes and ensure the feature branch is clean.**
 
-- [ ] **7.7 Advance `work` to the exact feature-branch head SHA**. Do not force unless fast-forward semantics require diagnosis; the expected baseline is shared.
+- [ ] **7.7 Advance `work` to the exact feature-branch head SHA** and let the push-triggered installer workflow run.
 
-- [ ] **7.8 Inspect the staging installer workflow triggered by `work`**. Require all three jobs to succeed: Browser Regression Tests, Android Permanently Signed APK, iPhone IPA for SideStore or AltStore. Inspect browser job logs and failure artifacts if anything fails; fix only the diagnosed cause on the feature branch, rerun local verification, and advance `work` again.
+- [ ] **7.8 Require staging success for all three jobs**: Browser Regression Tests, Android Permanently Signed APK, and iPhone IPA for SideStore or AltStore. Inspect browser logs/diagnostics for failures; fix only diagnosed causes, rerun local verification, and advance `work` again if necessary.
 
-- [ ] **7.9 Verify staging native proofs remain intact**: Android package `com.fabricationpro.app`, versionName `1.0.5`, versionCode `1000005`, permanent signing fingerprint check passes; iOS bundle identifier/version/build all remain correct.
+- [ ] **7.9 Verify staging native proofs remain intact**: Android package `com.fabricationpro.app`, versionName matching `package.json`, deterministic versionCode, permanent signing fingerprint; iOS bundle identifier and version/build matching `package.json`.
 
-- [ ] **7.10 Promote the exact staging-verified SHA to `main`** only after the staging workflow is fully green.
+- [ ] **7.10 Promote the exact staging-verified SHA to `main`** only after staging is fully green.
 
-- [ ] **7.11 Inspect production workflows**. Require the production installer workflow's browser/Android/iOS jobs to succeed and require the GitHub Pages deployment from the same main SHA to succeed.
+- [ ] **7.11 Require production success** for the installer workflow's browser/Android/iOS jobs and the GitHub Pages deployment from the same `main` SHA.
 
-- [ ] **7.12 Record production evidence**: final commit SHA, installer run ID, browser job result, Android artifact ID, iOS artifact ID, Pages run ID, and any browser diagnostic artifact policy confirmation.
+- [ ] **7.12 Record production evidence**: final SHA, installer run ID, browser job result, Android artifact ID, iOS artifact ID, Pages run ID, and Playwright diagnostics policy.
 
-- [ ] **7.13 Update `/mnt/data/Fabri-Cadabra_App_Audit_Fix_Checklist.txt` if that exact sandbox file still exists in the active runtime**, marking audit item #2 complete only after all production gates pass. If the sandbox file is absent, report that fact without inventing a download link.
+- [ ] **7.13 Update `/mnt/data/Fabri-Cadabra_App_Audit_Fix_Checklist.txt` only if that exact sandbox file exists in the active runtime**, marking audit item #2 complete after production gates pass. If it is absent, report that without inventing a link.
 
 ---
 
 ## Final Verification Checklist
 
-- [ ] `npm ci` succeeds with the committed lockfile and root package metadata is `1.0.5`.
-- [ ] `npm run verify` passes unchanged existing regression contracts.
+- [ ] `npm ci` succeeds and lockfile root package metadata matches `package.json`.
+- [ ] `npm run verify` passes all existing static contracts.
 - [ ] `npm run test:e2e` passes desktop and mobile Chromium projects.
-- [ ] All nine tool pages plus Settings are navigated through the real Pages UI.
-- [ ] Task Logging job/preset/timer flows are exercised through the DOM.
-- [ ] Timer recovery is proven over a real reload with persisted state and controlled time.
-- [ ] Shift Clock enable/clock-in/clock-out wiring is exercised through Settings/header controls and real dialogs.
-- [ ] Notes CRUD/formatting/import/export works in browser automation.
-- [ ] Checklist CRUD/completion/reorder/import/export works in browser automation.
+- [ ] Every one of the nine tool pages plus Settings is opened through the real UI.
+- [ ] Task Logging create/edit/delete, preset add/remove, start/stop, one-active-task, and timer reload recovery are browser-tested.
+- [ ] Shift Clock disabled/enabled, clock-in, and clock-out wiring is browser-tested through Settings/header controls and real dialogs.
+- [ ] Notes CRUD, formatting, and import/export are browser-tested.
+- [ ] Checklist CRUD, completion, reorder, and import/export are browser-tested.
 - [ ] Basic Calculator, Quick Reference, Fastener Spacing, and Aluminum Overhang produce verified visible outcomes.
-- [ ] Sheet Optimizer and Saw Optimizer perform basic runs and job-file round trips.
+- [ ] Sheet Optimizer and Saw Optimizer perform basic runs and backup round trips.
 - [ ] Six distinct backup formats have browser-level coverage: Task Logging jobs, Task Logging presets, Notes, Checklist, Sheet Optimizer, Saw Optimizer.
 - [ ] Mobile `390x844` and narrow `360x800` coverage passes without page-level horizontal overflow.
-- [ ] Drawer focus/open/close/return-focus behavior is proven through keyboard/browser interactions.
-- [ ] CI browser job blocks both native jobs on failure and uploads Playwright diagnostics only on failure.
-- [ ] Android signing/version/package verification remains unchanged and green.
-- [ ] iOS version/package verification remains green.
-- [ ] Staging `work` is green before promotion.
+- [ ] Drawer open/close/focus-trap/return-focus behavior is proven through browser keyboard interactions.
+- [ ] CI browser job blocks both native jobs on failure and uploads diagnostics only on failure.
+- [ ] Native Android/iOS version/package/signing verification remains green.
+- [ ] Staging `work` is fully green before promotion.
 - [ ] Production installer and Pages workflows are green from the exact verified commit before audit item #2 is marked complete.
