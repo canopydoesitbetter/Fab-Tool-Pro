@@ -69,6 +69,7 @@ test('Preset drawer assigns multiple tasks and removes an assignment without del
   await page.locator('#taskLogPresetMenuBtn').click();
   const assignedCut = page.locator('.tasklog-preset-row.assigned', { hasText: 'Cut' });
   await expect(assignedCut).toBeVisible();
+  acceptNextDialog(page, 'Remove “Cut” from E2E Job');
   await assignedCut.getByRole('button', { name: 'Remove Cut from this job' }).click();
   await expect(page.locator('.tasklog-task-row', { hasText: 'Cut' })).toHaveCount(0);
   await expect(page.locator('#taskLogPresetList')).toContainText('Cut');
