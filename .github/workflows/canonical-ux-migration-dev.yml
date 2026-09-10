@@ -81,11 +81,39 @@ jobs:
           path.write_text(source.replace(old,new,1))
           PY
 
+      - name: Inspect generated Settings structure
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('www/index.html').read_text()
+          markers={
+              'settings_section': '<section id="tool-settings"',
+              'settings_heading': '<h2>Settings</h2>',
+              'shift_details': "id='shiftScheduleDetails'",
+              'footer': '<div class="footer">Designed by Canopy.</div>',
+              'main_close': '</main>',
+          }
+          for name, marker in markers.items():
+              print(f'{name}: {html.find(marker)}')
+          start=html.find('<section id="tool-settings"')
+          footer=html.find('<div class="footer">Designed by Canopy.</div>')
+          print(f'settings section bytes: {footer-start if start >= 0 and footer >= 0 else -1}')
+          if start >= 0:
+              print('--- SETTINGS PREFIX ---')
+              print(html[start:start+1800])
+              print('--- SETTINGS SUFFIX ---')
+              print(html[max(start, footer-1200):footer+100])
+          PY
+
       - name: Verify canonical source
         run: npm run verify
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Run focused Settings browser diagnostics
+        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/navigation.spec.mjs tests/e2e/tasklog-shift.spec.mjs --grep "Settings remains reachable|Shift Schedule UI enables" --workers=1 --timeout=10000
 
       - name: Run targeted migrated UI tests
         run: npm run test:e2e -- --project=desktop-chromium tests/e2e/navigation.spec.mjs tests/e2e/tasklog-shift.spec.mjs tests/e2e/notes-checklist.spec.mjs
