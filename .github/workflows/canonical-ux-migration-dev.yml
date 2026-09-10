@@ -45,11 +45,19 @@ jobs:
           from pathlib import Path
           path=Path('scripts/migrate-canonical-ux.mjs')
           lines=path.read_text().splitlines()
-          replacement="  const re=new RegExp('function\\\\s+'+name+'\\\\(\\\\)\\\\s*\\\\{\\\\s*return `([\\\\s\\\\S]*?)`;\\\\s*\\\\}');"
-          matches=[i for i,line in enumerate(lines) if line.strip().startswith('const re=new RegExp(`function\\\\s+')]
-          if len(matches)!=1:
-              raise SystemExit(f'Expected one template regex line, found {len(matches)}')
-          lines[matches[0]]=replacement
+
+          regex_replacement="  const re=new RegExp('function\\\\s+'+name+'\\\\(\\\\)\\\\s*\\\\{\\\\s*return `([\\\\s\\\\S]*?)`;\\\\s*\\\\}');"
+          regex_matches=[i for i,line in enumerate(lines) if line.strip().startswith('const re=new RegExp(`function\\\\s+')]
+          if len(regex_matches)!=1:
+              raise SystemExit(f'Expected one template regex line, found {len(regex_matches)}')
+          lines[regex_matches[0]]=regex_replacement
+
+          guard_replacement=r'''  if (source.includes("www','ux.js") || source.includes("www','ux.css") || source.includes('www/ux.js') || source.includes('www/ux.css')) throw new Error(`${name} still references a retired UX asset.`);'''
+          guard_matches=[i for i,line in enumerate(lines) if 'still references a retired UX asset' in line]
+          if len(guard_matches)!=1:
+              raise SystemExit(f'Expected one retired-asset guard line, found {len(guard_matches)}')
+          lines[guard_matches[0]]=guard_replacement
+
           path.write_text('\n'.join(lines)+'\n')
           PY
 
