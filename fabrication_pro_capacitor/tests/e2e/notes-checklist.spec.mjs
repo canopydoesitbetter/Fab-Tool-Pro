@@ -33,8 +33,16 @@ async function createChecklist(page, title, items) {
   }
 }
 
-function checklistRow(page, text) {
-  return page.locator('.checklist-item', { hasText: text });
+function checklistCheckbox(page, item, checked = false) {
+  return page.getByRole('checkbox', { name: `${checked ? 'Mark incomplete' : 'Mark complete'}: ${item}` });
+}
+
+function checklistDragHandle(page, item) {
+  return page.getByRole('button', { name: new RegExp(`^Reorder checklist item: ${item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.`) });
+}
+
+function checklistItemInput(page, index) {
+  return page.locator('.checklist-item-text').nth(index);
 }
 
 test('Fabricator Notes creates, edits, switches topics, and deletes through visible controls', async ({ page }) => {
@@ -81,7 +89,7 @@ test('Fabricator Notes formatting and export/import round trip preserve rich tex
   expect(html).toMatch(/<u>/i);
 
   const exported = await captureJsonDownload(page, () => page.locator('#fabricatorNotesExportBtn').click());
-  expect(exported.json.topics).toHaveLength(1);
+  expect(exported.json.fabricatorNotes.topics).toHaveLength(1);
 
   acceptNextDialog(page, 'Delete the topic');
   await page.locator('#fabricatorNotesDeleteBtn').click();
@@ -100,22 +108,24 @@ test('Checklist creates, edits, completes, reorders, persists, and deletes items
   await openChecklist(page);
   await createChecklist(page, 'Final Inspection', ['First item', 'Second item', 'Third item']);
   await expect(page.locator('#checklistProgressText')).toHaveText('0 of 3 complete');
+  await expect(checklistItemInput(page, 0)).toHaveValue('First item');
+  await expect(checklistItemInput(page, 1)).toHaveValue('Second item');
+  await expect(checklistItemInput(page, 2)).toHaveValue('Third item');
 
-  const first = checklistRow(page, 'First item');
-  await first.locator('.checklist-box').check();
+  await checklistCheckbox(page, 'First item').check();
   await expect(page.locator('#checklistProgressText')).toHaveText('1 of 3 complete');
-  await first.locator('.checklist-box').uncheck();
+  await checklistCheckbox(page, 'First item', true).uncheck();
   await expect(page.locator('#checklistProgressText')).toHaveText('0 of 3 complete');
 
-  await first.locator('[data-checklist-drag-id]').focus();
+  await checklistDragHandle(page, 'First item').focus();
   await page.keyboard.press('End');
-  await expect(page.locator('.checklist-item').nth(2)).toContainText('First item');
+  await expect(checklistItemInput(page, 2)).toHaveValue('First item');
 
   await page.reload();
   await openTool(page, 'Checklist', '#tool-checklist');
   await expect(page.locator('#checklistTitle')).toHaveValue('Final Inspection');
-  await expect(page.locator('.checklist-item').nth(0)).toContainText('Second item');
-  await expect(page.locator('.checklist-item').nth(2)).toContainText('First item');
+  await expect(checklistItemInput(page, 0)).toHaveValue('Second item');
+  await expect(checklistItemInput(page, 2)).toHaveValue('First item');
 
   acceptNextDialog(page, 'Delete the checklist');
   await page.locator('#checklistDeleteTopicBtn').click();
@@ -126,13 +136,13 @@ test('Checklist creates, edits, completes, reorders, persists, and deletes items
 test('Checklist export/import round trip restores order and completion state', async ({ page }) => {
   await openChecklist(page);
   await createChecklist(page, 'Portable Checklist', ['Alpha', 'Beta', 'Gamma']);
-  await checklistRow(page, 'Beta').locator('.checklist-box').check();
-  await checklistRow(page, 'Alpha').locator('[data-checklist-drag-id]').focus();
+  await checklistCheckbox(page, 'Beta').check();
+  await checklistDragHandle(page, 'Alpha').focus();
   await page.keyboard.press('End');
   await expect(page.locator('#checklistProgressText')).toHaveText('1 of 3 complete');
 
   const exported = await captureJsonDownload(page, () => page.locator('#checklistExportBtn').click());
-  expect(exported.json.topics).toHaveLength(1);
+  expect(exported.json.fabricationChecklist.topics).toHaveLength(1);
 
   acceptNextDialog(page, 'Delete the checklist');
   await page.locator('#checklistDeleteTopicBtn').click();
@@ -140,7 +150,7 @@ test('Checklist export/import round trip restores order and completion state', a
 
   await expect(page.locator('#checklistTitle')).toHaveValue('Portable Checklist');
   await expect(page.locator('#checklistProgressText')).toHaveText('1 of 3 complete');
-  await expect(page.locator('.checklist-item').nth(0)).toContainText('Beta');
-  await expect(page.locator('.checklist-item').nth(2)).toContainText('Alpha');
-  await expect(checklistRow(page, 'Beta').locator('.checklist-box')).toBeChecked();
+  await expect(checklistItemInput(page, 0)).toHaveValue('Beta');
+  await expect(checklistItemInput(page, 2)).toHaveValue('Alpha');
+  await expect(checklistCheckbox(page, 'Beta', true)).toBeChecked();
 });
