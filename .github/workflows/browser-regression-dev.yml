@@ -55,8 +55,8 @@ jobs:
       - name: Run existing verification
         run: npm run verify
 
-      - name: Run Task Logging diagnostic suite
-        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/tasklog-shift.spec.mjs --workers=1 --timeout=10000
+      - name: Run Notes and Checklist diagnostic suite
+        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/notes-checklist.spec.mjs --workers=1 --timeout=12000 --retries=0
 
       - name: Upload Playwright diagnostics on failure
         if: failure()
