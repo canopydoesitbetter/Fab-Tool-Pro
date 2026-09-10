@@ -67,6 +67,20 @@ jobs:
       - name: Apply canonical UX migration
         run: node scripts/migrate-canonical-ux.mjs
 
+      - name: Align Shift verifier with static markup ownership
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('scripts/verify-shift-schedule.mjs')
+          source=path.read_text()
+          old="expect(app.includes('Length in minutes'),'Break/Lunch duration labels are missing.');"
+          new="expect(html.includes('Length in minutes'),'Break/Lunch duration labels are missing.');"
+          if old not in source:
+              raise SystemExit('Expected migrated Shift duration assertion was not found.')
+          path.write_text(source.replace(old,new,1))
+          PY
+
       - name: Verify canonical source
         run: npm run verify
 
