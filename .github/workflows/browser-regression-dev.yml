@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/browser-regression-dev.yml'
       - 'fabrication_pro_capacitor/**'
+      - '.github/workflows/build-phone-installers.yml'
 
 permissions:
   contents: write
@@ -55,8 +56,8 @@ jobs:
       - name: Run existing verification
         run: npm run verify
 
-      - name: Run optimizer diagnostic suite twice
-        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/optimizers.spec.mjs --workers=1 --timeout=15000 --retries=0 --repeat-each=2
+      - name: Run full browser regression suite
+        run: npm run test:e2e
 
       - name: Upload Playwright diagnostics on failure
         if: failure()
