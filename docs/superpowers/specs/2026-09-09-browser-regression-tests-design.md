@@ -71,6 +71,8 @@ Verify Task Logging entirely through visible controls:
 - Confirm elapsed time is recorded and visible.
 - Start a timer, advance browser time through Playwright Clock, reload the page, and verify the running timer recovers from persisted timestamps rather than resetting.
 - Verify one-active-task behavior where applicable.
+- Export Task Logging jobs through the real browser download path and import the exported file back through the real file input.
+- Export the preset library separately and import it back separately, proving the two backup formats remain independent at the UI level.
 
 Verify Shift Clock behavior through the real Settings/schedule UI and header control:
 
@@ -104,7 +106,7 @@ Checklist:
 - Delete a topic.
 - Verify checklist export/import round trip.
 
-Portable data tests should cover representative import/export behavior rather than redundantly test every identical serialization helper. Feature-specific formats that have materially different behavior, including Task Logging jobs/presets and Notes/Checklist backups, should each receive browser coverage.
+Portable data tests should cover the materially different user-facing backup formats: Task Logging jobs, Task Logging presets, Fabricator Notes, Checklist, Sheet Optimizer jobs, and Saw Optimizer jobs. The suite should avoid redundant low-level serialization assertions because those belong in the existing contract tests.
 
 ### 4. Calculators, Reference, and Optimizers
 
@@ -117,7 +119,9 @@ Verify at minimum:
 - Basic Calculator performs representative arithmetic and at least one non-basic operation.
 - Quick Reference changes table selection, toggles fraction/decimal display, and supports selectable/highlightable table interaction.
 - Sheet Optimizer can add a small valid part set, run optimization, and show material/sheet results.
+- Sheet Optimizer can export the current job, clear/remove the local job state through supported UI, import the exported job, and restore the expected visible parts/job state.
 - Saw Optimizer can add a small valid part set, run optimization, and show tube/cut results.
+- Saw Optimizer can export the current job, clear/remove the local job state through supported UI, import the exported job, and restore the expected visible parts/job state.
 
 These tests validate user-visible outcomes, not internal helper names or source markers.
 
@@ -125,15 +129,17 @@ These tests validate user-visible outcomes, not internal helper names or source 
 
 Add a phone-sized Chromium project/context with touch enabled. It is not a second exhaustive copy of the desktop suite.
 
+Primary mobile viewport: `390x844` CSS pixels with touch enabled. Add targeted narrow-width layout assertions at `360x800` CSS pixels for overflow-sensitive pages.
+
 Verify:
 
-- App launches without horizontal page-level overflow at the tested viewport.
+- App launches without horizontal page-level overflow at both tested widths.
 - Header/Page navigation controls remain usable.
 - Pages drawer opens and closes correctly.
 - Representative core flows remain operable on mobile: page navigation, one data-entry flow, theme toggle, and one drawer-heavy interaction.
 - Major cards, controls, and result areas remain inside the usable viewport width.
 
-The initial viewport should represent a common modern phone size. Tests should assert layout invariants rather than pixel-perfect screenshots so harmless visual changes do not create noise.
+Tests should assert layout invariants rather than pixel-perfect screenshots so harmless visual changes do not create noise.
 
 ## Time Control and Determinism
 
@@ -145,7 +151,7 @@ Browser dialogs such as `window.confirm()` will be accepted or dismissed intenti
 
 ## Import/Export Strategy
 
-Downloads must be captured with Playwright's download APIs and verified to produce a non-empty JSON file. Where practical, import/export testing should be a round trip:
+Downloads must be captured with Playwright's download APIs and verified to produce a non-empty JSON file. Primary happy-path tests will use round trips for each materially different backup format in scope:
 
 1. Create data through the UI.
 2. Export through the UI.
