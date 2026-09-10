@@ -45,6 +45,12 @@ function checklistItemInput(page, index) {
   return page.locator('.checklist-item-text').nth(index);
 }
 
+async function setChecklistComplete(page, item, complete) {
+  const current = checklistCheckbox(page, item, !complete);
+  await current.click();
+  await expect(checklistCheckbox(page, item, complete)).toBeChecked({ checked: complete });
+}
+
 test('Fabricator Notes creates, edits, switches topics, and deletes through visible controls', async ({ page }) => {
   await openNotes(page);
   await createNote(page, 'Door Setup', 'Hinge measurements');
@@ -112,9 +118,9 @@ test('Checklist creates, edits, completes, reorders, persists, and deletes items
   await expect(checklistItemInput(page, 1)).toHaveValue('Second item');
   await expect(checklistItemInput(page, 2)).toHaveValue('Third item');
 
-  await checklistCheckbox(page, 'First item').check();
+  await setChecklistComplete(page, 'First item', true);
   await expect(page.locator('#checklistProgressText')).toHaveText('1 of 3 complete');
-  await checklistCheckbox(page, 'First item', true).uncheck();
+  await setChecklistComplete(page, 'First item', false);
   await expect(page.locator('#checklistProgressText')).toHaveText('0 of 3 complete');
 
   await checklistDragHandle(page, 'First item').focus();
@@ -136,7 +142,7 @@ test('Checklist creates, edits, completes, reorders, persists, and deletes items
 test('Checklist export/import round trip restores order and completion state', async ({ page }) => {
   await openChecklist(page);
   await createChecklist(page, 'Portable Checklist', ['Alpha', 'Beta', 'Gamma']);
-  await checklistCheckbox(page, 'Beta').check();
+  await setChecklistComplete(page, 'Beta', true);
   await checklistDragHandle(page, 'Alpha').focus();
   await page.keyboard.press('End');
   await expect(page.locator('#checklistProgressText')).toHaveText('1 of 3 complete');
