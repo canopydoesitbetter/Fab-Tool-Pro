@@ -40,6 +40,7 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          npm run sync:version
           npm run native:brand -- --android
 
       - name: Verify Android launcher name
@@ -91,12 +92,31 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      - name: Verify signing identity and package APK
+      - name: Verify signing identity, version, and package APK
         run: |
           set -euo pipefail
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk dist/Fabri-Cadabra-Android.apk
           sha256sum dist/Fabri-Cadabra-Android.apk > dist/Fabri-Cadabra-Android.apk.sha256
+
+          EXPECTED_VERSION="$(node -p "require('./package.json').version")"
+          EXPECTED_VERSION_CODE="$(node --input-type=module -e "import { androidVersionCode } from './scripts/app-version.mjs'; import { readFileSync } from 'node:fs'; const pkg=JSON.parse(readFileSync('package.json','utf8')); console.log(androidVersionCode(pkg.version));")"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          if [ -z "$AAPT" ]; then
+            echo "::error::Android SDK aapt was not found."
+            exit 1
+          fi
+          PACKAGE_LINE="$("$AAPT" dump badging dist/Fabri-Cadabra-Android.apk | head -n 1)"
+          ACTUAL_PACKAGE="$(printf '%s\n' "$PACKAGE_LINE" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
+          ACTUAL_VERSION_CODE="$(printf '%s\n' "$PACKAGE_LINE" | sed -n "s/.* versionCode='\([^']*\)'.*/\1/p")"
+          ACTUAL_VERSION="$(printf '%s\n' "$PACKAGE_LINE" | sed -n "s/.* versionName='\([^']*\)'.*/\1/p")"
+          if [ "$ACTUAL_PACKAGE" != 'com.fabricationpro.app' ] || [ "$ACTUAL_VERSION" != "$EXPECTED_VERSION" ] || [ "$ACTUAL_VERSION_CODE" != "$EXPECTED_VERSION_CODE" ]; then
+            echo "::error::Finished APK metadata does not match the Fabri-Cadabra release contract."
+            echo "Expected: package=com.fabricationpro.app versionName=$EXPECTED_VERSION versionCode=$EXPECTED_VERSION_CODE"
+            echo "Actual:   package=${ACTUAL_PACKAGE:-unavailable} versionName=${ACTUAL_VERSION:-unavailable} versionCode=${ACTUAL_VERSION_CODE:-unavailable}"
+            exit 1
+          fi
+          printf 'package=%s\nversionName=%s\nversionCode=%s\n' "$ACTUAL_PACKAGE" "$ACTUAL_VERSION" "$ACTUAL_VERSION_CODE" | tee dist/Fabri-Cadabra-Android-version.txt
 
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           if [ -z "$APKSIGNER" ]; then
@@ -123,6 +143,7 @@ jobs:
           path: |
             fabrication_pro_capacitor/dist/Fabri-Cadabra-Android.apk
             fabrication_pro_capacitor/dist/Fabri-Cadabra-Android.apk.sha256
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-Android-version.txt
             fabrication_pro_capacitor/dist/Fabri-Cadabra-Android-signing.txt
           if-no-files-found: error
           retention-days: 30
@@ -152,6 +173,7 @@ jobs:
         run: |
           npx cap add ios
           npx cap sync ios
+          npm run sync:version
           npm run native:brand -- --ios
 
       - name: Verify iOS display name
@@ -179,7 +201,7 @@ jobs:
             DEVELOPMENT_TEAM="" \
             build
 
-      - name: Package unsigned IPA
+      - name: Package and verify unsigned IPA
         run: |
           set -euxo pipefail
           APP_PATH="$PWD/build/ios/Build/Products/Release-iphoneos/App.app"
@@ -191,6 +213,20 @@ jobs:
           rm -rf Payload
           shasum -a 256 Fabri-Cadabra-iPhone-Unsigned.ipa > Fabri-Cadabra-iPhone-Unsigned.ipa.sha256
 
+          EXPECTED_VERSION="$(node -p "require('../package.json').version")"
+          INFO_PLIST="$RUNNER_TEMP/Fabri-Cadabra-Info.plist"
+          unzip -p Fabri-Cadabra-iPhone-Unsigned.ipa 'Payload/Fabri-Cadabra.app/Info.plist' > "$INFO_PLIST"
+          ACTUAL_PACKAGE="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST")"
+          ACTUAL_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST")"
+          ACTUAL_BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO_PLIST")"
+          if [ "$ACTUAL_PACKAGE" != 'com.fabricationpro.app' ] || [ "$ACTUAL_VERSION" != "$EXPECTED_VERSION" ] || [ "$ACTUAL_BUILD" != "$EXPECTED_VERSION" ]; then
+            echo "::error::Finished IPA metadata does not match the Fabri-Cadabra release contract."
+            echo "Expected: bundle=com.fabricationpro.app version=$EXPECTED_VERSION build=$EXPECTED_VERSION"
+            echo "Actual:   bundle=${ACTUAL_PACKAGE:-unavailable} version=${ACTUAL_VERSION:-unavailable} build=${ACTUAL_BUILD:-unavailable}"
+            exit 1
+          fi
+          printf 'bundleIdentifier=%s\nCFBundleShortVersionString=%s\nCFBundleVersion=%s\n' "$ACTUAL_PACKAGE" "$ACTUAL_VERSION" "$ACTUAL_BUILD" | tee Fabri-Cadabra-iPhone-Unsigned-version.txt
+
       - name: Upload iPhone IPA
         uses: actions/upload-artifact@v4
         with:
@@ -198,5 +234,6 @@ jobs:
           path: |
             fabrication_pro_capacitor/dist/Fabri-Cadabra-iPhone-Unsigned.ipa
             fabrication_pro_capacitor/dist/Fabri-Cadabra-iPhone-Unsigned.ipa.sha256
+            fabrication_pro_capacitor/dist/Fabri-Cadabra-iPhone-Unsigned-version.txt
           if-no-files-found: error
           retention-days: 30
