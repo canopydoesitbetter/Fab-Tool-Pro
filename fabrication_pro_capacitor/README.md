@@ -62,6 +62,26 @@ npm run verify
 
 The verification suite checks the canonical source structure, JavaScript syntax, protected persistence/import/export contracts, native Blob export byte preservation, iOS privacy configuration, and Android permanent-signing workflow configuration.
 
+### Browser regression tests
+
+The Playwright regression suite drives the shipped `www/` application through real Chromium DOM interactions, including desktop and mobile viewports, navigation, drawers, Task Logging timers, Shift Clock, Notes, Checklist, calculators, Quick Reference, and both optimizers. The tests serve `www/` from a local test server and run in isolated browser contexts; they do not connect to or reuse production user data.
+
+For a clean local browser-test setup:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:e2e
+```
+
+To open Playwright's interactive test UI during development:
+
+```bash
+npm run test:e2e:ui
+```
+
+The installer workflow runs the browser suite as a release gate before either Android or iOS packaging begins. Playwright traces, screenshots, videos, and the HTML report are retained as diagnostics only when that CI gate fails.
+
 ## Phone-installable builds
 
 `.github/workflows/build-phone-installers.yml` produces:
