@@ -35,7 +35,9 @@
     "native:brand": "node scripts/apply-native-branding.mjs",
     "verify:branding-generator": "node scripts/verify-branding-generator.mjs",
     "verify:android-full-splash": "node scripts/verify-android-full-splash.mjs",
-    "verify:native-branding": "node scripts/verify-native-branding.mjs"
+    "verify:native-branding": "node scripts/verify-native-branding.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@capacitor/android": "8.5.0",
@@ -45,6 +47,7 @@
     "@capacitor/share": "8.0.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "8.5.0"
+    "@capacitor/cli": "8.5.0",
+    "@playwright/test": "1.63.0"
   }
 }
