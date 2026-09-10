@@ -50,18 +50,24 @@ export async function expectNoHorizontalOverflow(page, tolerance = 1) {
 }
 
 export async function expectWithinViewport(page, selector, tolerance = 1) {
-  const result = await page.locator(selector).evaluate((element, extra) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      left: rect.left,
-      right: rect.right,
-      width: rect.width,
-      viewport: document.documentElement.clientWidth,
-      tolerance: extra,
-    };
+  const results = await page.locator(selector).evaluateAll((elements, extra) => {
+    const viewport = document.documentElement.clientWidth;
+    return elements.map(element => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        viewport,
+        tolerance: extra,
+      };
+    });
   }, tolerance);
-  expect(result.left).toBeGreaterThanOrEqual(-tolerance);
-  expect(result.right).toBeLessThanOrEqual(result.viewport + tolerance);
+  expect(results.length).toBeGreaterThan(0);
+  for (const result of results) {
+    expect(result.left).toBeGreaterThanOrEqual(-tolerance);
+    expect(result.right).toBeLessThanOrEqual(result.viewport + tolerance);
+  }
 }
 
 export async function appPackageVersion() {
