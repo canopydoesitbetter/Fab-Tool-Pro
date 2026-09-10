@@ -3,6 +3,8 @@ fabrication_pro_capacitor/android/
 fabrication_pro_capacitor/ios/
 fabrication_pro_capacitor/build/
 fabrication_pro_capacitor/dist/
+fabrication_pro_capacitor/playwright-report/
+fabrication_pro_capacitor/test-results/
 *.jks
 *.keystore
 *.p12
