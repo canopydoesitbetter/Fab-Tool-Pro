@@ -1,0 +1,81 @@
+name: Canonical UX Migration Dev Verification
+
+on:
+  push:
+    branches:
+      - refactor/remove-runtime-ux-patch
+    paths:
+      - 'fabrication_pro_capacitor/**'
+      - '.github/workflows/canonical-ux-migration-dev.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canonical-ux-migration-dev
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: refactor/remove-runtime-ux-patch
+          fetch-depth: 0
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax-check migration script
+        run: node --check scripts/migrate-canonical-ux.mjs
+
+      - name: Apply canonical UX migration
+        run: node scripts/migrate-canonical-ux.mjs
+
+      - name: Verify canonical source
+        run: npm run verify
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run targeted migrated UI tests
+        run: npm run test:e2e -- --project=desktop-chromium tests/e2e/navigation.spec.mjs tests/e2e/tasklog-shift.spec.mjs tests/e2e/notes-checklist.spec.mjs
+
+      - name: Run full browser regression suite
+        run: npm run test:e2e
+
+      - name: Commit verified migration
+        shell: bash
+        run: |
+          if git diff --quiet -- www scripts; then
+            echo 'No migration changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add www scripts
+          git commit -m 'refactor: remove runtime UX patch architecture'
+          git push origin HEAD:refactor/remove-runtime-ux-patch
+
+      - name: Upload Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Canonical-UX-Playwright-Diagnostics
+          path: |
+            fabrication_pro_capacitor/playwright-report/
+            fabrication_pro_capacitor/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
