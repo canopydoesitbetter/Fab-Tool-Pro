@@ -17,8 +17,8 @@ need(androidVersionCode('2.0.0')===2000000,'Android versionCode mapping for 2.0.
 const config=JSON.parse(readFileSync(join(root,'capacitor.config.json'),'utf8'));
 need(config.appId==='com.fabricationpro.app','Capacitor app ID must remain com.fabricationpro.app.');
 
-const ux=readFileSync(join(root,'www','ux.js'),'utf8');
-need(ux.includes(`const FABRI_CADABRA_VERSION='${version}'; // @generated from package.json by scripts/sync-app-version.mjs`),'Browser version marker must match package.json.');
+const app=readFileSync(join(root,'www','app.js'),'utf8');
+need(app.includes(`const FABRI_CADABRA_VERSION='${version}'; // @generated from package.json by scripts/sync-app-version.mjs`),'Browser version marker must match package.json.');
 
 const fixture=mkdtempSync(join(tmpdir(),'fabri-cadabra-version-'));
 try {
@@ -29,14 +29,14 @@ try {
   cpSync(join(root,'scripts','app-version.mjs'),join(fixture,'scripts','app-version.mjs'));
   cpSync(join(root,'scripts','sync-app-version.mjs'),join(fixture,'scripts','sync-app-version.mjs'));
   writeFileSync(join(fixture,'package.json'),JSON.stringify({version},null,2));
-  writeFileSync(join(fixture,'www','ux.js'),"const FABRI_CADABRA_VERSION='0.0.0'; // @generated from package.json by scripts/sync-app-version.mjs\n");
+  writeFileSync(join(fixture,'www','app.js'),"const FABRI_CADABRA_VERSION='0.0.0'; // @generated from package.json by scripts/sync-app-version.mjs\n");
   writeFileSync(join(fixture,'android','app','build.gradle'),'android {\n  defaultConfig {\n    applicationId "com.fabricationpro.app"\n    versionCode 1\n    versionName "1.0"\n  }\n}\n');
   writeFileSync(join(fixture,'ios','App','App.xcodeproj','project.pbxproj'),'CURRENT_PROJECT_VERSION = 1;\nMARKETING_VERSION = 1.0;\nCURRENT_PROJECT_VERSION = 1;\nMARKETING_VERSION = 1.0;\n');
 
   const result=spawnSync(process.execPath,[join(fixture,'scripts','sync-app-version.mjs')],{cwd:fixture,encoding:'utf8'});
   need(result.status===0,`sync-app-version fixture failed: ${result.stderr || result.stdout}`);
-  const fixtureUx=readFileSync(join(fixture,'www','ux.js'),'utf8');
-  need(fixtureUx.includes(`FABRI_CADABRA_VERSION='${version}'`),'Browser fixture version was not synchronized.');
+  const fixtureApp=readFileSync(join(fixture,'www','app.js'),'utf8');
+  need(fixtureApp.includes(`FABRI_CADABRA_VERSION='${version}'`),'Browser fixture version was not synchronized.');
   const gradle=readFileSync(join(fixture,'android','app','build.gradle'),'utf8');
   need(new RegExp(`versionCode\\s+${expectedCode}\\b`).test(gradle),`Android fixture versionCode must be ${expectedCode}.`);
   need(gradle.includes(`versionName "${version}"`),`Android fixture versionName must be ${version}.`);

@@ -27,7 +27,7 @@ function replaceOnce(source,find,replacement,label) {
   return source.replace(find,replacement);
 }
 function templateFromFunction(source,name) {
-  const re=new RegExp(`function\\s+${name}\\(\\)\\s*\\{\\s*return \\`([\\s\\S]*?)\\`;\\s*\\}`);
+  const re=new RegExp('function\\s+'+name+'\\(\\)\\s*\\{\\s*return `([\\s\\S]*?)`;\\s*\\}');
   const match=source.match(re);
   need(match,`Unable to extract ${name} template.`);
   return match[1];
@@ -76,7 +76,7 @@ let settingsInner=settingsInnerMatch[1].replaceAll('${FABRI_CADABRA_VERSION}',ve
 const settingsPanel=`    <section id="tool-settings" class="tool-panel settings-page">${settingsInner}\n    </section>\n\n`;
 const footerMarker='    <div class="footer">Designed by Canopy.</div>';
 need(html.includes(footerMarker),'App footer marker missing.');
-html=html.replace(footerMarker,settingsPanel+footerMarker);
+html=html.replace(footerMarker,'    </section>\n\n'+settingsPanel+footerMarker);
 
 const pageDrawerClose='</nav></div>\n  </aside>\n\n  <div id="calculatorGuideBackdrop"';
 need(html.includes(pageDrawerClose),'Pages drawer closing marker missing.');
@@ -205,7 +205,7 @@ unlinkSync(uxCssPath);
 // Refuse to leave an active verifier coupled to the retired files.
 for (const name of readdirSync(scripts).filter(name=>name.endsWith('.mjs') && name!=='migrate-canonical-ux.mjs')) {
   const source=readFileSync(join(scripts,name),'utf8');
-  if (/www['"],?['"]ux\\.(?:js|css)|www\\/ux\\.(?:js|css)/.test(source)) throw new Error(`${name} still references a retired UX asset.`);
+  if (source.includes("readFileSync(join(root,'www','ux.js')") || source.includes("readFileSync(join(root,'www','ux.css')") || source.includes("readFileSync(path.join(root,'www','ux.js')") || source.includes("readFileSync(path.join(root,'www','ux.css')")) throw new Error(`${name} still reads a retired UX asset.`);
 }
 
 need(!html.includes('ux.js') && !html.includes('ux.css'),'Runtime UX patch references remain in index.html.');

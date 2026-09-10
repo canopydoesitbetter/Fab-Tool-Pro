@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Fabri-Cadabra</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="ux.css" />
 </head>
 <body>
   <div id="nativeLaunchScreen" class="native-launch-screen" hidden aria-hidden="true">
@@ -400,10 +399,11 @@
             <input id="taskLogImportJobsFile" type="file" accept="application/json,.json" hidden />
             <span class="hint">Job exports contain job names, assigned tasks, accumulated time, completed timer sessions, and any currently running timer. Preset tasks are managed from each job panel.</span>
           </div>
-          <div id="taskLogStatus" class="status" role="status" aria-live="polite"></div>
           <span class="hint"><b>Jobs and preset tasks are independent.</b> Importing jobs never replaces the preset library, and importing presets never changes existing job time logs.</span>
         </div>
       </details>
+
+      <div id="taskLogStatus" class="status" role="status" aria-live="polite"></div>
 
       <div id="taskLogRenameBackdrop" class="tasklog-rename-backdrop" aria-hidden="true"></div>
       <section id="taskLogRenameDialog" class="tasklog-rename-dialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="taskLogRenameTitle">
@@ -520,15 +520,16 @@
         <div class="management-details-body">
           <div class="notes-actions notes-management-actions">
             <button id="fabricatorNotesNewBtn" class="btn" type="button">New Topic</button>
-            <button id="fabricatorNotesTopicsBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="fabricatorNotesTopicsDrawer"><span class="hamburger" aria-hidden="true">☰</span><span>Topics</span><span id="fabricatorNotesCount" class="count">0</span></button>
+            
             <button id="fabricatorNotesExportBtn" class="btn secondary" type="button">Export Notes</button>
             <button id="fabricatorNotesImportBtn" class="btn secondary" type="button">Import Notes</button>
           </div>
           <input id="fabricatorNotesImportFile" type="file" accept="application/json,.json" hidden />
-          <div id="fabricatorNotesStatus" class="status" role="status" aria-live="polite"></div>
           <span class="hint">Topic titles, formatting, and note content save automatically in this browser. Export creates a portable JSON file that can be imported on another phone or computer.</span>
         </div>
       </details>
+
+      <div id="fabricatorNotesStatus" class="status" role="status" aria-live="polite"></div>
 
       <div id="fabricatorNotesTopicsBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
       <aside id="fabricatorNotesTopicsDrawer" class="cut-list-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="fabricatorNotesTopicsDrawerTitle">
@@ -545,6 +546,7 @@
         <section class="card notes-editor-card">
           <div id="fabricatorNotesEmpty" class="notes-empty">Create a topic to start writing fabricator notes.</div>
           <div id="fabricatorNotesEditor" class="notes-editor-fields">
+            <button id="fabricatorNotesTopicsBtn" class="cut-list-menu-btn notes-topics-inline-btn" type="button" aria-expanded="false" aria-controls="fabricatorNotesTopicsDrawer"><span class="hamburger" aria-hidden="true">☰</span><span>Topics</span><span id="fabricatorNotesCount" class="count">0</span></button>
             <div>
               <label for="fabricatorNotesTitle">Topic</label>
               <input id="fabricatorNotesTitle" class="notes-title-input" type="text" maxlength="120" autocomplete="off" placeholder="Example: Door frame setup" />
@@ -737,6 +739,119 @@
       <div id="calculatorStatus" class="fab-calc-status">Keyboard: 0–9, +, −, ×, ÷, ^, %, Enter/=, Backspace, Delete/Escape.</div>
     </section>
 
+    </section>
+
+    <section id="tool-settings" class="tool-panel settings-page">
+      <div class='tool-title'>
+        <h2>Settings</h2>
+        <p>App information, release history, and Fabri-Cadabra settings.</p>
+      </div>
+      <details id='shiftScheduleDetails' class='card management-details settings-shift-schedule'>
+        <summary class='management-summary'>
+          <span>Shift Schedule</span>
+          <span id='shiftScheduleMasterState' class='shift-schedule-master-state disabled'>DISABLED</span>
+        </summary>
+        <div class='management-details-body'>
+          <div class='settings-shift-master-row'>
+            <div>
+              <strong>Enable Shift Schedule</strong>
+              <span class='hint'>When enabled, manual Clock In is required and Task Logging follows the scheduled Break, Lunch, and Clock Out protections.</span>
+            </div>
+            <label class='toggle-switch' for='shiftScheduleMasterToggle'>
+              <input id='shiftScheduleMasterToggle' type='checkbox' aria-label='Enable Shift Schedule' />
+              <span class='toggle-slider' aria-hidden='true'></span>
+            </label>
+          </div>
+
+          <div class='settings-shift-form'>
+            <div class='settings-shift-row settings-shift-days-row'>
+              <label>Scheduled Days</label>
+              <div class='settings-shift-fields'>
+                <select id='shiftStartDay' aria-label='First scheduled workday'>
+                  <option value='0'>Sunday</option><option value='1'>Monday</option><option value='2'>Tuesday</option><option value='3'>Wednesday</option><option value='4'>Thursday</option><option value='5'>Friday</option><option value='6'>Saturday</option>
+                </select>
+                <span class='settings-shift-through'>through</span>
+                <select id='shiftEndDay' aria-label='Last scheduled workday'>
+                  <option value='0'>Sunday</option><option value='1'>Monday</option><option value='2'>Tuesday</option><option value='3'>Wednesday</option><option value='4'>Thursday</option><option value='5'>Friday</option><option value='6'>Saturday</option>
+                </select>
+              </div>
+            </div>
+
+            <div class='settings-shift-row'>
+              <label for='shiftClockInTime'>Clock In</label>
+              <div class='settings-shift-fields settings-shift-time-fields'>
+                <input id='shiftClockInTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='7:00' aria-label='Clock In time' />
+                <select id='shiftClockInPeriod' aria-label='Clock In AM or PM'><option>AM</option><option>PM</option></select>
+              </div>
+            </div>
+
+            <div class='settings-shift-row settings-shift-pause-row'>
+              <div class='settings-shift-pause-label'>
+                <label for='shiftBreakTime'>Break</label>
+                <label class='toggle-switch compact' for='shiftBreakToggle'>
+                  <input id='shiftBreakToggle' type='checkbox' aria-label='Enable Break' />
+                  <span class='toggle-slider' aria-hidden='true'></span>
+                </label>
+              </div>
+              <div class='settings-shift-fields settings-shift-pause-fields'>
+                <input id='shiftBreakTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='9:00' aria-label='Break time' />
+                <select id='shiftBreakPeriod' aria-label='Break AM or PM'><option>AM</option><option>PM</option></select>
+                <label class='settings-shift-minutes-field'>
+                  <span>Length in minutes</span>
+                  <input id='shiftBreakMinutes' type='number' inputmode='numeric' min='1' step='1' value='15' aria-label='Break length in minutes' />
+                </label>
+              </div>
+              <span id='shiftBreakModeHint' class='hint settings-shift-mode-hint'>Saved default for future shifts.</span>
+            </div>
+
+            <div class='settings-shift-row settings-shift-pause-row'>
+              <div class='settings-shift-pause-label'>
+                <label for='shiftLunchTime'>Lunch</label>
+                <label class='toggle-switch compact' for='shiftLunchToggle'>
+                  <input id='shiftLunchToggle' type='checkbox' aria-label='Enable Lunch' />
+                  <span class='toggle-slider' aria-hidden='true'></span>
+                </label>
+              </div>
+              <div class='settings-shift-fields settings-shift-pause-fields'>
+                <input id='shiftLunchTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='12:00' aria-label='Lunch time' />
+                <select id='shiftLunchPeriod' aria-label='Lunch AM or PM'><option>AM</option><option>PM</option></select>
+                <label class='settings-shift-minutes-field'>
+                  <span>Length in minutes</span>
+                  <input id='shiftLunchMinutes' type='number' inputmode='numeric' min='1' step='1' value='30' aria-label='Lunch length in minutes' />
+                </label>
+              </div>
+              <span id='shiftLunchModeHint' class='hint settings-shift-mode-hint'>Saved default for future shifts.</span>
+            </div>
+
+            <div class='settings-shift-row'>
+              <label for='shiftClockOutTime'>Clock Out</label>
+              <div class='settings-shift-fields settings-shift-time-fields'>
+                <input id='shiftClockOutTime' type='text' inputmode='numeric' enterkeyhint='done' maxlength='5' autocomplete='off' placeholder='3:30' aria-label='Clock Out time' />
+                <select id='shiftClockOutPeriod' aria-label='Clock Out AM or PM'><option>AM</option><option>PM</option></select>
+              </div>
+            </div>
+            <span class='hint settings-shift-time-hint'>Phone-friendly time entry: type 730 for 7:30, 1230 for 12:30, or 7 for 7:00. No colon needed.</span>
+          </div>
+
+          <div class='settings-shift-actions'>
+            <button id='shiftScheduleSaveBtn' class='btn' type='button'>Save Schedule</button>
+          </div>
+          <div id='shiftScheduleStatus' class='status' role='status' aria-live='polite'></div>
+          <span class='hint'>Overnight shifts are supported. The scheduled workday is the day the shift starts. Break and Lunch current-shift overrides reset when that scheduled shift ends.</span>
+        </div>
+      </details>
+      <section class='card settings-overview-card'>
+        <h2>Application</h2>
+        <div class='settings-version-row'>
+          <div>
+            <span class='settings-row-label'>Current Version</span>
+            <strong id='settingsVersionValue' class='settings-version-value'>1.0.5</strong>
+          </div>
+          <button id='settingsChangelogBtn' class='btn settings-changelog-btn' type='button' aria-expanded='false' aria-controls='settingsChangelogDrawer'>Changelog</button>
+        </div>
+      </section>
+    </section>
+
     <div class="footer">Designed by Canopy.</div>
   </main>
   <div id="pageMenuBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
@@ -752,7 +867,225 @@
   <button class="fab-page-link" type="button" data-tool="optimizer">Sheet Optimizer</button>
   <button class="fab-page-link" type="button" data-tool="saw">Saw Optimizer</button>
   <button class="fab-page-link" type="button" data-tool="overhang">Aluminum Overhang</button>
-</nav></div>
+</nav>
+      <div class="fab-settings-drawer-footer">
+        <button id="settingsPageBtn" class="fab-settings-link" type="button" data-tool="settings" aria-controls="tool-settings">Settings</button>
+      </div>
+    </div>
+  </aside>
+
+  <div id="settingsChangelogBackdrop" class="cut-list-backdrop settings-changelog-backdrop" aria-hidden="true"></div>
+  <aside id="settingsChangelogDrawer" class="cut-list-drawer settings-changelog-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settingsChangelogTitle">
+      <div class='cut-list-drawer-head settings-changelog-head'>
+        <strong id='settingsChangelogTitle'>Changelog</strong>
+        <span class='cut-list-drawer-meta'>Newest first</span>
+        <button id='settingsChangelogCloseBtn' class='cut-list-close-btn' type='button' aria-label='Close Changelog'>×</button>
+      </div>
+      <div class='cut-list-drawer-body settings-changelog-body'>
+      <article class='changelog-entry changelog-release' data-changelog-version='current'>
+  <div class='changelog-entry-heading'>
+    <div>
+      <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>
+      <h2>Fabri-Cadabra Branding Refresh</h2>
+    </div>
+  </div>
+  <ul>
+    <li>Added the new Fabri-Cadabra launcher icon on Android and iPhone, replacing the default Capacitor branding.</li>
+    <li>Added a branded launch screen with the Fabri-Cadabra logo centered and the app name directly underneath.</li>
+    <li>Native branding now travels through the same repeatable Capacitor installer pipeline used for production builds.</li>
+  </ul>
+</article>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.3'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span class='changelog-version-label'>Version 1.0.3</span>
+            <h2>Smart Shift Time Entry</h2>
+          </div>
+        </div>
+        <ul>
+          <li>Shift Schedule time fields are now phone-friendly and accept digits without requiring a colon from the mobile keyboard.</li>
+          <li>Type 730 for 7:30, 1230 for 12:30, or a single hour such as 7 for 7:00; the existing AM/PM selector remains explicit.</li>
+          <li>Existing colon-formatted times still work, and impossible times are still rejected instead of being silently changed.</li>
+          <li>The Task Logging Jobs panel is now collapsible and starts closed by default, matching Task Logging Management while preserving the same saved jobs, totals, running indicators, and job-selection behavior.</li>
+          <li>Job # / Name now opens a dedicated rename overlay. The job name changes only after pressing Apply Name Change, with Cancel and outside-dismiss leaving the existing name untouched.</li>
+        </ul>
+      </article>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.2'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span class='changelog-version-label'>Version 1.0.2</span>
+            <h2>Shift Schedule &amp; Clock Controls</h2>
+          </div>
+        </div>
+        <ul>
+          <li>Added Shift Schedule in Settings with an inclusive, cyclic scheduled-workday range plus configurable Clock In, Break, Lunch, and Clock Out times.</li>
+          <li>Added a green CLOCK IN button and red CLOCK OUT button in the main Fabri-Cadabra header, with clear confirmation before either clock action.</li>
+          <li>When Shift Schedule is enabled, manual Clock In is required before Task Logging timers can start; early or late Clock In is allowed so the schedule does not become a hindrance.</li>
+          <li>Break and Lunch can be independently enabled. During an established scheduled shift, each small toggle becomes a current-shift override that resets for the next scheduled shift.</li>
+          <li>A running task stops at the exact configured Break or Lunch start. Task timers never restart automatically when Break or Lunch ends; the user deliberately starts the next task session.</li>
+          <li>Scheduled Clock Out stops any running task at the exact scheduled boundary and forces Clocked Out state, even when the app was locked, backgrounded, or suspended.</li>
+          <li>After scheduled Clock Out, the user can Clock In again for overtime. Overtime continues until the user manually clocks out and does not inherit the already-passed schedule boundaries.</li>
+          <li>On a non-scheduled workday, Clock In offers an unscheduled work confirmation. Confirmed unscheduled work continues until manual Clock Out without borrowing another day's Break, Lunch, or Clock Out.</li>
+          <li>Supported overnight shifts: the shift belongs to the scheduled day it starts, so a Friday overnight shift may correctly finish Saturday morning.</li>
+          <li>When the phone locks, the app backgrounds, or Fabri-Cadabra is reopened, Task Logging reconciles to the first prohibited boundary that was crossed instead of counting time until wake-up.</li>
+          <li>Schedule and current-shift override edits are prospective; they do not retroactively erase already-earned labor time.</li>
+          <li>Disabling Shift Schedule restores the original unrestricted Task Logging behavior and preserves the saved schedule for later re-enabling.</li>
+        </ul>
+      </article>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.1'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span class='changelog-version-label'>Version 1.0.1</span>
+            <h2>Settings &amp; Changelog</h2>
+          </div>
+        </div>
+        <ul>
+          <li>Added Settings page.</li>
+          <li>Added permanent Settings access at the bottom of the Pages drawer.</li>
+          <li>Added in-app Changelog.</li>
+          <li>Added application version tracking.</li>
+          <li>Established newest-first changelog ordering.</li>
+        </ul>
+      </article>
+      
+      <article class='changelog-entry changelog-current-features' data-changelog-version='1.0.0'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span class='changelog-version-label'>Version 1.0.0</span>
+            <h2>Fabri-Cadabra — Current Features</h2>
+          </div>
+        </div>
+
+        <section class='changelog-feature-section'>
+          <h3>Task Logging</h3>
+          <ul>
+            <li>Create and manage jobs.</li>
+            <li>Add reusable preset tasks to jobs.</li>
+            <li>Select all presets for quick job setup.</li>
+            <li>Persistent Start/Stop timers that continue correctly when the phone locks or pages change.</li>
+            <li>Automatic task session history.</li>
+            <li>Job and task time totals.</li>
+            <li>Import/export jobs and presets separately.</li>
+            <li>Preset Tasks drawer used to add/remove assigned tasks.</li>
+            <li>Collapsible Task Logging Management panel.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Fabricator Notes</h3>
+          <ul>
+            <li>Create and manage note topics.</li>
+            <li>Rich-text notes with bold, italic, and underline.</li>
+            <li>Automatic local saving.</li>
+            <li>Topics drawer inside the note editor.</li>
+            <li>Import/export note backups.</li>
+            <li>Collapsible Notes Management panel.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Checklist</h3>
+          <ul>
+            <li>Create checklist topics.</li>
+            <li>Add, delete, complete, and reorder checklist items.</li>
+            <li>Drag/touch reordering.</li>
+            <li>Completion progress bar.</li>
+            <li>Automatic local saving.</li>
+            <li>Import/export checklist backups.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Basic Calculator</h3>
+          <ul>
+            <li>Standard arithmetic.</li>
+            <li>Percentages, square roots, powers, π, and rounding.</li>
+            <li>Memory functions.</li>
+            <li>Repeating operations.</li>
+            <li>Keyboard support.</li>
+            <li>Built-in Calculator Guide.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Quick Reference</h3>
+          <ul>
+            <li>Fraction addition charts for 1/16&quot;, 1/32&quot;, and 1/64&quot; increments.</li>
+            <li>Gauge → Decimal Thickness chart.</li>
+            <li>Selectable/highlightable table cells.</li>
+            <li>Fraction/decimal display toggle.</li>
+            <li>Remembers selected table and display preference.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Fastener Spacing</h3>
+          <ul>
+            <li>Calculates equal fastener spacing.</li>
+            <li>Calculates total fastener count.</li>
+            <li>Displays fastener locations.</li>
+            <li>Measurements rounded to the nearest 1/16&quot;.</li>
+            <li>Visual spacing diagram.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Sheet Optimizer</h3>
+          <ul>
+            <li>Whole-job sheet optimization.</li>
+            <li>Automatic fabrication allowances by product type.</li>
+            <li>Supports .063 Exterior Panels, .063 Door Panels, ACP, Insulation, and Plywood.</li>
+            <li>Guillotine/shear-compatible layouts for aluminum and ACP.</li>
+            <li>Free-form nesting for insulation and plywood.</li>
+            <li>Grain Flow Rotation control.</li>
+            <li>Cut List drawer.</li>
+            <li>Save/load local jobs.</li>
+            <li>Import/export job files.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Saw Optimizer</h3>
+          <ul>
+            <li>Optimize tube/linear stock usage.</li>
+            <li>Custom stock lengths.</li>
+            <li>Part labels, lengths, and quantities.</li>
+            <li>Fixed 1/4&quot; kerf between adjacent pieces.</li>
+            <li>Optimized tube diagrams and remaining offcut.</li>
+            <li>Individual Cut / Uncut tracking.</li>
+            <li>Part List drawer.</li>
+            <li>Import/export saw jobs.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>Aluminum Overhang</h3>
+          <ul>
+            <li>Calculates long- and short-side blanks.</li>
+            <li>Automatically adds corner and seam flanges.</li>
+            <li>Automatically splits oversized pieces.</li>
+            <li>Enforces maximum usable stock length.</li>
+            <li>Displays fabrication rules and cut dimensions.</li>
+          </ul>
+        </section>
+
+        <section class='changelog-feature-section'>
+          <h3>App-Wide Features</h3>
+          <ul>
+            <li>9 fabrication tools.</li>
+            <li>Task Logging opens by default.</li>
+            <li>Pages navigation drawer.</li>
+            <li>Light and dark themes.</li>
+            <li>Persistent local storage.</li>
+            <li>Portable JSON import/export.</li>
+            <li>Responsive mobile interface.</li>
+            <li>Android and iPhone Capacitor apps.</li>
+            <li>Permanently signed Android APK builds.</li>
+            <li>Unsigned iPhone IPA builds.</li>
+            <li>GitHub Pages web deployment.</li>
+          </ul>
+        </section>
+      </article></div>
   </aside>
 
   <div id="calculatorGuideBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
@@ -819,7 +1152,6 @@
 
   <script src="native-compat.js" defer></script>
   <script src="app.js" defer></script>
-  <script src="ux.js" defer></script>
   <script src="calculator.js" defer></script>
 </body>
 </html>

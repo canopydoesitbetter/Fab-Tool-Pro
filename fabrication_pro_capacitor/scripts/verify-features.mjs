@@ -2,21 +2,19 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
-for (const f of ['www/index.html','www/styles.css','www/ux.css','www/app.js','www/ux.js','www/calculator.js','www/native-compat.js']) {
+for (const f of ['www/index.html','www/styles.css','www/app.js','www/calculator.js','www/native-compat.js']) {
   if (!existsSync(join(root,f))) throw new Error(`Missing canonical source required by feature verification: ${f}`);
 }
 const html=readFileSync(join(root,'www','index.html'),'utf8');
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
-const uxStyles=readFileSync(join(root,'www','ux.css'),'utf8');
 const app=readFileSync(join(root,'www','app.js'),'utf8');
-const ux=readFileSync(join(root,'www','ux.js'),'utf8');
 const calculator=readFileSync(join(root,'www','calculator.js'),'utf8');
 const native=readFileSync(join(root,'www','native-compat.js'),'utf8');
 const config=JSON.parse(readFileSync(join(root,'capacitor.config.json'),'utf8'));
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 const installerWorkflow=readFileSync(join(root,'..','.github','workflows','build-phone-installers.yml'),'utf8');
 const pagesWorkflow=readFileSync(join(root,'..','.github','workflows','deploy-pages.yml'),'utf8');
-const combined=[html,styles,uxStyles,app,ux,calculator,native].join('\n');
+const combined=[html,styles,app,calculator,native].join('\n');
 const tools=['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
 const expectedNavTools=['tasklog','notes','checklist','calculator','reference','fasteners','optimizer','saw','overhang'];
 const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^"]+)"/g)].map(match=>match[1]);
@@ -62,6 +60,7 @@ for(const marker of ['function selectTool(tool)','const VALID_TOOLS','window.Fab
 for(const marker of [
   "const DEFAULT_TOOL = 'tasklog';",
   'const VALID_TOOLS = new Set(pageLinks.map(link=>link.dataset.tool));',
+  'VALID_TOOLS.add(settingsPageBtn.dataset.tool)',
   'let activeTool = DEFAULT_TOOL;',
   "const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;",
   'selectTool(DEFAULT_TOOL);'
@@ -69,7 +68,7 @@ for(const marker of [
   if(!app.includes(marker)) throw new Error(`Navigation source-of-truth contract missing: ${marker}`);
 }
 if(app.includes("storageGet('fabricationTool')")) throw new Error('Launch behavior must be hard-wired to Task Logging instead of restoring the previously viewed page.');
-if(/const VALID_TOOLS\s*=\s*new Set\s*\(\s*\[/.test(app)) throw new Error('Navigation must derive valid tool IDs from canonical Pages markup instead of maintaining a second hard-coded list.');
+if(!app.includes("const settingsPageBtn = document.getElementById('settingsPageBtn');")) throw new Error('Settings navigation must derive its page ID from canonical markup.');
 for(const marker of ['function clearEntry()','function equals()','function percent()','function sqrt()','function memory(action)',"key==='Backspace' || key==='Delete'",'FabriCadabraApp.getActiveTool()']) {
   if(!calculator.includes(marker)) throw new Error(`Missing calculator behavior marker: ${marker}`);
 }
@@ -98,21 +97,22 @@ if(html.includes('class="card notes-topics-card"')) throw new Error('Fabricator 
 if(!/<div hidden aria-hidden="true">[\s\S]*?id="taskLogPresetSelect"[\s\S]*?id="taskLogAddTaskBtn"[\s\S]*?<\/div>/.test(html)) {
   throw new Error('Retired Task Logging select/Add Task controls must remain hidden only as compatibility hooks for the unchanged task engine.');
 }
-if(!uxStyles.includes('.tasklog-remove-task') || !uxStyles.includes('display:none !important;')) {
+if(!styles.includes('.tasklog-remove-task') || !styles.includes('display:none !important;')) {
   throw new Error('Inline task removal must be hidden so tasks can only be removed from the preset drawer.');
 }
 for(const marker of [
   'data-tasklog-remove-assigned',
-  'function removeAssignedTaskLogPreset(',
-  'new MutationObserver(normalizeAssignedPresetActions)',
-  "window.FabriCadabraApp.openDrawer('fabricatorNotesTopicsDrawer'",
-  "window.FabriCadabraApp.closeDrawer('fabricatorNotesTopicsDrawer'",
-  "fabricatorNotesTopicsBtn.setAttribute('aria-expanded'"
+  "openDrawer('fabricatorNotesTopicsDrawer'",
+  "closeDrawer('fabricatorNotesTopicsDrawer'",
+  "fabricatorNotesTopicsBtnCanonical.setAttribute('aria-expanded'"
 ]) {
-  if(!ux.includes(marker)) throw new Error(`Task Logging/Notes UX behavior missing: ${marker}`);
+  if(!app.includes(marker)) throw new Error(`Task Logging/Notes canonical behavior missing: ${marker}`);
+}
+for(const forbidden of ['normalizeAssignedPresetActions','removeAssignedTaskLogPreset','new MutationObserver']) {
+  if(app.includes(forbidden)) throw new Error(`Runtime Task Logging repair must remain removed: ${forbidden}`);
 }
 for(const marker of ['.management-details','.management-summary','.tasklog-job-preset-btn','.tasklog-remove-assigned-btn','.notes-topics-drawer-list']) {
-  if(!uxStyles.includes(marker)) throw new Error(`Task Logging/Notes UX style missing: ${marker}`);
+  if(!styles.includes(marker)) throw new Error(`Task Logging/Notes canonical style missing: ${marker}`);
 }
 
 for(const marker of [

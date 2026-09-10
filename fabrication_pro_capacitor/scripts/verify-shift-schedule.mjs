@@ -4,9 +4,8 @@ import path from 'node:path';
 process.env.TZ='America/New_York';
 const root=path.resolve(import.meta.dirname,'..');
 const app=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
-const ux=fs.readFileSync(path.join(root,'www','ux.js'),'utf8');
 const html=fs.readFileSync(path.join(root,'www','index.html'),'utf8');
-const css=fs.readFileSync(path.join(root,'www','ux.css'),'utf8');
+const css=fs.readFileSync(path.join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 
 function expect(condition,message) {
@@ -87,17 +86,17 @@ for (const id of ['shiftClockControl','shiftClockStatus','shiftClockBtn','taskLo
   expect(html.includes(`id="${id}"`),`Missing ${id}.`);
 }
 for (const id of ['shiftScheduleDetails','shiftScheduleMasterToggle','shiftScheduleMasterState','shiftStartDay','shiftEndDay','shiftClockInTime','shiftClockInPeriod','shiftBreakToggle','shiftBreakTime','shiftBreakPeriod','shiftBreakMinutes','shiftLunchToggle','shiftLunchTime','shiftLunchPeriod','shiftLunchMinutes','shiftClockOutTime','shiftClockOutPeriod','shiftScheduleSaveBtn','shiftScheduleStatus']) {
-  expect(ux.includes(`id='${id}'`) || ux.includes(`id="${id}"`),`Settings is missing ${id}.`);
+  expect(html.includes(`id='${id}'`) || html.includes(`id="${id}"`),`Settings is missing ${id}.`);
 }
 expect(css.includes('.shift-clock-btn.clock-in'),'Green Clock In style is missing.');
 expect(css.includes('.shift-clock-btn.clock-out'),'Red Clock Out style is missing.');
-expect(ux.includes('fabrication:shift-schedule-change'),'UX must listen for Shift Schedule changes.');
-expect(ux.includes('getClockInIntent'),'Clock In UX must distinguish scheduled/overtime/unscheduled intent.');
-expect(ux.includes('Current shift override'),'Current-shift pause helper copy is missing.');
-expect(ux.includes('Length in minutes'),'Break/Lunch duration labels are missing.');
-expect(ux.includes('Any running Task Logging timer will stop immediately.'),'Clock Out warning must disclose timer stop behavior.');
-expect(ux.includes('Overtime will continue until you manually clock out.'),'Overtime confirmation must disclose manual end behavior.');
-expect(ux.includes('Today is not one of your scheduled workdays.'),'Unscheduled-work confirmation is missing.');
+expect(app.includes('fabrication:shift-schedule-change'),'UX must listen for Shift Schedule changes.');
+expect(app.includes('getClockInIntent'),'Clock In UX must distinguish scheduled/overtime/unscheduled intent.');
+expect(app.includes('Current shift override'),'Current-shift pause helper copy is missing.');
+expect(html.includes('Length in minutes'),'Break/Lunch duration labels are missing.');
+expect(app.includes('Any running Task Logging timer will stop immediately.'),'Clock Out warning must disclose timer stop behavior.');
+expect(app.includes('Overtime will continue until you manually clock out.'),'Overtime confirmation must disclose manual end behavior.');
+expect(app.includes('Today is not one of your scheduled workdays.'),'Unscheduled-work confirmation is missing.');
 expect(pkg.scripts?.['verify:shift-schedule']==='node scripts/verify-shift-schedule.mjs','package.json must expose the Shift Schedule verifier.');
 expect(String(pkg.scripts?.verify || '').includes('npm run verify:shift-schedule'),'Aggregate verification must include the Shift Schedule verifier.');
 expect(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(String(pkg.version||'')),`Canonical package version must be a valid semantic version; got ${pkg.version || 'missing'}.`);

@@ -4,16 +4,16 @@ import { parseAppVersion, syncAndroidVersion, syncIosVersion } from './app-versi
 
 const root=process.cwd();
 const packagePath=join(root,'package.json');
-const uxPath=join(root,'www','ux.js');
+const appPath=join(root,'www','app.js');
 const pkg=JSON.parse(readFileSync(packagePath,'utf8'));
 const {version}=parseAppVersion(pkg.version);
 
-const source=readFileSync(uxPath,'utf8');
+const source=readFileSync(appPath,'utf8');
 const marker=/const FABRI_CADABRA_VERSION='[^']+'; \/\/ @generated from package\.json by scripts\/sync-app-version\.mjs/;
-if (!marker.test(source)) throw new Error('FABRI_CADABRA_VERSION generated marker is missing from www/ux.js.');
+if (!marker.test(source)) throw new Error('FABRI_CADABRA_VERSION generated marker is missing from www/app.js.');
 
 const next=source.replace(marker,`const FABRI_CADABRA_VERSION='${version}'; // @generated from package.json by scripts/sync-app-version.mjs`);
-if (next!==source) writeFileSync(uxPath,next,'utf8');
+if (next!==source) writeFileSync(appPath,next,'utf8');
 console.log(`Fabri-Cadabra browser version synchronized from package.json: ${version}`);
 
 const android=syncAndroidVersion(root,version);
