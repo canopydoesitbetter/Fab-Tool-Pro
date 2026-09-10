@@ -158,6 +158,8 @@ Preferences receive an explicit allowlist validator:
 - Quick Reference table: one of the supported table IDs
 - Quick Reference display mode: `fraction` or `decimal`
 
+The backup builder also normalizes any stale/invalid stored preference to the app's current safe default before exporting it.
+
 Unknown top-level or nested extra fields may be ignored for forward-tolerant parsing, but required known fields may not be omitted.
 
 ## 6. Running-timer and Shift Schedule restore safety
@@ -225,11 +227,13 @@ Create a recovery snapshot immediately before the actual mutation for these dest
 - Task Logging Presets import that replaces current presets
 - Fabricator Notes import that replaces current notes
 - Checklist import that replaces current checklists
-- Sheet Optimizer job import when it will replace an existing saved job and/or discard a dirty current optimizer workspace
+- Sheet Optimizer job import when it will replace an existing saved optimizer job
 
 A snapshot is not required for non-destructive export operations.
 
-The recovery snapshot represents the entire app-owned persistent state, not just the feature being replaced. This makes `Restore Last Recovery Snapshot` a simple full-state rollback.
+The recovery snapshot represents the entire app-owned **persistent** state, not just the feature being replaced. This makes `Restore Last Recovery Snapshot` a simple full-state rollback.
+
+Automatic recovery does not preserve a transient unsaved Sheet Optimizer workspace because that workspace is not persistent state. If a Sheet Optimizer import would discard dirty unsaved work, the existing destructive confirmation remains and the UI must make clear that the user should `Save Job` or `Export Job File` first if that unsaved workspace needs to be recoverable.
 
 ### Snapshot failure behavior
 
@@ -278,7 +282,7 @@ New dedicated subsystem responsible for:
 - transaction-style localStorage replacement/rollback
 - full restore confirmation and status UI
 - `Restore Last Recovery Snapshot`
-- wrapper used by existing destructive feature import flows to create a recovery snapshot before mutation
+- recovery-snapshot service callable by existing destructive feature import flows
 
 `backup.js` must consume the narrow bridge from `app.js`; it must not reimplement Task/Notes/Checklist/Optimizer/Shift business normalizers.
 
@@ -301,6 +305,10 @@ The only intentional behavioral change is that destructive feature imports gain 
 Existing feature confirmation wording can remain based on the current `window.confirm()` architecture; replacing browser confirms is audit item #11 and is intentionally out of scope here.
 
 If the user cancels an import confirmation, no recovery snapshot needs to be created because no mutation will occur.
+
+Because IndexedDB snapshot creation is asynchronous, existing destructive import handlers may become asynchronous at the mutation boundary so they can await recovery protection before changing persistent data.
+
+For Sheet Optimizer specifically, replacing an existing **saved** job is recovery-protected. Dirty unsaved current workspace remains transient and is not represented in automatic recovery snapshots.
 
 ## 11. File-size and corruption safety
 
@@ -347,7 +355,7 @@ Add a real Playwright end-to-end full backup/restore journey that uses the UI ra
 8. change Quick Reference table and fraction/decimal mode
 9. create/download a full Fabri-Cadabra backup through Settings
 10. capture the downloaded JSON and assert metadata/section presence
-11. clear Fabri-Cadabra localStorage state in the browser to simulate local data loss, then reload
+11. clear the 10 registered Fabri-Cadabra localStorage values in the browser to simulate local data loss, then reload
 12. confirm the supported categories are absent/defaulted
 13. restore the downloaded file through the Settings restore UI
 14. accept the destructive restore confirmation
@@ -362,7 +370,7 @@ Add recovery-snapshot coverage:
 2. perform one destructive feature import that replaces data
 3. verify Settings reports a recovery snapshot
 4. invoke `Restore Last Recovery Snapshot`
-5. verify the pre-import app state returns after reload
+5. verify the pre-import persistent app state returns after reload
 
 Add invalid-backup coverage proving malformed/unsupported files change no persistent state.
 
