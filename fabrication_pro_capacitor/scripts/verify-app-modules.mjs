@@ -30,7 +30,7 @@ for (const src of expectedRuntimeOrder) {
 need(!html.includes('<script src="app.js"'),'index.html must not load the legacy app.js monolith.');
 
 const owners={
-  'app/bootstrap.js':['FABRI_CADABRA_VERSION','requireRecoverySnapshot'],
+  'app/bootstrap.js':['FABRI_CADABRA_VERSION','requireRecoverySnapshot','function escapeHtml'],
   'app/storage.js':['function storageGet','function storageSet'],
   'app/drawers.js':['function openDrawer','function closeDrawer','function isDrawerOpen'],
   'app/navigation.js':['function selectTool','window.FabriCadabraApp'],
@@ -39,10 +39,10 @@ const owners={
   'app/notes.js':['fabricationFabricatorNotesV1','FabricationFabricatorNotes'],
   'app/checklist.js':['fabricationChecklistV1','FabricationChecklist'],
   'app/quick-reference.js':['fabricationQuickReferenceDecimalMode','fabricationQuickReferenceTable'],
-  'app/calculators.js':['calculateOverhang','calculateFastenerSpacing'],
+  'app/calculators.js':['calculateOverhang','calculateFasteners'],
   'app/sheet-optimizer.js':['fabricationOptimizerJobsV1','FabricationCutOptimizerJob'],
   'app/saw-optimizer.js':['FabricationSawOptimizerJob','renderSawJob'],
-  'app/settings.js':['@shift-smart-time-start','installSettingsPage'],
+  'app/settings.js':['@shift-smart-time-start','settingsVersionValue'],
   'app/import-export.js':['FabriCadabraBackup','FABRI_CADABRA_PERSISTENCE_KEYS','window.FabriCadabraApp.backup'],
   'app/self-tests.js':['runFabricationSelfTests','runFabricationBrowserSelfTests']
 };
@@ -64,7 +64,7 @@ need(String(pkg.scripts?.['verify:app-modules']||'')==='node scripts/verify-app-
 need(String(pkg.scripts?.verify||'').includes('npm run verify:app-modules'),'Aggregate npm run verify must include verify:app-modules.');
 
 for (const name of readdirSync(join(root,'scripts'))) {
-  if (!name.endsWith('.mjs') || ['app-module-manifest.mjs','verify-app-modules.mjs'].includes(name)) continue;
+  if (!name.endsWith('.mjs') || ['app-module-manifest.mjs','verify-app-modules.mjs','split-app-modules.mjs'].includes(name)) continue;
   const source=readFileSync(join(root,'scripts',name),'utf8');
   need(!source.includes("join(root,'www','app.js')") && !source.includes("path.join(root,'www','app.js')"),`${name} still reads the removed www/app.js directly.`);
 }
