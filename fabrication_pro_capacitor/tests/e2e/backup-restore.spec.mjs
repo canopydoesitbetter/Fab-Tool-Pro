@@ -119,7 +119,7 @@ async function appStorageSnapshot(page) {
   return page.evaluate(keys=>Object.fromEntries(keys.map(key=>[key,localStorage.getItem(key)])),APP_KEYS);
 }
 
-test('full backup restores all persistent categories and sanitizes live clock state', async ({ page }) => {
+test('full backup restores all persistent categories and safely finalizes captured live state', async ({ page }) => {
   await page.clock.install({time:new Date('2026-09-10T08:00:00')});
   await openApp(page);
   await createTaskFixture(page);
@@ -129,6 +129,13 @@ test('full backup restores all persistent categories and sanitizes live clock st
   await createOptimizerFixture(page);
   const expectedTheme=await setPreferenceFixtures(page);
 
+  await openTool(page,'Task Logging','#tool-tasklog');
+  const liveTask=page.locator('.tasklog-task-row',{hasText:'Backup Task'});
+  await liveTask.locator('[data-tasklog-timer-action="start"]').click();
+  await page.clock.fastForward('00:08');
+  await expect(liveTask.locator('[data-tasklog-timer]')).toHaveText('00:00:20');
+  await expect(liveTask.locator('[data-tasklog-timer-action="stop"]')).toBeVisible();
+
   await openSettings(page);
   const exported=await captureJsonDownload(page,()=>page.locator('#settingsBackupBtn').click());
   expect(exported.json.format).toBe('FabriCadabraBackup');
@@ -136,6 +143,10 @@ test('full backup restores all persistent categories and sanitizes live clock st
   expect(exported.json.appVersion).toBe('1.0.5');
   expect(exported.json.sections.taskLogging.jobs.jobs).toHaveLength(1);
   expect(exported.json.sections.taskLogging.presets.presets).toHaveLength(1);
+  const backedUpTask=exported.json.sections.taskLogging.jobs.jobs[0].tasks[0];
+  expect(backedUpTask.running).toBe(true);
+  expect(backedUpTask.sessions).toHaveLength(1);
+  expect(backedUpTask.accumulatedMs).toBe(12000);
   expect(exported.json.sections.fabricatorNotes.topics).toHaveLength(1);
   expect(exported.json.sections.checklists.topics).toHaveLength(1);
   expect(exported.json.sections.optimizer.savedJobs['BACKUP-100']).toBeTruthy();
@@ -157,9 +168,11 @@ test('full backup restores all persistent categories and sanitizes live clock st
   await expect(page.locator('#tool-tasklog')).toHaveClass(/\bactive\b/,{timeout:15000});
   await expect(page.locator('#taskLogJobTitle')).toHaveText('Backup Job');
   const restoredTask=page.locator('.tasklog-task-row',{hasText:'Backup Task'});
-  await expect(restoredTask).toContainText('00:00:12');
+  await expect(restoredTask).toContainText('00:00:20');
   await expect(restoredTask.locator('[data-tasklog-timer-action="start"]')).toBeVisible();
   await expect(page.locator('[data-tasklog-timer-action="stop"]')).toHaveCount(0);
+  await expect(restoredTask.locator('.tasklog-session-details')).toContainText('00:00:12');
+  await expect(restoredTask.locator('.tasklog-session-details')).toContainText('00:00:08');
 
   await expect(page.locator('html')).toHaveAttribute('data-theme',expectedTheme);
   await openTool(page,'Quick Reference','#tool-reference');
