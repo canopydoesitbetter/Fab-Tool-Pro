@@ -178,12 +178,19 @@ versionVerify=versionVerify.replace("const fixtureApp=readFileSync(join(fixture,
 versionVerify=versionVerify.replace('Browser version marker must match package.json.','Browser bootstrap version marker must match package.json.');
 writeFileSync(versionVerifyPath,versionVerify,'utf8');
 
+const settingsVerifyPath=join(scriptsDir,'verify-settings-changelog.mjs');
+let settingsVerify=readFileSync(settingsVerifyPath,'utf8');
+settingsVerify=settingsVerify.replace("need(sync.includes(\"join(root,'www','app.js')\"),'Version sync must update app.js.');","need(sync.includes(\"join(root,'www','app','bootstrap.js')\"),'Version sync must update app/bootstrap.js.');");
+writeFileSync(settingsVerifyPath,settingsVerify,'utf8');
+
+const leftovers=[];
 for (const name of readdirSync(scriptsDir)) {
   if (!name.endsWith('.mjs') || ['split-app-modules.mjs','verify-app-modules.mjs'].includes(name)) continue;
   const source=readFileSync(join(scriptsDir,name),'utf8');
-  const leftovers=["join(root,'www','app.js')","path.join(root,'www','app.js')"];
-  need(leftovers.every(token=>!source.includes(token)),`Unmigrated direct app.js reader remains in ${name}.`);
+  const tokens=["join(root,'www','app.js')","path.join(root,'www','app.js')"];
+  if (tokens.some(token=>source.includes(token))) leftovers.push(name);
 }
+need(leftovers.length===0,`Unmigrated direct app.js readers remain in: ${leftovers.join(', ')}.`);
 
 rmSync(legacyPath);
 console.log(`Split legacy app.js into ${APP_MODULES.length} focused feature modules without rewriting feature logic.`);
