@@ -148,6 +148,9 @@ test('full backup restores all persistent categories and safely finalizes captur
   expect(backedUpTask.sessions).toHaveLength(1);
   expect(backedUpTask.accumulatedMs).toBeGreaterThanOrEqual(12000);
   expect(backedUpTask.accumulatedMs).toBeLessThan(13000);
+  const capturedRunningMs=Date.parse(exported.json.exportedAt)-Number(backedUpTask.startedAt);
+  expect(capturedRunningMs).toBeGreaterThanOrEqual(8000);
+  expect(capturedRunningMs).toBeLessThan(11000);
   expect(exported.json.sections.fabricatorNotes.topics).toHaveLength(1);
   expect(exported.json.sections.checklists.topics).toHaveLength(1);
   expect(exported.json.sections.optimizer.savedJobs['BACKUP-100']).toBeTruthy();
@@ -169,11 +172,20 @@ test('full backup restores all persistent categories and safely finalizes captur
   await expect(page.locator('#tool-tasklog')).toHaveClass(/\bactive\b/,{timeout:15000});
   await expect(page.locator('#taskLogJobTitle')).toHaveText('Backup Job');
   const restoredTask=page.locator('.tasklog-task-row',{hasText:'Backup Task'});
-  await expect(restoredTask.locator('[data-tasklog-timer]')).toHaveText(/00:00:2[01]/);
   await expect(restoredTask.locator('[data-tasklog-timer-action="start"]')).toBeVisible();
   await expect(page.locator('[data-tasklog-timer-action="stop"]')).toHaveCount(0);
+  await expect(restoredTask.locator('.tasklog-session-details')).toContainText('2 completed sessions');
   await expect(restoredTask.locator('.tasklog-session-details')).toContainText('00:00:12');
-  await expect(restoredTask.locator('.tasklog-session-details')).toContainText('00:00:08');
+  const restoredTaskRecord=await page.evaluate(()=>{
+    const record=JSON.parse(localStorage.getItem('fabricationTaskLogJobsV1') || '{}');
+    return record.jobs?.[0]?.tasks?.[0] || null;
+  });
+  expect(restoredTaskRecord).toBeTruthy();
+  expect(restoredTaskRecord.running).toBe(false);
+  expect(restoredTaskRecord.startedAt).toBeNull();
+  expect(restoredTaskRecord.sessions).toHaveLength(2);
+  expect(restoredTaskRecord.sessions.at(-1).durationMs).toBe(capturedRunningMs);
+  expect(restoredTaskRecord.accumulatedMs).toBe(backedUpTask.accumulatedMs+capturedRunningMs);
 
   await expect(page.locator('html')).toHaveAttribute('data-theme',expectedTheme);
   await openTool(page,'Quick Reference','#tool-reference');
