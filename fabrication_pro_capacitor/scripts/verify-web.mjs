@@ -3,16 +3,17 @@ import { join } from 'node:path';
 import vm from 'node:vm';
 
 const root=process.cwd();
-const requiredFiles=['www/index.html','www/styles.css','www/app.js','www/calculator.js','www/native-compat.js'];
+const requiredFiles=['www/index.html','www/styles.css','www/app.js','www/backup.js','www/calculator.js','www/native-compat.js'];
 for (const relative of requiredFiles) if (!existsSync(join(root,relative))) throw new Error(`Missing canonical web asset: ${relative}`);
 for (const retired of ['www/ux.js','www/ux.css']) if (existsSync(join(root,retired))) throw new Error(`Retired runtime UX patch asset must be absent: ${retired}`);
-const html=readFileSync(join(root,'www/index.html'),'utf8');
-const styles=readFileSync(join(root,'www/styles.css'),'utf8');
-const app=readFileSync(join(root,'www/app.js'),'utf8');
-const calculator=readFileSync(join(root,'www/calculator.js'),'utf8');
-const native=readFileSync(join(root,'www/native-compat.js'),'utf8');
+const html=readFileSync(join(root,'www','index.html'),'utf8');
+const styles=readFileSync(join(root,'www','styles.css'),'utf8');
+const app=readFileSync(join(root,'www','app.js'),'utf8');
+const backup=readFileSync(join(root,'www','backup.js'),'utf8');
+const calculator=readFileSync(join(root,'www','calculator.js'),'utf8');
+const native=readFileSync(join(root,'www','native-compat.js'),'utf8');
 
-const scriptOrder=['native-compat.js','app.js','calculator.js'];
+const scriptOrder=['native-compat.js','app.js','backup.js','calculator.js'];
 let previous=-1;
 for (const script of scriptOrder) {
   const marker=`<script src="${script}" defer></script>`;
@@ -29,14 +30,14 @@ if (!/<title>Fabri-Cadabra<\/title>/.test(html) || !/<h1>Fabri-Cadabra<\/h1>/.te
 if (html.includes('Fabrication Calculators')) throw new Error('Legacy Fabrication Calculators product name remains in live HTML.');
 if (/class="tool-menu"/.test(html) || /class="tool-tab/.test(html)) throw new Error('Legacy tool-menu/tool-tab markup remains.');
 if (html.includes('fabri-cadabra.js')) throw new Error('Legacy runtime enhancement is still referenced.');
-for (const [name,source] of [['app.js',app],['calculator.js',calculator],['native-compat.js',native]]) {
+for (const [name,source] of [['app.js',app],['backup.js',backup],['calculator.js',calculator],['native-compat.js',native]]) {
   new vm.Script(source,{filename:name});
   if (/createElement\(\s*['"]script['"]\s*\)/.test(source)) throw new Error(`${name} dynamically creates a shipped script loader.`);
 }
-const shippedJs=app+calculator+native;
+const shippedJs=app+backup+calculator+native;
 if (/document\.title\s*=|brandHeading\.textContent/.test(shippedJs)) throw new Error('Runtime product-name replacement remains in shipped JavaScript.');
 if (/originalNav\.remove\(\)|originalTabs|originalTabByTool/.test(shippedJs)) throw new Error('Detached legacy navigation compatibility remains.');
 if (/\.tool-menu|\.tool-tab/.test(styles)) throw new Error('Legacy navigation CSS remains in canonical stylesheet.');
 if (/installSettingsPage|normalizeAssignedPresetActions|removeAssignedTaskLogPreset/.test(app)) throw new Error('Retired runtime UX patch behavior remains in app.js.');
 console.log('Canonical web source architecture: OK');
-console.log('JavaScript syntax: OK (app.js, calculator.js, native-compat.js)');
+console.log('JavaScript syntax: OK (app.js, backup.js, calculator.js, native-compat.js)');
