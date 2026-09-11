@@ -35,7 +35,19 @@ jobs:
 
       - name: Apply deterministic feature patch when present
         if: ${{ hashFiles('fabrication_pro_capacitor/scripts/apply-unified-backup-restore.mjs') != '' && github.actor != 'github-actions[bot]' }}
-        run: node scripts/apply-unified-backup-restore.mjs
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('scripts/apply-unified-backup-restore.mjs')
+          source=path.read_text()
+          old='''  verifyWeb=replaceOnce(verifyWeb,\n"const app=readFileSync(join(root,'www','app.js'),'utf8');\\nconst calculator=readFileSync(join(root,'www','calculator.js'),'utf8');",\n"const app=readFileSync(join(root,'www','app.js'),'utf8');\\nconst backup=readFileSync(join(root,'www','backup.js'),'utf8');\\nconst calculator=readFileSync(join(root,'www','calculator.js'),'utf8');",\n'verify-web backup read');'''
+          new='''  verifyWeb=replaceOnce(verifyWeb,\n"const app=readFileSync(join(root,'www','app.js'),'utf8');",\n"const app=readFileSync(join(root,'www','app.js'),'utf8');\\nconst backup=readFileSync(join(root,'www','backup.js'),'utf8');",\n'verify-web backup read');'''
+          if old not in source:
+              raise SystemExit('Expected verify-web helper block was not found.')
+          path.write_text(source.replace(old,new,1))
+          PY
+          node scripts/apply-unified-backup-restore.mjs
 
       - name: Commit generated implementation when patch changed files
         if: ${{ hashFiles('fabrication_pro_capacitor/scripts/apply-unified-backup-restore.mjs') != '' && github.actor != 'github-actions[bot]' }}
