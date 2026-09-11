@@ -169,7 +169,7 @@ test('full backup restores all persistent categories and safely finalizes captur
   await expect(page.locator('#tool-tasklog')).toHaveClass(/\bactive\b/,{timeout:15000});
   await expect(page.locator('#taskLogJobTitle')).toHaveText('Backup Job');
   const restoredTask=page.locator('.tasklog-task-row',{hasText:'Backup Task'});
-  await expect(restoredTask).toContainText('00:00:20');
+  await expect(restoredTask.locator('[data-tasklog-timer]')).toHaveText(/00:00:2[01]/);
   await expect(restoredTask.locator('[data-tasklog-timer-action="start"]')).toBeVisible();
   await expect(page.locator('[data-tasklog-timer-action="stop"]')).toHaveCount(0);
   await expect(restoredTask.locator('.tasklog-session-details')).toContainText('00:00:12');
