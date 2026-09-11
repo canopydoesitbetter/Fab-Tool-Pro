@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/refactor-app-modules.yml'
       - 'fabrication_pro_capacitor/scripts/split-app-modules.mjs'
+      - 'fabrication_pro_capacitor/scripts/fix-module-verifiers.mjs'
 
 permissions:
   contents: write
@@ -38,6 +39,9 @@ jobs:
 
       - name: Mechanically split app.js
         run: node scripts/split-app-modules.mjs
+
+      - name: Focus pure behavior verifiers on their modules
+        run: node scripts/fix-module-verifiers.mjs
 
       - name: Verify complete regression suite
         run: npm run verify
