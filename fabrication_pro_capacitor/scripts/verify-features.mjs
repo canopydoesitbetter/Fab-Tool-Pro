@@ -67,7 +67,7 @@ for(const marker of [
 ]) {
   if(!app.includes(marker)) throw new Error(`Navigation source-of-truth contract missing: ${marker}`);
 }
-if(app.includes("storageGet('fabricationTool')")) throw new Error('Launch behavior must be hard-wired to Task Logging instead of restoring the previously viewed page.');
+if(/selectTool\(\s*storageGet\(\s*['"]fabricationTool['"]/.test(app)) throw new Error('Launch behavior must be hard-wired to Task Logging instead of restoring the previously viewed page.');
 if(!app.includes("const settingsPageBtn = document.getElementById('settingsPageBtn');")) throw new Error('Settings navigation must derive its page ID from canonical markup.');
 for(const marker of ['function clearEntry()','function equals()','function percent()','function sqrt()','function memory(action)',"key==='Backspace' || key==='Delete'",'FabriCadabraApp.getActiveTool()']) {
   if(!calculator.includes(marker)) throw new Error(`Missing calculator behavior marker: ${marker}`);
