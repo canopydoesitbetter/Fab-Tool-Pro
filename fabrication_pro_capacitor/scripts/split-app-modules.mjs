@@ -151,7 +151,8 @@ for (const name of readdirSync(scriptsDir)) {
   let source=readFileSync(path,'utf8');
   const needsAppReader=source.includes("fs.readFileSync(path.join(root,'www','app.js'),'utf8')") || source.includes("readFileSync(join(root,'www','app.js'),'utf8')");
   if (!needsAppReader) continue;
-  source=addModuleImport(source,name==='verify-web.mjs' || name==='verify-features.mjs' ? 'APP_MODULES, readAppSource' : 'readAppSource');
+  const needsManifest=name==='verify-web.mjs' || name==='verify-features.mjs' || name==='verify-backup-restore.mjs';
+  source=addModuleImport(source,needsManifest ? 'APP_MODULES, readAppSource' : 'readAppSource');
   source=replaceRootAppRead(source);
   writeFileSync(path,source,'utf8');
 }
@@ -182,6 +183,14 @@ const settingsVerifyPath=join(scriptsDir,'verify-settings-changelog.mjs');
 let settingsVerify=readFileSync(settingsVerifyPath,'utf8');
 settingsVerify=settingsVerify.replace("need(sync.includes(\"join(root,'www','app.js')\"),'Version sync must update app.js.');","need(sync.includes(\"join(root,'www','app','bootstrap.js')\"),'Version sync must update app/bootstrap.js.');");
 writeFileSync(settingsVerifyPath,settingsVerify,'utf8');
+
+const backupVerifyPath=join(scriptsDir,'verify-backup-restore.mjs');
+let backupVerify=readFileSync(backupVerifyPath,'utf8');
+backupVerify=backupVerify.replace(
+  "const appIndex=html.indexOf('<script src=\"app.js\" defer></script>');\nconst backupIndex=html.indexOf('<script src=\"backup.js\" defer></script>');\nneed(appIndex>=0 && backupIndex>appIndex,'backup.js must load after app.js.');",
+  "const appIndex=Math.max(...APP_MODULES.map(src=>html.indexOf(`<script src=\"${src}\" defer></script>`)));\nconst backupIndex=html.indexOf('<script src=\"backup.js\" defer></script>');\nneed(appIndex>=0 && APP_MODULES.every(src=>html.includes(`<script src=\"${src}\" defer></script>`)) && backupIndex>appIndex,'backup.js must load after all app feature modules.');"
+);
+writeFileSync(backupVerifyPath,backupVerify,'utf8');
 
 const leftovers=[];
 for (const name of readdirSync(scriptsDir)) {
