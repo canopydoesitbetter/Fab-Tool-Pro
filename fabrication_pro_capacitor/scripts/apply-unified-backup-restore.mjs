@@ -105,26 +105,7 @@ if (!styles.includes('.settings-data-backup')) {
   write('www/styles.css',styles);
 }
 
-// ---------- verify-web.mjs ----------
-let verifyWeb=read('scripts/verify-web.mjs');
-if (!verifyWeb.includes("'www/backup.js'")) {
-  verifyWeb=replaceOnce(verifyWeb,
-"const requiredFiles=['www/index.html','www/styles.css','www/app.js','www/calculator.js','www/native-compat.js'];",
-"const requiredFiles=['www/index.html','www/styles.css','www/app.js','www/backup.js','www/calculator.js','www/native-compat.js'];",
-'verify-web required files');
-  verifyWeb=replaceOnce(verifyWeb,
-"const app=readFileSync(join(root,'www','app.js'),'utf8');\nconst calculator=readFileSync(join(root,'www','calculator.js'),'utf8');",
-"const app=readFileSync(join(root,'www','app.js'),'utf8');\nconst backup=readFileSync(join(root,'www','backup.js'),'utf8');\nconst calculator=readFileSync(join(root,'www','calculator.js'),'utf8');",
-'verify-web backup read');
-  verifyWeb=replaceOnce(verifyWeb,"const scriptOrder=['native-compat.js','app.js','calculator.js'];","const scriptOrder=['native-compat.js','app.js','backup.js','calculator.js'];",'verify-web script order');
-  verifyWeb=replaceOnce(verifyWeb,
-"for (const [name,source] of [['app.js',app],['calculator.js',calculator],['native-compat.js',native]]) {",
-"for (const [name,source] of [['app.js',app],['backup.js',backup],['calculator.js',calculator],['native-compat.js',native]]) {",
-'verify-web syntax list');
-  verifyWeb=replaceOnce(verifyWeb,'const shippedJs=app+calculator+native;','const shippedJs=app+backup+calculator+native;','verify-web shipped JS');
-  verifyWeb=verifyWeb.replace("console.log('JavaScript syntax: OK (app.js, calculator.js, native-compat.js)');","console.log('JavaScript syntax: OK (app.js, backup.js, calculator.js, native-compat.js)');");
-  write('scripts/verify-web.mjs',verifyWeb);
-}
+// verify-web.mjs is updated separately after generated app changes.
 
 // ---------- package.json ----------
 const packagePath=path.join(root,'package.json');

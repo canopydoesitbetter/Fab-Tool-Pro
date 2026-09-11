@@ -10,13 +10,12 @@ Edit the file that owns the thing you want to change:
 | --- | --- |
 | `www/index.html` | Application markup, visible copy, page/drawer structure, calculator/guide markup |
 | `www/styles.css` | Core application styling and responsive behavior |
-| `www/ux.css` | Focused interaction styling for streamlined management sections and drawer-based Task Logging / Fabricator Notes controls |
-| `www/app.js` | Fabrication tools, saved-data behavior, Shift Schedule timer policy/persistence, canonical navigation, shared drawer mechanics, self-tests |
-| `www/ux.js` | Focused Task Logging / Fabricator Notes / Shift Schedule presentation wiring that delegates data, clock/timer rules, persistence, and note operations to `app.js` |
+| `www/app.js` | Fabrication tools, saved-data behavior, Shift Schedule timer policy/persistence, canonical navigation, shared drawer mechanics, backup-domain bridge, self-tests |
+| `www/backup.js` | Full-app backup/restore orchestration, IndexedDB recovery snapshots, and transaction-style localStorage replacement |
 | `www/calculator.js` | Basic Calculator behavior and Calculator Guide event wiring |
 | `www/native-compat.js` | Capacitor-only Blob export compatibility |
 
-There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. `ux.js` is an explicit shipped UI module for the canonical markup in `index.html`; it does not replace markup or own fabrication data. Git history is the archive for previous source versions.
+There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. `app.js` owns domain validation and persistent state rules; `backup.js` only orchestrates full backup/restore and recovery by calling the narrow backup bridge exposed by `app.js`. Git history is the archive for previous source versions.
 
 ## Compatibility guarantees
 
@@ -139,6 +138,6 @@ Generated `android/` and `ios/` projects are build products for this workflow; t
 
 ## Persistence notes
 
-Fabri-Cadabra uses browser/WebView `localStorage`. In Capacitor, that storage belongs to the installed application and persists across normal restarts and same-identity app updates. Uninstalling the application removes app-local storage, so the built-in JSON exports remain the portable backup/transfer mechanism.
+Fabri-Cadabra uses browser/WebView `localStorage`. In Capacitor, that storage belongs to the installed application and persists across normal restarts and same-identity app updates. Uninstalling the application removes app-local storage. Settings → Data & Backup can export one full portable JSON backup of all app-owned persistent state, while the existing feature-specific JSON exports remain available for targeted transfer. Destructive replacement imports and full restore create one rolling IndexedDB recovery snapshot before mutation.
 
 Shift Schedule configuration and its live clock/override state use the isolated `fabricationShiftScheduleV1` localStorage record. This state is a Task Logging guardrail, not a payroll/timecard history or export format.

@@ -840,6 +840,19 @@
           <span class='hint'>Overnight shifts are supported. The scheduled workday is the day the shift starts. Break and Lunch current-shift overrides reset when that scheduled shift ends.</span>
         </div>
       </details>
+      <section id='settingsDataBackupCard' class='card settings-overview-card settings-data-backup'>
+        <h2>Data &amp; Backup</h2>
+        <p class='hint'>Create one portable backup of all persistent Fabri-Cadabra data, or restore a previous full backup. Existing feature-specific import/export tools remain available.</p>
+        <div class='settings-backup-actions'>
+          <button id='settingsBackupBtn' class='btn' type='button'>Backup Fabri-Cadabra</button>
+          <button id='settingsRestoreBtn' class='btn' type='button'>Restore Fabri-Cadabra Backup</button>
+          <input id='settingsBackupRestoreFile' type='file' accept='application/json,.json' hidden />
+          <button id='settingsRestoreRecoveryBtn' class='btn' type='button' disabled>Restore Last Recovery Snapshot</button>
+        </div>
+        <div id='settingsBackupStatus' class='status' role='status' aria-live='polite'></div>
+        <div id='settingsRecoveryMeta' class='settings-recovery-meta'>No automatic recovery snapshot is available yet.</div>
+        <span class='hint'>Before a destructive full restore or supported replacement import, Fabri-Cadabra saves one rolling automatic recovery snapshot in device storage.</span>
+      </section>
       <section class='card settings-overview-card'>
         <h2>Application</h2>
         <div class='settings-version-row'>
@@ -1152,6 +1165,7 @@
 
   <script src="native-compat.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="backup.js" defer></script>
   <script src="calculator.js" defer></script>
 </body>
 </html>

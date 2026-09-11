@@ -3491,3 +3491,43 @@ label[for="fabricatorNotesTitle"] {
   opacity:0;
   pointer-events:none;
 }
+
+
+/* Unified Data & Backup */
+.settings-data-backup {
+  max-width:720px;
+}
+.settings-data-backup > h2 {
+  margin-bottom:8px;
+}
+.settings-data-backup > .hint {
+  display:block;
+  line-height:1.5;
+}
+.settings-backup-actions {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:14px 0 10px;
+}
+.settings-backup-actions .btn {
+  width:100%;
+  min-height:46px;
+}
+.settings-backup-actions #settingsRestoreRecoveryBtn {
+  grid-column:1 / -1;
+}
+.settings-recovery-meta {
+  margin:10px 0;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--card2);
+  color:var(--muted);
+  font-size:.82rem;
+  line-height:1.45;
+}
+@media (max-width:680px) {
+  .settings-backup-actions { grid-template-columns:1fr; }
+  .settings-backup-actions #settingsRestoreRecoveryBtn { grid-column:auto; }
+}
