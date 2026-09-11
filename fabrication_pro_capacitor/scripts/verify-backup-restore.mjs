@@ -1,10 +1,11 @@
+import { APP_MODULES, readAppSource } from './app-module-manifest.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
 const need=(condition,message)=>{if(!condition)throw new Error(message);};
 const html=readFileSync(join(root,'www','index.html'),'utf8');
-const app=readFileSync(join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 const backupPath=join(root,'www','backup.js');
@@ -43,9 +44,9 @@ need(html.includes('Restore Last Recovery Snapshot'),'Settings must expose recov
 need(styles.includes('.settings-data-backup'),'Settings Data & Backup styles are missing.');
 need(styles.includes('.settings-backup-actions'),'Settings backup action layout is missing.');
 
-const appIndex=html.indexOf('<script src="app.js" defer></script>');
+const appIndex=Math.max(...APP_MODULES.map(src=>html.indexOf(`<script src="${src}" defer></script>`)));
 const backupIndex=html.indexOf('<script src="backup.js" defer></script>');
-need(appIndex>=0 && backupIndex>appIndex,'backup.js must load after app.js.');
+need(appIndex>=0 && APP_MODULES.every(src=>html.includes(`<script src="${src}" defer></script>`)) && backupIndex>appIndex,'backup.js must load after all app feature modules.');
 need(!/localStorage\.clear\s*\(/.test(app+backup),'Unified backup/restore must never call localStorage.clear().');
 
 for(const marker of ['buildFullBackup','normalizeFullBackupForRestore','flushPendingPersistentEdits','persistenceKeys']) {

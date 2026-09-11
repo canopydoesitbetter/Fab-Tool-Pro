@@ -1,10 +1,11 @@
+import { readAppSource } from './app-module-manifest.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';
 
 const root=process.cwd();
 const index=readFileSync(join(root,'www','index.html'),'utf8');
-const app=readFileSync(join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 

@@ -1,9 +1,10 @@
+import { readAppSource } from './app-module-manifest.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
 const html=readFileSync(join(root,'www','index.html'),'utf8');
-const app=readFileSync(join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
 const syncPath=join(root,'scripts','sync-app-version.mjs');
@@ -17,7 +18,7 @@ need(/\.settings-changelog-drawer\s*\{[^}]*left:\s*50%[^}]*top:\s*50%/s.test(sty
 need(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(String(pkg.version||'')),`Invalid package version: ${pkg.version || 'missing'}`);
 need(existsSync(syncPath),'Missing package-version sync script.');
 const sync=readFileSync(syncPath,'utf8');
-need(sync.includes("join(root,'www','app.js')"),'Version sync must update app.js.');
+need(sync.includes("join(root,'www','app','bootstrap.js')"),'Version sync must update app/bootstrap.js.');
 const generated=app.match(/const FABRI_CADABRA_VERSION='([^']+)'/)?.[1];
 need(generated===pkg.version,`Browser version ${generated || 'missing'} does not match package version ${pkg.version}.`);
 need(app.includes("settingsPageBtn?.addEventListener('click'"),'Settings must use canonical page navigation.');

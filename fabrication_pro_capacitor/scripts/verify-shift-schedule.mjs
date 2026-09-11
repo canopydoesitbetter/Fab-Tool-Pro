@@ -1,9 +1,10 @@
+import { readAppSource } from './app-module-manifest.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 process.env.TZ='America/New_York';
 const root=path.resolve(import.meta.dirname,'..');
-const app=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 const html=fs.readFileSync(path.join(root,'www','index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));

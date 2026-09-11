@@ -1,3 +1,4 @@
+import { readAppSource } from './app-module-manifest.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -65,7 +66,7 @@ for(const marker of ['@capacitor/assets@3.0.5',"const stagingPath=join(root,'ass
 if(apply.includes("'--assetPath'"))throw new Error('Native branding generator must not use the ignored --assetPath option.');
 const init=readFileSync(join(root,'scripts','native-init.mjs'),'utf8');
 need(init,"run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'native:brand']);",'native:init must apply Fabri-Cadabra branding.');
-const app=readFileSync(join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 need(app,`const FABRI_CADABRA_VERSION='${version}';`,'Browser version marker must match package.json.');
 need(index,"data-changelog-version='1.0.3'",'v1.0.3 changelog history must remain.');
 need(index,'new Fabri-Cadabra launcher icon','v1.0.4 changelog must disclose launcher icon.');

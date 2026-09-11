@@ -4,7 +4,7 @@ import path from 'node:path';
 process.env.TZ='America/New_York';
 
 const root=path.resolve(import.meta.dirname,'..');
-const app=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
+const app=fs.readFileSync(path.join(root,'www','app','shift-schedule.js'),'utf8');
 
 function expect(condition,message) {
   if (!condition) throw new Error(message);
@@ -15,11 +15,9 @@ function localMs(y,m,d,h=0,min=0) {
 }
 
 const startMarker='// @shift-schedule-core-start';
-const endMarker='\n  function showTaskLogStatus';
 const start=app.indexOf(startMarker);
-const end=app.indexOf(endMarker,start);
-expect(start>=0 && end>start,'Shift Schedule engine block could not be isolated from app.js.');
-const engineSource=app.slice(start,end);
+expect(start>=0,'Shift Schedule engine block could not be isolated from app/shift-schedule.js.');
+const engineSource=app.slice(start);
 
 function makeHarness(initialRecord=null) {
   const storage=new Map();

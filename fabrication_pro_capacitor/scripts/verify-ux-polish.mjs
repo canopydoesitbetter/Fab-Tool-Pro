@@ -1,10 +1,11 @@
+import { readAppSource } from './app-module-manifest.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
 const html=readFileSync(join(root,'www','index.html'),'utf8');
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
-const app=readFileSync(join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 function need(condition,message){if(!condition)throw new Error(message);}
 need(!existsSync(join(root,'www','ux.js')) && !existsSync(join(root,'www','ux.css')),'Retired ux.js / ux.css files must be absent.');
 need(!/ux\.js|ux\.css/.test(html),'index.html must not reference retired UX patch assets.');

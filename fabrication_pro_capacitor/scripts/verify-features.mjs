@@ -1,13 +1,14 @@
+import { APP_MODULES, readAppSource } from './app-module-manifest.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root=process.cwd();
-for (const f of ['www/index.html','www/styles.css','www/app.js','www/calculator.js','www/native-compat.js']) {
+for (const f of ['www/index.html','www/styles.css',...APP_MODULES.map(file=>`www/${file}`),'www/calculator.js','www/native-compat.js']) {
   if (!existsSync(join(root,f))) throw new Error(`Missing canonical source required by feature verification: ${f}`);
 }
 const html=readFileSync(join(root,'www','index.html'),'utf8');
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
-const app=readFileSync(join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 const calculator=readFileSync(join(root,'www','calculator.js'),'utf8');
 const native=readFileSync(join(root,'www','native-compat.js'),'utf8');
 const config=JSON.parse(readFileSync(join(root,'capacitor.config.json'),'utf8'));

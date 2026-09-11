@@ -1,8 +1,9 @@
+import { readAppSource } from './app-module-manifest.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const root=path.resolve(import.meta.dirname,'..');
-const app=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
+const app=readAppSource(root);
 const html=fs.readFileSync(path.join(root,'www','index.html'),'utf8');
 
 function expect(condition,message) {
