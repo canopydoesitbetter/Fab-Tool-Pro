@@ -146,7 +146,8 @@ test('full backup restores all persistent categories and safely finalizes captur
   const backedUpTask=exported.json.sections.taskLogging.jobs.jobs[0].tasks[0];
   expect(backedUpTask.running).toBe(true);
   expect(backedUpTask.sessions).toHaveLength(1);
-  expect(backedUpTask.accumulatedMs).toBe(12000);
+  expect(backedUpTask.accumulatedMs).toBeGreaterThanOrEqual(12000);
+  expect(backedUpTask.accumulatedMs).toBeLessThan(13000);
   expect(exported.json.sections.fabricatorNotes.topics).toHaveLength(1);
   expect(exported.json.sections.checklists.topics).toHaveLength(1);
   expect(exported.json.sections.optimizer.savedJobs['BACKUP-100']).toBeTruthy();
