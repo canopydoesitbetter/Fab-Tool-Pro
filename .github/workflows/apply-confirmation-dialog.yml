@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/apply-confirmation-dialog.yml'
       - 'fabrication_pro_capacitor/scripts/apply-confirmation-dialog.mjs'
+      - 'fabrication_pro_capacitor/scripts/verify-settings-changelog.mjs'
   workflow_dispatch:
 
 permissions:
