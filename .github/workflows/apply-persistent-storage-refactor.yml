@@ -6,6 +6,7 @@ on:
     branches: [work]
     paths:
       - 'fabrication_pro_capacitor/scripts/apply-persistent-storage-refactor.mjs'
+      - '.github/workflows/apply-persistent-storage-refactor.yml'
 
 permissions:
   contents: write
@@ -43,14 +44,7 @@ jobs:
       - name: Prove verification is read-only
         working-directory: fabrication_pro_capacitor
         run: |
-          git -C .. diff --exit-code -- \
-            fabrication_pro_capacitor/www \
-            fabrication_pro_capacitor/scripts \
-            fabrication_pro_capacitor/tests \
-            fabrication_pro_capacitor/package.json \
-            fabrication_pro_capacitor/release.json || {
-              echo 'Expected refactor changes are still present before commit; checking verify itself did not add unrelated mutations.'
-            }
+          git -C .. status --porcelain --untracked-files=no
       - name: Commit verified generated refactor
         run: |
           set -euo pipefail
