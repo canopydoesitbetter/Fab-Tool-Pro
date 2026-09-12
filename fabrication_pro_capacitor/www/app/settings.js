@@ -246,8 +246,13 @@
         renderShiftScheduleSettings();
         return;
       }
-      const warning='Enable Shift Schedule? Manual Clock In becomes required. Active timers stop now. Enabled Break, Lunch, and scheduled Clock Out boundaries will control Task Logging.';
-      if (!await confirmAppAction(warning)) {
+      const enableConfirmed=await confirmAppAction({
+        title:'Enable Shift Schedule?',
+        message:'Enable Shift Schedule to require Manual Clock In. Active timers stop now. Enabled Break, Lunch, and scheduled Clock Out boundaries will control Task Logging.',
+        confirmLabel:'Enable Shift Schedule',
+        cancelLabel:'Cancel'
+      });
+      if (!enableConfirmed) {
         renderShiftScheduleSettings();
         return;
       }
@@ -255,8 +260,14 @@
       if (!result.ok) showShiftScheduleStatus((result.errors || ['Unable to enable Shift Schedule.']).join(' '),'error');
       else showShiftScheduleStatus('Shift Schedule ENABLED. Clock In before starting Task Logging timers.','ok');
     } else {
-      const warning='Disable Shift Schedule? Task Logging returns to unrestricted behavior. Automatic Break, Lunch, Clock Out, and clock-in protection are turned off.';
-      if (!await confirmAppAction(warning)) {
+      const disableConfirmed=await confirmAppAction({
+        title:'Disable Shift Schedule?',
+        message:'Disable Shift Schedule to return Task Logging to unrestricted behavior. Automatic Break, Lunch, Clock Out, and clock-in protection are turned off.',
+        confirmLabel:'Disable Shift Schedule',
+        cancelLabel:'Cancel',
+        danger:true
+      });
+      if (!disableConfirmed) {
         renderShiftScheduleSettings();
         return;
       }

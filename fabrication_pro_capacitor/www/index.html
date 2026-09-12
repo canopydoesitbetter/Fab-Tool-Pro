@@ -904,6 +904,7 @@
         </div>
         <ul>
           <li><b>Fabri-Cadabra Confirmation Dialogs:</b> Replaced browser-native confirmation popups across Clock Out, Shift Schedule controls, destructive deletes and clears, overwrite/import/restore actions, and optimizer cut-status changes with one reusable app-styled modal featuring configurable titles and button labels, danger styling, keyboard focus trapping, Escape cancellation, backdrop cancellation, and previous-focus restoration.</li>
+          <li><b>Shift Schedule Confirmation:</b> Gave Enable and Disable Shift Schedule dedicated confirmation titles and action labels so schedule controls can never inherit Clock In or Clock Out wording from explanatory text.</li>
           <li>Added permanent source and browser regression coverage so important workflows cannot silently fall back to <code>window.confirm()</code>.</li>
         </ul>
       </article>
