@@ -43,6 +43,8 @@ jobs:
         working-directory: fabrication_pro_capacitor
         run: |
           sed -i 's#<script defer src="app/bootstrap.js"></script>#<script src="app/bootstrap.js" defer></script>#g' scripts/apply-confirmation-dialog.mjs
+          sed -i 's#transition:opacity .18s ease,visibility .18s ease;#transition:opacity .18s ease;#g' scripts/apply-confirmation-dialog.mjs
+          sed -i 's#transition:transform .18s ease,opacity .18s ease,visibility .18s ease;#transition:transform .18s ease,opacity .18s ease;#g' scripts/apply-confirmation-dialog.mjs
           node scripts/apply-confirmation-dialog.mjs
 
       - name: Verify source and release contracts
