@@ -149,6 +149,9 @@ test('Shift Schedule UI enables real clock in and clock out wiring', async ({ pa
   await page.locator('#shiftScheduleSaveBtn').click();
 
   await page.locator('label[for="shiftScheduleMasterToggle"]').click();
+  await expect(page.locator('#appConfirmTitle')).toHaveText('Enable Shift Schedule?');
+  await expect(page.locator('#appConfirmConfirmBtn')).toHaveText('Enable Shift Schedule');
+  await expect(page.locator('#appConfirmTitle')).not.toHaveText('Clock In?');
   await acceptNextDialog(page, 'Enable Shift Schedule');
   await expect(page.locator('#shiftScheduleMasterToggle')).toBeChecked();
   await expect(page.locator('#shiftScheduleMasterState')).toHaveText('ENABLED');
