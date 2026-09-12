@@ -1,0 +1,65 @@
+name: Apply Release Continuity Repair
+
+on:
+  push:
+    branches: [ work ]
+    paths:
+      - '.github/workflows/apply-release-continuity.yml'
+      - 'fabrication_pro_capacitor/scripts/apply-release-continuity.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work
+        uses: actions/checkout@v4
+        with:
+          ref: work
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Apply deterministic release repair
+        run: node fabrication_pro_capacitor/scripts/apply-release-continuity.mjs
+
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm ci
+
+      - name: Verify source and release contracts
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Install Playwright Chromium
+        working-directory: fabrication_pro_capacitor
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser regression tests
+        working-directory: fabrication_pro_capacitor
+        run: npm run test:e2e
+
+      - name: Remove one-time repair scaffolding
+        run: |
+          rm fabrication_pro_capacitor/scripts/apply-release-continuity.mjs
+          rm .github/workflows/apply-release-continuity.yml
+
+      - name: Commit verified release repair
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No release repair changes to commit.'
+            exit 0
+          fi
+          git commit -m 'release: repair 1.0.4 version continuity'
+          git push origin HEAD:work
