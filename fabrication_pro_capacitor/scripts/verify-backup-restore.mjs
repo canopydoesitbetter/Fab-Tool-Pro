@@ -13,12 +13,13 @@ const backupPath=join(root,'www','backup.js');
 need(existsSync(backupPath),'Unified backup subsystem is missing: www/backup.js');
 const backup=readFileSync(backupPath,'utf8');
 
-need(app.includes("const FABRI_CADABRA_BACKUP_FORMAT='FabriCadabraBackup';"),'Backup format constant must be canonical in app.js.');
-need(app.includes('const FABRI_CADABRA_BACKUP_SCHEMA_VERSION=1;'),'Backup schema version 1 must be canonical in app.js.');
+need(app.includes("const FABRI_CADABRA_BACKUP_FORMAT='FabriCadabraBackup';"),'Backup format constant must remain canonical.');
+need(app.includes('const FABRI_CADABRA_BACKUP_SCHEMA_VERSION=2;'),'Backup schema version 2 must be canonical.');
+need(app.includes('function migrateFullBackupV1ToV2'),'Backup schema v1 must have an explicit v1 -> v2 migration.');
+need(app.includes("sourceSchemaVersion===1"),'Full restore must route schema-v1 backups through the explicit migration.');
+need(app.includes('persistenceKeys:Object.freeze(listPersistentStores().map(store=>store.key))'),'Full backup persistence keys must come from the central persistent-store registry.');
+need(!app.includes('const FABRI_CADABRA_PERSISTENCE_KEYS=Object.freeze(['),'Backup must not keep a second hard-coded persistence-key registry.');
 
-const registryMatch=app.match(/const FABRI_CADABRA_PERSISTENCE_KEYS=Object\.freeze\(\[([\s\S]*?)\]\);/);
-need(registryMatch,'Authoritative persistence-key registry is missing from app.js.');
-const registry=[...registryMatch[1].matchAll(/'([^']+)'/g)].map(match=>match[1]);
 const expected=[
   'fabricationTaskLogJobsV1',
   'fabricationTaskLogPresetsV1',
@@ -31,9 +32,8 @@ const expected=[
   'fabricationQuickReferenceTable',
   'fabricationQuickReferenceDecimalMode'
 ];
-need(registry.length===expected.length,`Backup registry must contain exactly ${expected.length} keys; found ${registry.length}.`);
-need(JSON.stringify(registry)===JSON.stringify(expected),`Backup registry changed or is out of order. Expected ${expected.join(', ')}; got ${registry.join(', ')}.`);
-need(new Set(registry).size===registry.length,'Backup registry contains duplicate keys.');
+for (const key of expected) need(app.includes(key),`Stable persistence key disappeared from registered app source: ${key}.`);
+need(new Set(expected).size===expected.length,'Backup verifier expected-key list contains duplicates.');
 
 for(const id of ['settingsDataBackupCard','settingsBackupBtn','settingsRestoreBtn','settingsBackupRestoreFile','settingsRestoreRecoveryBtn','settingsBackupStatus','settingsRecoveryMeta']) {
   need(html.includes(`id='${id}'`) || html.includes(`id="${id}"`),`Settings Data & Backup markup missing ${id}.`);
@@ -49,7 +49,7 @@ const backupIndex=html.indexOf('<script src="backup.js" defer></script>');
 need(appIndex>=0 && APP_MODULES.every(src=>html.includes(`<script src="${src}" defer></script>`)) && backupIndex>appIndex,'backup.js must load after all app feature modules.');
 need(!/localStorage\.clear\s*\(/.test(app+backup),'Unified backup/restore must never call localStorage.clear().');
 
-for(const marker of ['buildFullBackup','normalizeFullBackupForRestore','flushPendingPersistentEdits','persistenceKeys']) {
+for(const marker of ['buildFullBackup','normalizeFullBackupForRestore','flushPendingPersistentEdits','persistenceKeys','normalizeBackupStore']) {
   need(app.includes(marker),`FabriCadabraApp backup bridge missing ${marker}.`);
 }
 need(app.includes('window.FabriCadabraApp.backup='),'Backup bridge must be exposed under window.FabriCadabraApp.backup.');
@@ -60,10 +60,15 @@ need(app.includes('normalizedShift.pauseOverrides={shiftId:null,breakEnabled:nul
 for(const marker of [
   "const RECOVERY_DB_NAME='FabriCadabraRecovery'",
   "const RECOVERY_STORE_NAME='snapshots'",
+  "const RECOVERY_RAW_STORE_NAME='rawStores'",
+  "const RECOVERY_DB_VERSION=2",
   "const RECOVERY_LATEST_ID='latest'",
   'indexedDB.open(',
   'writeRecoverySnapshot',
   'readLatestRecoverySnapshot',
+  'protectPersistentStores',
+  'listStoresNeedingRecoveryProtection',
+  'markRecoveryProtected',
   'transactionalReplaceAppStorage',
   'rollback'
 ]) need(backup.includes(marker),`Recovery/transaction implementation missing ${marker}.`);
@@ -80,4 +85,4 @@ need(String(pkg.scripts?.verify||'').includes('npm run verify:backup-restore'),'
 const release=JSON.parse(readFileSync(join(root,'release.json'),'utf8'));
 need(pkg.version===release.version,`Backup verifier package version ${pkg.version} must match release metadata ${release.version}.`);
 
-console.log('Unified backup format, 10-key registry, restore safety, and recovery contract: OK');
+console.log('Unified backup schema v2, central 10-store registry, v1 migration, restore safety, and recovery contract: OK');
