@@ -7,6 +7,7 @@ const html=readFileSync(join(root,'www','index.html'),'utf8');
 const app=readAppSource(root);
 const styles=readFileSync(join(root,'www','styles.css'),'utf8');
 const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+const release=JSON.parse(readFileSync(join(root,'release.json'),'utf8'));
 const syncPath=join(root,'scripts','sync-app-version.mjs');
 function need(condition,message){if(!condition)throw new Error(message);}
 need(!existsSync(join(root,'www','ux.js')) && !existsSync(join(root,'www','ux.css')),'Settings must not depend on retired UX patch assets.');
@@ -16,6 +17,7 @@ need(/\.fab-settings-link\s*\{[^}]*background:\s*var\(--danger-bg\)[^}]*color:\s
 need(/\.fab-page-drawer \.cut-list-drawer-body\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column[^}]*overflow:\s*hidden/s.test(styles),'Pages drawer must pin Settings outside the scrollable tool list.');
 need(/\.settings-changelog-drawer\s*\{[^}]*left:\s*50%[^}]*top:\s*50%/s.test(styles),'Changelog overlay must remain centered.');
 need(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(String(pkg.version||'')),`Invalid package version: ${pkg.version || 'missing'}`);
+need(pkg.version===release.version,`Settings version contract: package ${pkg.version} must match release ${release.version}.`);
 need(existsSync(syncPath),'Missing package-version sync script.');
 const sync=readFileSync(syncPath,'utf8');
 need(sync.includes("join(root,'www','app','bootstrap.js')"),'Version sync must update app/bootstrap.js.');
@@ -24,13 +26,15 @@ need(generated===pkg.version,`Browser version ${generated || 'missing'} does not
 need(app.includes("settingsPageBtn?.addEventListener('click'"),'Settings must use canonical page navigation.');
 need(!/installSettingsPage|originalGetActiveTool|FabriCadabraApp\.getActiveTool=/.test(app),'Settings navigation monkey-patch must be absent.');
 need(app.includes("openDrawer('settingsChangelogDrawer'" ) && app.includes("closeDrawer('settingsChangelogDrawer'"),'Changelog must reuse shared drawer behavior.');
-const currentIndex=html.indexOf(`data-changelog-version='${pkg.version}'`);
+const currentIndex=html.indexOf(`data-changelog-version='${release.version}'`);
+const previousIndex=html.indexOf(`data-changelog-version='${release.previousVersion}'`);
 const v103Index=html.indexOf("data-changelog-version='1.0.3'");
 const v102Index=html.indexOf("data-changelog-version='1.0.2'");
 const v101Index=html.indexOf("data-changelog-version='1.0.1'");
 const baselineIndex=html.indexOf("data-changelog-version='1.0.0'");
-need(pkg.version==='1.0.4','Current repaired public release must be 1.0.4.');
-need(currentIndex>=0 && v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineIndex>v101Index,'Changelog must remain newest-first with 1.0.4 followed by 1.0.3.');
+need(currentIndex>=0 && previousIndex>currentIndex,'Changelog must contain the current release followed by release.json previousVersion.');
+if (release.previousVersion==='1.0.4') need(v103Index>previousIndex && v102Index>v103Index && v101Index>v102Index && baselineIndex>v101Index,'Changelog must remain newest-first with 1.0.5, 1.0.4, 1.0.3, 1.0.2, 1.0.1, then 1.0.0.');
+else need(v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineIndex>v101Index,'Changelog must remain newest-first through the established 1.0.3 to 1.0.0 history.');
 for (const concept of ['Full Backup &amp; Recovery','full-app JSON backup','automatic recovery snapshot','Task Logging Jobs and Presets imports','transactional','Restore Latest Recovery','new Fabri-Cadabra launcher icon','branded launch screen','full portrait artwork','runtime UX patch layer','6,600+ line app.js monolith','15 ordered feature modules','Playwright','npm run verify read-only','release-continuity checks']) need(html.includes(concept),`v1.0.4 changelog missing audited release concept: ${concept}`);
 for (const heading of ['Task Logging','Fabricator Notes','Checklist','Basic Calculator','Quick Reference','Fastener Spacing','Sheet Optimizer','Saw Optimizer','Aluminum Overhang','App-Wide Features']) need(html.includes(`<h3>${heading}</h3>`),`Current Features changelog missing section: ${heading}`);
 for (const concept of ['phone-friendly','730 for 7:30','AM/PM selector','impossible times','Task Logging Jobs panel is now collapsible','Job # / Name now opens a dedicated rename overlay','Shift Schedule in Settings','green CLOCK IN','red CLOCK OUT','overtime','unscheduled work','overnight shifts','unrestricted Task Logging behavior']) need(html.includes(concept),`Changelog missing required concept: ${concept}`);
