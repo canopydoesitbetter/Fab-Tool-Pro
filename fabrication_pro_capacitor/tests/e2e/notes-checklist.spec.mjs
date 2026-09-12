@@ -67,8 +67,8 @@ test('Fabricator Notes creates, edits, switches topics, and deletes through visi
   await page.locator('#fabricatorNotesTitle').focus();
   await expect(page.locator('#fabricatorNotesContent')).toContainText('Updated hinge measurements');
 
-  acceptNextDialog(page, 'Delete the topic');
   await page.locator('#fabricatorNotesDeleteBtn').click();
+  await acceptNextDialog(page, 'Delete the topic');
   await expect(page.locator('#fabricatorNotesTitle')).toHaveValue('Weld Notes');
   await expect(page.locator('#fabricatorNotesCount')).toHaveText('1');
 });
@@ -97,8 +97,8 @@ test('Fabricator Notes formatting and export/import round trip preserve rich tex
   const exported = await captureJsonDownload(page, () => page.locator('#fabricatorNotesExportBtn').click());
   expect(exported.json.fabricatorNotes.topics).toHaveLength(1);
 
-  acceptNextDialog(page, 'Delete the topic');
   await page.locator('#fabricatorNotesDeleteBtn').click();
+  await acceptNextDialog(page, 'Delete the topic');
   await expect(page.locator('#fabricatorNotesCount')).toHaveText('0');
 
   await page.locator('#fabricatorNotesImportFile').setInputFiles(exported.path);
@@ -133,8 +133,8 @@ test('Checklist creates, edits, completes, reorders, persists, and deletes items
   await expect(checklistItemInput(page, 0)).toHaveValue('Second item');
   await expect(checklistItemInput(page, 2)).toHaveValue('First item');
 
-  acceptNextDialog(page, 'Delete the checklist');
   await page.locator('#checklistDeleteTopicBtn').click();
+  await acceptNextDialog(page, 'Delete the checklist');
   await expect(page.locator('#checklistTitle')).toHaveValue('');
   await expect(page.locator('#checklistProgressText')).toHaveText('0 of 0 complete');
 });
@@ -150,8 +150,8 @@ test('Checklist export/import round trip restores order and completion state', a
   const exported = await captureJsonDownload(page, () => page.locator('#checklistExportBtn').click());
   expect(exported.json.fabricationChecklist.topics).toHaveLength(1);
 
-  acceptNextDialog(page, 'Delete the checklist');
   await page.locator('#checklistDeleteTopicBtn').click();
+  await acceptNextDialog(page, 'Delete the checklist');
   await page.locator('#checklistImportFile').setInputFiles(exported.path);
 
   await expect(page.locator('#checklistTitle')).toHaveValue('Portable Checklist');

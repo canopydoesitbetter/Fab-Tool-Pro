@@ -640,10 +640,10 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     showTaskLogStatus(`Preset task “${name}” added.`,'ok');
   }
 
-  function deleteTaskLogPreset(id) {
+  async function deleteTaskLogPreset(id) {
     const preset=taskLogPresets.find(p=>p.id===id);
     if (!preset) return;
-    if (!window.confirm(`Delete preset task “${preset.name}”? Existing jobs keep their already-assigned copy of this task.`)) return;
+    if (!await confirmAppAction(`Delete preset task “${preset.name}”? Existing jobs keep their already-assigned copy of this task.`)) return;
     taskLogPresets=taskLogPresets.filter(p=>p.id!==id);
     persistTaskLogPresets(true);
     renderTaskLogPresetLibrary();
@@ -734,24 +734,24 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     if (active) stopTaskLogTaskById(active.task.id,true);
   }
 
-  function removeTaskLogTask(taskId) {
+  async function removeTaskLogTask(taskId) {
     const job=activeTaskLogJob();
     if (!job) return;
     const task=job.tasks.find(t=>t.id===taskId);
     if (!task) return;
     const warning=task.running ? ' It is currently running and will be removed without adding any more time.' : '';
-    if (!window.confirm(`Remove “${task.name}” from ${job.title}? Its logged time and session history will be deleted.${warning}`)) return;
+    if (!await confirmAppAction(`Remove “${task.name}” from ${job.title}? Its logged time and session history will be deleted.${warning}`)) return;
     job.tasks=job.tasks.filter(t=>t.id!==taskId);
     job.updatedAt=new Date().toISOString();
     persistTaskLogJobs(true);
     renderTaskLogging();
   }
 
-  function deleteActiveTaskLogJob() {
+  async function deleteActiveTaskLogJob() {
     const job=activeTaskLogJob();
     if (!job) return;
     const running=job.tasks.some(t=>t.running);
-    if (!window.confirm(`Delete ${job.title} and all of its task time logs?${running?' A timer is currently running in this job.':''}`)) return;
+    if (!await confirmAppAction(`Delete ${job.title} and all of its task time logs?${running?' A timer is currently running in this job.':''}`)) return;
     taskLogJobs=taskLogJobs.filter(j=>j.id!==job.id);
     taskLogActiveJobId=taskLogJobs[0]?.id ?? null;
     persistTaskLogJobs(true);
@@ -782,7 +782,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     reader.onload=async ()=>{
       try {
         const record=normalizeTaskLogJobsRecord(JSON.parse(String(reader.result||'')));
-        if (taskLogJobs.length && !window.confirm(`Import ${record.jobs.length} Task Logging job${record.jobs.length===1?'':'s'} and replace the jobs currently saved on this device? Preset tasks will not be changed.`)) return;
+        if (taskLogJobs.length && !await confirmAppAction(`Import ${record.jobs.length} Task Logging job${record.jobs.length===1?'':'s'} and replace the jobs currently saved on this device? Preset tasks will not be changed.`)) return;
         if (taskLogJobs.length) await requireRecoverySnapshot('before-task-jobs-import');
         const stopped=finalizeImportedRunningTaskLogJobs(record);
         taskLogJobs=record.jobs;
@@ -807,7 +807,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     reader.onload=async ()=>{
       try {
         const record=normalizeTaskLogPresetsRecord(JSON.parse(String(reader.result||'')));
-        if (taskLogPresets.length && !window.confirm(`Import ${record.presets.length} preset task${record.presets.length===1?'':'s'} and replace the preset library currently saved on this device? Existing jobs and their time logs will not be changed.`)) return;
+        if (taskLogPresets.length && !await confirmAppAction(`Import ${record.presets.length} preset task${record.presets.length===1?'':'s'} and replace the preset library currently saved on this device? Existing jobs and their time logs will not be changed.`)) return;
         if (taskLogPresets.length) await requireRecoverySnapshot('before-task-presets-import');
         taskLogPresets=record.presets;
         taskLogNextPresetId=record.nextPresetId;

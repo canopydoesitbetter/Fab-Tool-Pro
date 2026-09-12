@@ -3531,3 +3531,30 @@ label[for="fabricatorNotesTitle"] {
   .settings-backup-actions { grid-template-columns:1fr; }
   .settings-backup-actions #settingsRestoreRecoveryBtn { grid-column:auto; }
 }
+
+
+/* Fabri-Cadabra reusable confirmation dialog */
+body.app-confirm-open { overflow:hidden; }
+.app-confirm-backdrop {
+  position:fixed; inset:0; z-index:340; background:rgba(3,12,20,.66);
+  opacity:0; visibility:hidden; transition:opacity .18s ease;
+}
+.app-confirm-backdrop.open { opacity:1; visibility:visible; }
+.app-confirm-dialog {
+  position:fixed; left:50%; top:50%; z-index:341; width:min(92vw,520px); max-height:min(82vh,680px);
+  transform:translate(-50%,-48%) scale(.97); opacity:0; visibility:hidden;
+  transition:transform .18s ease,opacity .18s ease; outline:none;
+}
+.app-confirm-dialog.open { transform:translate(-50%,-50%) scale(1); opacity:1; visibility:visible; }
+.app-confirm-panel {
+  overflow:auto; max-height:min(82vh,680px); background:var(--card); color:var(--text);
+  border:2px solid var(--panel-border-inner); border-radius:18px; padding:18px;
+  box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--panel-border-outer),var(--panel-depth);
+}
+.app-confirm-panel h2 { margin:0 0 8px; color:var(--accent); font-size:1.2rem; line-height:1.25; }
+.app-confirm-panel p { margin:0; color:var(--muted); font-size:.94rem; line-height:1.48; white-space:pre-wrap; }
+.app-confirm-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+.app-confirm-confirm.danger { background:var(--danger); color:var(--card); }
+.app-confirm-dialog :is(button):focus-visible { outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent),0 3px 0 var(--button-edge),var(--button-depth); }
+@media (max-width:520px) { .app-confirm-actions { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion: reduce) { .app-confirm-backdrop,.app-confirm-dialog { transition:none; } }

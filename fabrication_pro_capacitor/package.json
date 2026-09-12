@@ -1,6 +1,6 @@
 {
   "name": "fabri-cadabra-capacitor",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "description": "Capacitor wrapper and canonical web source for the offline Fabri-Cadabra fabrication toolkit.",
   "engines": {

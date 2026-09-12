@@ -105,11 +105,11 @@
   }
 
   if (shiftSchedule && shiftClockBtn) {
-    shiftClockBtn.addEventListener('click',()=>{
+    shiftClockBtn.addEventListener('click',async ()=>{
       const state=shiftSchedule.getState();
       if (!state.enabled) return;
       if (state.clock.clockedIn) {
-        if (window.confirm('Clock out now? Any running Task Logging timer will stop immediately.')) {
+        if (await confirmAppAction('Clock out now? Any running Task Logging timer will stop immediately.')) {
           shiftSchedule.clockOut();
         }
         return;
@@ -120,7 +120,7 @@
         : intent.mode==='unscheduled'
           ? 'Today is not one of your scheduled workdays. Clock in for unscheduled work? This will continue until you manually clock out.'
           : 'Clock in for this shift? Task Logging timers will be available immediately except during enabled Break and Lunch periods. Scheduled Clock Out will still end this clock-in.';
-      if (window.confirm(message)) shiftSchedule.clockIn();
+      if (await confirmAppAction(message)) shiftSchedule.clockIn();
     });
     document.addEventListener('fabrication:shift-schedule-change',renderShiftClockUi);
     renderShiftClockUi();
@@ -239,7 +239,7 @@
 
   shiftScheduleSaveBtn?.addEventListener('click',()=>saveShiftScheduleFromForm(true));
 
-  shiftScheduleMasterToggle?.addEventListener('change',()=>{
+  shiftScheduleMasterToggle?.addEventListener('change',async ()=>{
     const wantsEnabled=shiftScheduleMasterToggle.checked;
     if (wantsEnabled) {
       if (!saveShiftScheduleFromForm(false)) {
@@ -247,7 +247,7 @@
         return;
       }
       const warning='Enable Shift Schedule? Manual Clock In becomes required. Active timers stop now. Enabled Break, Lunch, and scheduled Clock Out boundaries will control Task Logging.';
-      if (!window.confirm(warning)) {
+      if (!await confirmAppAction(warning)) {
         renderShiftScheduleSettings();
         return;
       }
@@ -256,7 +256,7 @@
       else showShiftScheduleStatus('Shift Schedule ENABLED. Clock In before starting Task Logging timers.','ok');
     } else {
       const warning='Disable Shift Schedule? Task Logging returns to unrestricted behavior. Automatic Break, Lunch, Clock Out, and clock-in protection are turned off.';
-      if (!window.confirm(warning)) {
+      if (!await confirmAppAction(warning)) {
         renderShiftScheduleSettings();
         return;
       }

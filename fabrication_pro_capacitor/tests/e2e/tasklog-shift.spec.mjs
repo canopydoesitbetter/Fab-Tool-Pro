@@ -56,8 +56,8 @@ test('Task Logging creates, renames, and deletes a job through the UI', async ({
   await createJob(page, 'Browser Job');
   await expect(page.locator('#taskLogJobList')).toContainText('Browser Job');
 
-  acceptNextDialog(page, 'Delete Browser Job');
   await page.locator('#taskLogDeleteJobBtn').click();
+  await acceptNextDialog(page, 'Delete Browser Job');
   await expect(page.locator('#taskLogEmpty')).toBeVisible();
   await expect(page.locator('#taskLogJobList')).not.toContainText('Browser Job');
 });
@@ -69,8 +69,8 @@ test('Preset drawer assigns multiple tasks and removes an assignment without del
   await page.locator('#taskLogPresetMenuBtn').click();
   const assignedCut = page.locator('.tasklog-preset-row.assigned', { hasText: 'Cut' });
   await expect(assignedCut).toBeVisible();
-  acceptNextDialog(page, 'Remove “Cut” from E2E Job');
   await assignedCut.getByRole('button', { name: 'Remove Cut from this job' }).click();
+  await acceptNextDialog(page, 'Remove “Cut” from E2E Job');
   await expect(page.locator('.tasklog-task-row', { hasText: 'Cut' })).toHaveCount(0);
   await expect(page.locator('#taskLogPresetList')).toContainText('Cut');
   await expect(page.locator('#taskLogPresetList')).toContainText('Assemble');
@@ -148,19 +148,19 @@ test('Shift Schedule UI enables real clock in and clock out wiring', async ({ pa
   await setToggle(page, '#shiftLunchToggle', false);
   await page.locator('#shiftScheduleSaveBtn').click();
 
-  acceptNextDialog(page, 'Enable Shift Schedule');
   await page.locator('label[for="shiftScheduleMasterToggle"]').click();
+  await acceptNextDialog(page, 'Enable Shift Schedule');
   await expect(page.locator('#shiftScheduleMasterToggle')).toBeChecked();
   await expect(page.locator('#shiftScheduleMasterState')).toHaveText('ENABLED');
   await expect(page.locator('#shiftClockBtn')).toBeEnabled();
   await expect(page.locator('#shiftClockBtn')).toHaveText('CLOCK IN');
 
-  acceptNextDialog(page, 'Clock in');
   await page.locator('#shiftClockBtn').click();
+  await acceptNextDialog(page, 'Clock in');
   await expect(page.locator('#shiftClockBtn')).toHaveText('CLOCK OUT');
 
-  acceptNextDialog(page, 'Clock out now');
   await page.locator('#shiftClockBtn').click();
+  await acceptNextDialog(page, 'Clock out now');
   await expect(page.locator('#shiftClockBtn')).toHaveText('CLOCK IN');
 });
 
@@ -176,8 +176,8 @@ test('Task Logging jobs export and import restore job, task, and elapsed state',
   const exported = await captureJsonDownload(page, () => page.locator('#taskLogExportJobsBtn').click());
   expect(exported.json.taskLogJobs).toBeTruthy();
 
-  acceptNextDialog(page, 'Delete E2E Job');
   await page.locator('#taskLogDeleteJobBtn').click();
+  await acceptNextDialog(page, 'Delete E2E Job');
   await expect(page.locator('#taskLogEmpty')).toBeVisible();
 
   await page.locator('#taskLogImportJobsFile').setInputFiles(exported.path);
@@ -194,8 +194,8 @@ test('Preset export and import restore the preset library independently', async 
   const exported = await captureJsonDownload(page, () => page.locator('#taskLogExportPresetsBtn').click());
   expect(exported.json.taskLogPresets).toBeTruthy();
 
-  acceptNextDialog(page, 'Delete preset task');
   await page.locator('#taskLogPresetList').getByRole('button', { name: 'Delete preset Portable Preset' }).click();
+  await acceptNextDialog(page, 'Delete preset task');
   await expect(page.locator('#taskLogPresetList')).not.toContainText('Portable Preset');
 
   await page.locator('#taskLogImportPresetsFile').setInputFiles(exported.path);

@@ -372,10 +372,10 @@
     updateFabricatorNotesFormatButtons();
   }
 
-  function deleteActiveFabricatorNote() {
+  async function deleteActiveFabricatorNote() {
     const topic = activeFabricatorNote();
     if (!topic) return;
-    if (!window.confirm(`Delete the topic “${topic.title || 'Untitled Topic'}”? This cannot be undone unless you have an exported backup.`)) return;
+    if (!await confirmAppAction(`Delete the topic “${topic.title || 'Untitled Topic'}”? This cannot be undone unless you have an exported backup.`)) return;
     const index = fabricatorNotes.findIndex(item=>item.id===topic.id);
     fabricatorNotes.splice(index,1);
     const remaining = fabricatorNotes.slice().sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)) || a.id-b.id);
@@ -434,7 +434,7 @@
       try {
         const parsed = JSON.parse(String(reader.result || ''));
         const record = normalizeFabricatorNotesRecord(parsed);
-        if (fabricatorNotes.length && !window.confirm(`Import ${record.topics.length} topic${record.topics.length===1?'':'s'} and replace the Fabricator Notes currently saved on this device?`)) return;
+        if (fabricatorNotes.length && !await confirmAppAction(`Import ${record.topics.length} topic${record.topics.length===1?'':'s'} and replace the Fabricator Notes currently saved on this device?`)) return;
         if (fabricatorNotes.length) await requireRecoverySnapshot('before-notes-import');
         applyFabricatorNotesRecord(record);
         showFabricatorNotesStatus(`Imported ${record.topics.length} topic${record.topics.length===1?'':'s'} and saved them on this device.`,'ok');

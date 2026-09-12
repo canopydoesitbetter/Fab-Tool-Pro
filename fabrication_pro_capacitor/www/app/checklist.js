@@ -398,13 +398,13 @@
     scheduleChecklistSave();
   }
 
-  function normalizeChecklistItemText(id,input) {
+  async function normalizeChecklistItemText(id,input) {
     const topic = activeChecklistTopic();
     const item = findChecklistItem(id);
     if (!topic || !item) return;
     const text = String(item.text || '').trim();
     if (!text) {
-      if (!window.confirm('This checklist item is blank. Remove it?')) {
+      if (!await confirmAppAction('This checklist item is blank. Remove it?')) {
         input.value = 'Checklist Item';
         item.text = 'Checklist Item';
       } else {
@@ -420,11 +420,11 @@
     renderChecklistItems();
   }
 
-  function removeChecklistItem(id) {
+  async function removeChecklistItem(id) {
     const topic = activeChecklistTopic();
     const item = findChecklistItem(id);
     if (!topic || !item) return;
-    if (!window.confirm(`Remove “${item.text}” from this checklist?`)) return;
+    if (!await confirmAppAction(`Remove “${item.text}” from this checklist?`)) return;
     topic.items = topic.items.filter(entry=>entry.id!==id);
     topic.updatedAt = checklistNow();
     persistChecklists();
@@ -432,10 +432,10 @@
     renderChecklistItems();
   }
 
-  function deleteChecklistTopic() {
+  async function deleteChecklistTopic() {
     const topic = activeChecklistTopic();
     if (!topic) return;
-    if (!window.confirm(`Delete the checklist “${topic.title || 'Untitled Checklist'}”? This cannot be undone unless you have an exported backup.`)) return;
+    if (!await confirmAppAction(`Delete the checklist “${topic.title || 'Untitled Checklist'}”? This cannot be undone unless you have an exported backup.`)) return;
     fabricationChecklists = fabricationChecklists.filter(entry=>entry.id!==topic.id);
     const ordered = fabricationChecklists.slice().sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)) || a.id-b.id);
     checklistActiveTopicId = ordered[0]?.id ?? null;
@@ -494,7 +494,7 @@
       try {
         const parsed = JSON.parse(String(reader.result || ''));
         const record = normalizeChecklistRecord(parsed);
-        if (fabricationChecklists.length && !window.confirm(`Import ${record.topics.length} checklist topic${record.topics.length===1?'':'s'} and replace the checklists currently saved on this device?`)) return;
+        if (fabricationChecklists.length && !await confirmAppAction(`Import ${record.topics.length} checklist topic${record.topics.length===1?'':'s'} and replace the checklists currently saved on this device?`)) return;
         if (fabricationChecklists.length) await requireRecoverySnapshot('before-checklist-import');
         applyChecklistRecord(record);
         showChecklistStatus(`Imported ${record.topics.length} checklist topic${record.topics.length===1?'':'s'} and saved them on this device.`,'ok');

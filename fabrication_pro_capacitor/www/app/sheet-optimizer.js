@@ -314,15 +314,15 @@
     if (autoOptimize && optimizerJob.length) runOptimizer(false);
   }
 
-  function saveOptimizerJob() {
+  async function saveOptimizerJob() {
     clearOptimizerJobStatus();
     const number=cleanJobNumber(optimizerJobNumber.value);
     if (!number) { showOptimizerJobStatus('Enter a Job # before saving.','error'); optimizerJobNumber.focus(); return; }
     if (!optimizerJob.length) { showOptimizerJobStatus('Add at least one part before saving the job.','error'); return; }
     optimizerJobNumber.value=number;
     const jobs=readSavedOptimizerJobs();
-    if (hasOwn(jobs,number) && number!==optimizerLoadedJobNumber && !window.confirm(`Job #${number} already exists. Replace the saved job?`)) return;
-    if (hasOwn(jobs,number) && number===optimizerLoadedJobNumber && !window.confirm(`Save the current changes to Job #${number}?`)) return;
+    if (hasOwn(jobs,number) && number!==optimizerLoadedJobNumber && !await confirmAppAction(`Job #${number} already exists. Replace the saved job?`)) return;
+    if (hasOwn(jobs,number) && number===optimizerLoadedJobNumber && !await confirmAppAction(`Save the current changes to Job #${number}?`)) return;
     const record=serializeOptimizerJob();
     jobs[number]=record;
     if (!writeSavedOptimizerJobs(jobs)) return;
@@ -332,13 +332,13 @@
     showOptimizerJobStatus(`Job #${number} saved on this device.`,'ok');
   }
 
-  function loadOptimizerJob() {
+  async function loadOptimizerJob() {
     clearOptimizerJobStatus();
     const number=cleanJobNumber(optimizerSavedJobs.value);
     if (!number) { showOptimizerJobStatus('Select a saved job to load.','error'); return; }
     const jobs=readSavedOptimizerJobs();
     if (!hasOwn(jobs,number)) { showOptimizerJobStatus(`Job #${number} was not found on this device.`,'error'); return; }
-    if (optimizerDirty && !window.confirm(`The current job has unsaved changes. Load Job #${number} and discard those changes?`)) return;
+    if (optimizerDirty && !await confirmAppAction(`The current job has unsaved changes. Load Job #${number} and discard those changes?`)) return;
     try {
       const record=normalizeOptimizerJobRecord(jobs[number]);
       applyOptimizerJobRecord(record,true);
@@ -346,13 +346,13 @@
     } catch (e) { showOptimizerJobStatus(e.message || 'Unable to load that saved job.','error'); }
   }
 
-  function deleteOptimizerSavedJob() {
+  async function deleteOptimizerSavedJob() {
     clearOptimizerJobStatus();
     const number=cleanJobNumber(optimizerSavedJobs.value);
     if (!number) { showOptimizerJobStatus('Select a saved job to delete.','error'); return; }
     const jobs=readSavedOptimizerJobs();
     if (!hasOwn(jobs,number)) { showOptimizerJobStatus(`Job #${number} was not found on this device.`,'error'); return; }
-    if (!window.confirm(`Delete the saved copy of Job #${number}? This does not delete an exported backup file.`)) return;
+    if (!await confirmAppAction(`Delete the saved copy of Job #${number}? This does not delete an exported backup file.`)) return;
     delete jobs[number];
     if (!writeSavedOptimizerJobs(jobs)) return;
     if (optimizerLoadedJobNumber===number) { optimizerLoadedJobNumber=''; markOptimizerDirty(); }
@@ -398,8 +398,8 @@
         const parsed=JSON.parse(String(reader.result||''));
         const record=normalizeOptimizerJobRecord(parsed);
         const jobs=readSavedOptimizerJobs();
-        if (optimizerDirty && !window.confirm('The current job has unsaved changes. Import another job and discard those changes? Automatic recovery does not preserve unsaved optimizer work; save or export it first if you need a backup.')) return;
-        if (hasOwn(jobs,record.jobNumber) && !window.confirm(`Job #${record.jobNumber} already exists on this device. Replace it with the imported job?`)) return;
+        if (optimizerDirty && !await confirmAppAction('The current job has unsaved changes. Import another job and discard those changes? Automatic recovery does not preserve unsaved optimizer work; save or export it first if you need a backup.')) return;
+        if (hasOwn(jobs,record.jobNumber) && !await confirmAppAction(`Job #${record.jobNumber} already exists on this device. Replace it with the imported job?`)) return;
         if (hasOwn(jobs,record.jobNumber)) await requireRecoverySnapshot('before-optimizer-import');
         jobs[record.jobNumber]=record;
         if (!writeSavedOptimizerJobs(jobs)) return;
@@ -1732,7 +1732,7 @@
     return null;
   }
 
-  function toggleOptimizerPartCut(uid) {
+  async function toggleOptimizerPartCut(uid) {
     const item=findOptimizerPhysicalPart(uid);
     if (!item) return;
     const isCut=optimizerCutIds.has(String(uid));
@@ -1741,7 +1741,7 @@
     const row=optimizerJob.find(r=>r.id===item.rowId);
     const instanceText=row && row.qty>1 ? ` piece ${item.instance} of ${row.qty}` : '';
     const nextWord=isCut?'NOT CUT':'CUT';
-    if (!window.confirm(`Mark ${base}${instanceText} as ${nextWord}?`)) return;
+    if (!await confirmAppAction(`Mark ${base}${instanceText} as ${nextWord}?`)) return;
     if (isCut) optimizerCutIds.delete(String(uid)); else optimizerCutIds.add(String(uid));
     markOptimizerDirty();
     renderOptimizerJob();
@@ -1755,8 +1755,8 @@
     toggleOptimizerPartCut(btn.dataset.toggleCut);
   });
 
-  function clearOptimizerJob() {
-    if ((optimizerJob.length || optimizerDirty) && !window.confirm('Clear the current optimizer job and all cut-status marks? Unsaved changes will be discarded.')) return;
+  async function clearOptimizerJob() {
+    if ((optimizerJob.length || optimizerDirty) && !await confirmAppAction('Clear the current optimizer job and all cut-status marks? Unsaved changes will be discarded.')) return;
     optimizerRunSerial++;
     if (optimizerWorker) { optimizerWorker.terminate(); optimizerWorker=null; }
     if (optimizerWorkerReject) optimizerWorkerReject(new Error('Optimizer run was superseded.'));

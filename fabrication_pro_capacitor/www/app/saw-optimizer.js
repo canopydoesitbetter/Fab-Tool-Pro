@@ -183,11 +183,11 @@
     }
     clearSawJobFileStatus();
     const reader=new FileReader();
-    reader.onload=()=>{
+    reader.onload=async ()=>{
       try {
         const parsed=JSON.parse(String(reader.result || ''));
         const record=normalizeSawJobRecord(parsed);
-        if ((sawJob.length || sawCutIds.size) && !window.confirm('Import this Saw Optimizer job and replace the current saw job?')) return;
+        if ((sawJob.length || sawCutIds.size) && !await confirmAppAction('Import this Saw Optimizer job and replace the current saw job?')) return;
         applySawJobRecord(record);
         showSawJobFileStatus(`Saw job imported with ${sawPhysicalPieceCount()} piece${sawPhysicalPieceCount()===1?'':'s'}. Press Optimize Job to calculate the tube layout.`,'ok');
       } catch (error) {
@@ -501,7 +501,7 @@
     return expandedSawItems().find(item=>String(item.uid)===String(uid)) || null;
   }
 
-  function toggleSawPartCut(uid) {
+  async function toggleSawPartCut(uid) {
     const item=findSawPhysicalPart(uid);
     if (!item) return;
     const isCut=sawCutIds.has(String(uid));
@@ -509,15 +509,15 @@
     const base=item.label || `${measurementText(item.length)} part`;
     const instanceText=row && row.qty>1 ? ` piece ${item.instance} of ${row.qty}` : '';
     const nextWord=isCut?'NOT CUT':'CUT';
-    if (!window.confirm(`Mark ${base}${instanceText} as ${nextWord}?`)) return;
+    if (!await confirmAppAction(`Mark ${base}${instanceText} as ${nextWord}?`)) return;
     if (isCut) sawCutIds.delete(String(uid)); else sawCutIds.add(String(uid));
     renderSawJob();
     if (sawLastResult && Number.isFinite(sawLastTubeLength)) renderSawOutput(sawLastResult,sawLastTubeLength,false);
     showSawStatus(`${base}${instanceText} marked ${isCut?'not cut':'cut'}.`,'ok');
   }
 
-  function clearSawJob() {
-    if (sawJob.length && !window.confirm('Clear the current saw job, cut-status marks, and optimized layout?')) return;
+  async function clearSawJob() {
+    if (sawJob.length && !await confirmAppAction('Clear the current saw job, cut-status marks, and optimized layout?')) return;
     sawJob=[];
     sawNextId=1;
     sawCutIds=new Set();

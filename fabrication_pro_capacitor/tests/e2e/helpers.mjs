@@ -17,18 +17,18 @@ export async function openTool(page, label, panelId) {
   await expect(page.locator('#pageMenuDrawer')).toHaveAttribute('aria-hidden', 'true');
 }
 
-export function acceptNextDialog(page, expectedText) {
-  page.once('dialog', async dialog => {
-    expect(dialog.message()).toContain(expectedText);
-    await dialog.accept();
-  });
+export async function acceptNextDialog(page, expectedText) {
+  const dialog=page.locator('#appConfirmDialog');
+  await expect(dialog).toHaveAttribute('aria-hidden','false');
+  await expect(page.locator('#appConfirmMessage')).toContainText(expectedText);
+  await page.locator('#appConfirmConfirmBtn').click();
 }
 
-export function dismissNextDialog(page, expectedText) {
-  page.once('dialog', async dialog => {
-    expect(dialog.message()).toContain(expectedText);
-    await dialog.dismiss();
-  });
+export async function dismissNextDialog(page, expectedText) {
+  const dialog=page.locator('#appConfirmDialog');
+  await expect(dialog).toHaveAttribute('aria-hidden','false');
+  await expect(page.locator('#appConfirmMessage')).toContainText(expectedText);
+  await page.locator('#appConfirmCancelBtn').click();
 }
 
 export async function captureJsonDownload(page, trigger) {

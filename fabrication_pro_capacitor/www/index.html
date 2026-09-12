@@ -895,10 +895,22 @@
         <button id='settingsChangelogCloseBtn' class='cut-list-close-btn' type='button' aria-label='Close Changelog'>×</button>
       </div>
       <div class='cut-list-drawer-body settings-changelog-body'>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.5'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>
+            <h2>App-Styled Confirmation Dialogs</h2>
+          </div>
+        </div>
+        <ul>
+          <li><b>Fabri-Cadabra Confirmation Dialogs:</b> Replaced browser-native confirmation popups across Clock Out, Shift Schedule controls, destructive deletes and clears, overwrite/import/restore actions, and optimizer cut-status changes with one reusable app-styled modal featuring configurable titles and button labels, danger styling, keyboard focus trapping, Escape cancellation, backdrop cancellation, and previous-focus restoration.</li>
+          <li>Added permanent source and browser regression coverage so important workflows cannot silently fall back to <code>window.confirm()</code>.</li>
+        </ul>
+      </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.4'>
   <div class='changelog-entry-heading'>
     <div>
-      <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.4</span>
+      <span class='changelog-version-label'>Version 1.0.4</span>
       <h2>Full Backup, Native Branding &amp; Reliability</h2>
     </div>
   </div>
@@ -1175,6 +1187,19 @@
   </aside>
 
   <script src="native-compat.js" defer></script>
+
+  <div id="appConfirmBackdrop" class="app-confirm-backdrop" aria-hidden="true"></div>
+  <section id="appConfirmDialog" class="app-confirm-dialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="appConfirmTitle" aria-describedby="appConfirmMessage">
+    <div class="app-confirm-panel">
+      <h2 id="appConfirmTitle">Confirm Action</h2>
+      <p id="appConfirmMessage"></p>
+      <div class="app-confirm-actions">
+        <button id="appConfirmCancelBtn" class="btn secondary" type="button">Cancel</button>
+        <button id="appConfirmConfirmBtn" class="btn app-confirm-confirm" type="button">Confirm</button>
+      </div>
+    </div>
+  </section>
+
   <script src="app/bootstrap.js" defer></script>
   <script src="app/storage.js" defer></script>
   <script src="app/drawers.js" defer></script>

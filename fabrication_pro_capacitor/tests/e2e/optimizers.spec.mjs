@@ -54,12 +54,12 @@ test('Sheet Optimizer export/import round trip restores the job and still optimi
   const exported = await captureJsonDownload(page, () => page.locator('#optimizerExportJobBtn').click());
   expect(exported.json.fabricationOptimizerJob.jobNumber).toBe('E2E-100');
 
-  acceptNextDialog(page, 'Clear the current optimizer job');
   await page.locator('#optimizerClearBtn').click();
+  await acceptNextDialog(page, 'Clear the current optimizer job');
   await expect(page.locator('#optimizerJobNumber')).toHaveValue('');
 
-  acceptNextDialog(page, 'already exists on this device');
   await page.locator('#optimizerImportFile').setInputFiles(exported.path);
+  await acceptNextDialog(page, 'already exists on this device');
   await expect(page.locator('#optimizerJobNumber')).toHaveValue('E2E-100');
   await page.locator('#optimizerCutListMenuBtn').click();
   await expect(page.locator('#optimizerJobList')).toContainText('Portable Panel');
@@ -88,8 +88,8 @@ test('Saw Optimizer export/import round trip restores stock and parts and reruns
   expect(exported.json.fabricationSawOptimizerJob.tubeLength).toBe(240);
   expect(exported.json.fabricationSawOptimizerJob.parts).toHaveLength(1);
 
-  acceptNextDialog(page, 'Clear the current saw job');
   await page.locator('#sawClearBtn').click();
+  await acceptNextDialog(page, 'Clear the current saw job');
   await expect(page.locator('#sawPartList')).not.toContainText('Portable Upright');
 
   await page.locator('#sawImportFile').setInputFiles(exported.path);

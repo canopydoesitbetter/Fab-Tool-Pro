@@ -98,5 +98,5 @@
   selectTool(DEFAULT_TOOL);
   suppressToolPersistence=false;
 
-  window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen,version:FABRI_CADABRA_VERSION,storage:persistentStoragePublicApi};
+  window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen,confirmAction:confirmAppAction,version:FABRI_CADABRA_VERSION,storage:persistentStoragePublicApi};
 

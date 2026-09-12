@@ -209,7 +209,7 @@
       if (file.size>MAX_BACKUP_IMPORT_BYTES) throw new Error('That Fabri-Cadabra backup is too large. Maximum restore size is 16 MiB.');
       const parsed=await readJsonFile(file);
       const normalized=bridge.normalizeFullBackupForRestore(parsed);
-      if (!window.confirm('Restore this backup and replace all Fabri-Cadabra data currently saved on this device? An automatic recovery snapshot will be created first.')) return;
+      if (!await confirmAppAction('Restore this backup and replace all Fabri-Cadabra data currently saved on this device? An automatic recovery snapshot will be created first.')) return;
       await createRecoverySnapshot('before-full-restore');
       transactionalReplaceAppStorage(normalized.storage);
       showStatus('Fabri-Cadabra backup restored. Reloading the app…','ok');
@@ -225,7 +225,7 @@
       const snapshot=await readLatestRecoverySnapshot();
       if (!snapshot || !snapshot.backup) throw new Error('No automatic recovery snapshot is available.');
       const normalized=bridge.normalizeFullBackupForRestore(snapshot.backup);
-      if (!window.confirm('This will restore the last recovery snapshot and replace all Fabri-Cadabra data currently saved on this device. Continue?')) return;
+      if (!await confirmAppAction('This will restore the last recovery snapshot and replace all Fabri-Cadabra data currently saved on this device. Continue?')) return;
       await bridge.flushPendingPersistentEdits();
       const currentBackup=bridge.buildFullBackup();
       await writeRecoverySnapshot(currentBackup,'before-recovery-restore');

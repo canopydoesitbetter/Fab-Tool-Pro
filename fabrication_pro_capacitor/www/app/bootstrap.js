@@ -1,4 +1,4 @@
-  const FABRI_CADABRA_VERSION='1.0.4'; // @generated from package.json by scripts/sync-app-version.mjs
+  const FABRI_CADABRA_VERSION='1.0.5'; // @generated from package.json by scripts/sync-app-version.mjs
 
   // ---------------- Shared helpers ----------------
   function gcd(a,b) {
