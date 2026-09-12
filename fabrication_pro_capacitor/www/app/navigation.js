@@ -51,7 +51,9 @@
     catch (error) { console.warn(error); }
   });
 
-  function selectTool(tool,{persist=true}={}) {
+  function selectTool(tool) {
+    const options=arguments[1] && typeof arguments[1]==='object' ? arguments[1] : {};
+    const persist=options.persist!==false;
     const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;
     activeTool=next;
     pageLinks.forEach(link=>link.classList.toggle('active',link.dataset.tool===next));
