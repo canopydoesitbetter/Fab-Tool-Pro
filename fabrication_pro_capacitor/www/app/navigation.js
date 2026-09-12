@@ -9,6 +9,7 @@
   const VALID_TOOLS = new Set(pageLinks.map(link=>link.dataset.tool));
   if (settingsPageBtn?.dataset.tool) VALID_TOOLS.add(settingsPageBtn.dataset.tool);
   let activeTool = DEFAULT_TOOL;
+  let suppressToolPersistence = false;
 
   function systemPrefersDark() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -52,14 +53,12 @@
   });
 
   function selectTool(tool) {
-    const options=arguments[1] && typeof arguments[1]==='object' ? arguments[1] : {};
-    const persist=options.persist!==false;
     const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;
     activeTool=next;
     pageLinks.forEach(link=>link.classList.toggle('active',link.dataset.tool===next));
     settingsPageBtn?.classList.toggle('active',settingsPageBtn.dataset.tool===next);
     toolPanels.forEach(panel=>panel.classList.toggle('active',panel.id==='tool-'+next));
-    if (persist) {
+    if (!suppressToolPersistence) {
       try { writePersistentStore('lastTool',next); }
       catch (error) { console.warn(error); }
     }
@@ -95,7 +94,9 @@
     }
   });
 
-  selectTool(DEFAULT_TOOL,{persist:false});
+  suppressToolPersistence=true;
+  selectTool(DEFAULT_TOOL);
+  suppressToolPersistence=false;
 
   window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen,version:FABRI_CADABRA_VERSION,storage:persistentStoragePublicApi};
 
