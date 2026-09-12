@@ -66,4 +66,4 @@ jobs:
           fi
           git commit -m 'refactor: centralize persistent data schemas'
           git push origin HEAD:work
-# rerun after navigation source-contract preservation
+# rerun after backup verifier migration
