@@ -14,6 +14,23 @@
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
+  registerPersistentStore({
+    id:'theme',key:'fabricationTheme',version:1,encoding:'string',label:'Color Theme',
+    defaultValue:()=>systemPrefersDark()?'dark':'light',
+    normalize:value=>{
+      if (!['light','dark'].includes(value)) throw new Error('Saved color theme is invalid.');
+      return value;
+    }
+  });
+  registerPersistentStore({
+    id:'lastTool',key:'fabricationTool',version:1,encoding:'string',label:'Last Page',
+    defaultValue:()=>DEFAULT_TOOL,
+    normalize:value=>{
+      if (!VALID_TOOLS.has(value)) throw new Error('Saved page preference is invalid.');
+      return value;
+    }
+  });
+
   function applyTheme(theme) {
     root.dataset.theme = theme;
     themeToggle.textContent = theme === 'dark' ? '☀ Light' : '☾ Dark';
@@ -23,22 +40,27 @@
 
   function getActiveTool() { return activeTool; }
 
-  const savedTheme = storageGet('fabricationTheme');
-  applyTheme(savedTheme || (systemPrefersDark() ? 'dark' : 'light'));
+  const savedThemeResult=loadPersistentStore('theme');
+  loadPersistentStore('lastTool');
+  applyTheme(savedThemeResult.value);
 
   themeToggle.addEventListener('click', () => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     applyTheme(next);
-    storageSet('fabricationTheme', next);
+    try { writePersistentStore('theme',next); }
+    catch (error) { console.warn(error); }
   });
 
-  function selectTool(tool) {
+  function selectTool(tool,{persist=true}={}) {
     const next=VALID_TOOLS.has(tool)?tool:DEFAULT_TOOL;
     activeTool=next;
     pageLinks.forEach(link=>link.classList.toggle('active',link.dataset.tool===next));
     settingsPageBtn?.classList.toggle('active',settingsPageBtn.dataset.tool===next);
     toolPanels.forEach(panel=>panel.classList.toggle('active',panel.id==='tool-'+next));
-    storageSet('fabricationTool',next);
+    if (persist) {
+      try { writePersistentStore('lastTool',next); }
+      catch (error) { console.warn(error); }
+    }
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
@@ -71,7 +93,7 @@
     }
   });
 
-  selectTool(DEFAULT_TOOL);
+  selectTool(DEFAULT_TOOL,{persist:false});
 
-  window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen,version:FABRI_CADABRA_VERSION};
+  window.FabriCadabraApp={getActiveTool,openDrawer,closeDrawer,isDrawerOpen,version:FABRI_CADABRA_VERSION,storage:persistentStoragePublicApi};
 
