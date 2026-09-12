@@ -6,6 +6,7 @@ on:
     branches: [work]
     paths:
       - 'fabrication_pro_capacitor/scripts/apply-persistent-storage-refactor.mjs'
+      - 'fabrication_pro_capacitor/scripts/patch-persistence-test-harnesses.mjs'
       - '.github/workflows/apply-persistent-storage-refactor.yml'
 
 permissions:
@@ -34,7 +35,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Apply persistent storage refactor
         working-directory: fabrication_pro_capacitor
-        run: node scripts/apply-persistent-storage-refactor.mjs
+        run: |
+          node scripts/apply-persistent-storage-refactor.mjs
+          node scripts/patch-persistence-test-harnesses.mjs
       - name: Verify source contracts
         working-directory: fabrication_pro_capacitor
         run: npm run verify
@@ -59,11 +62,12 @@ jobs:
             fabrication_pro_capacitor/www/app/sheet-optimizer.js \
             fabrication_pro_capacitor/www/app/import-export.js \
             fabrication_pro_capacitor/www/backup.js \
-            fabrication_pro_capacitor/tests/e2e/backup-restore.spec.mjs
+            fabrication_pro_capacitor/tests/e2e/backup-restore.spec.mjs \
+            fabrication_pro_capacitor/scripts/verify-shift-schedule-behavior.mjs
           if git diff --cached --quiet; then
             echo 'No generated changes to commit.'
             exit 0
           fi
           git commit -m 'refactor: centralize persistent data schemas'
           git push origin HEAD:work
-# rerun after backup verifier migration
+# rerun with persistence-aware shift behavior harness
