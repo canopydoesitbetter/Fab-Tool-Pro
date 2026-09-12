@@ -916,6 +916,7 @@
     <li><b>Regression &amp; Release Safety:</b> Expanded Playwright and source-level regression coverage around browser behavior, backups/restores, timers, native compatibility, branding, signing, and version metadata.</li>
     <li>Made npm run verify read-only and added CI proof that verification leaves tracked repository files unchanged.</li>
     <li>Separated the public release version from native install/build numbers and added release-continuity checks so the package version and changelog cannot silently skip a public patch release again.</li>
+    <li><b>Persistent Data Schemas &amp; Migrations:</b> Centralized all 10 saved-data stores behind versioned schemas and explicit migrations, preserves original raw data before risky upgrades, reports corrupt or future-version data without silently overwriting it, and keeps schema-v1 full backups restorable through backup schema v2.</li>
   </ul>
 </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.3'>
