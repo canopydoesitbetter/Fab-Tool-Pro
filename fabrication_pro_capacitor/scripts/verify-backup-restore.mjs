@@ -77,6 +77,7 @@ need(backup.includes('window.FabriCadabraRecovery='),'Existing feature imports n
 
 need(pkg.scripts?.['verify:backup-restore']==='node scripts/verify-backup-restore.mjs','package.json must expose verify:backup-restore.');
 need(String(pkg.scripts?.verify||'').includes('npm run verify:backup-restore'),'npm run verify must include the permanent backup/restore verifier.');
-need(pkg.version==='1.0.5',`Audit #4 must not bump app version; found ${pkg.version}.`);
+const release=JSON.parse(readFileSync(join(root,'release.json'),'utf8'));
+need(pkg.version===release.version,`Backup verifier package version ${pkg.version} must match release metadata ${release.version}.`);
 
 console.log('Unified backup format, 10-key registry, restore safety, and recovery contract: OK');

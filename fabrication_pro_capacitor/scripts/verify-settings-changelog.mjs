@@ -24,12 +24,14 @@ need(generated===pkg.version,`Browser version ${generated || 'missing'} does not
 need(app.includes("settingsPageBtn?.addEventListener('click'"),'Settings must use canonical page navigation.');
 need(!/installSettingsPage|originalGetActiveTool|FabriCadabraApp\.getActiveTool=/.test(app),'Settings navigation monkey-patch must be absent.');
 need(app.includes("openDrawer('settingsChangelogDrawer'" ) && app.includes("closeDrawer('settingsChangelogDrawer'"),'Changelog must reuse shared drawer behavior.');
-const currentIndex=html.indexOf("data-changelog-version='current'");
+const currentIndex=html.indexOf(`data-changelog-version='${pkg.version}'`);
 const v103Index=html.indexOf("data-changelog-version='1.0.3'");
 const v102Index=html.indexOf("data-changelog-version='1.0.2'");
 const v101Index=html.indexOf("data-changelog-version='1.0.1'");
 const baselineIndex=html.indexOf("data-changelog-version='1.0.0'");
-need(currentIndex>=0 && v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineIndex>v101Index,'Changelog must remain newest-first.');
+need(pkg.version==='1.0.4','Current repaired public release must be 1.0.4.');
+need(currentIndex>=0 && v103Index>currentIndex && v102Index>v103Index && v101Index>v102Index && baselineIndex>v101Index,'Changelog must remain newest-first with 1.0.4 followed by 1.0.3.');
+for (const concept of ['Full Backup &amp; Recovery','full-app JSON backup','automatic recovery snapshot','Task Logging Jobs and Presets imports','transactional','Restore Latest Recovery','new Fabri-Cadabra launcher icon','branded launch screen','full portrait artwork','runtime UX patch layer','6,600+ line app.js monolith','15 ordered feature modules','Playwright','npm run verify read-only','release-continuity checks']) need(html.includes(concept),`v1.0.4 changelog missing audited release concept: ${concept}`);
 for (const heading of ['Task Logging','Fabricator Notes','Checklist','Basic Calculator','Quick Reference','Fastener Spacing','Sheet Optimizer','Saw Optimizer','Aluminum Overhang','App-Wide Features']) need(html.includes(`<h3>${heading}</h3>`),`Current Features changelog missing section: ${heading}`);
 for (const concept of ['phone-friendly','730 for 7:30','AM/PM selector','impossible times','Task Logging Jobs panel is now collapsible','Job # / Name now opens a dedicated rename overlay','Shift Schedule in Settings','green CLOCK IN','red CLOCK OUT','overtime','unscheduled work','overnight shifts','unrestricted Task Logging behavior']) need(html.includes(concept),`Changelog missing required concept: ${concept}`);
 console.log(`Settings, canonical version ${pkg.version}, and newest-first changelog contract: OK`);

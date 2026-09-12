@@ -858,7 +858,7 @@
         <div class='settings-version-row'>
           <div>
             <span class='settings-row-label'>Current Version</span>
-            <strong id='settingsVersionValue' class='settings-version-value'>1.0.5</strong>
+            <strong id='settingsVersionValue' class='settings-version-value'>1.0.4</strong>
           </div>
           <button id='settingsChangelogBtn' class='btn settings-changelog-btn' type='button' aria-expanded='false' aria-controls='settingsChangelogDrawer'>Changelog</button>
         </div>
@@ -895,17 +895,27 @@
         <button id='settingsChangelogCloseBtn' class='cut-list-close-btn' type='button' aria-label='Close Changelog'>×</button>
       </div>
       <div class='cut-list-drawer-body settings-changelog-body'>
-      <article class='changelog-entry changelog-release' data-changelog-version='current'>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.4'>
   <div class='changelog-entry-heading'>
     <div>
-      <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>
-      <h2>Fabri-Cadabra Branding Refresh</h2>
+      <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.4</span>
+      <h2>Full Backup, Native Branding &amp; Reliability</h2>
     </div>
   </div>
   <ul>
-    <li>Added the new Fabri-Cadabra launcher icon on Android and iPhone, replacing the default Capacitor branding.</li>
-    <li>Added a branded launch screen with the Fabri-Cadabra logo centered and the app name directly underneath.</li>
+    <li><b>Full Backup &amp; Recovery:</b> Added a Settings-based full-app JSON backup that captures all Fabri-Cadabra saved data after pending edits are flushed.</li>
+    <li>Full restore now validates the backup before changing saved data, asks for confirmation, and creates an automatic recovery snapshot first.</li>
+    <li>Automatic recovery snapshots are stored separately in IndexedDB and are created before full restore, Task Logging Jobs and Presets imports, Fabricator Notes imports, Checklist imports, Sheet Optimizer saved-job replacement, and recovery restore.</li>
+    <li>Restore writes are transactional: if a local-storage write fails, Fabri-Cadabra attempts to roll back the previous saved data instead of leaving a partial restore.</li>
+    <li>Added recovery status plus a Restore Latest Recovery control so the most recent protected snapshot can be restored from Settings.</li>
+    <li><b>Native Branding:</b> Added the new Fabri-Cadabra launcher icon on Android and iPhone, replacing the default Capacitor launcher branding.</li>
+    <li>Added a branded launch screen using the exact approved artwork. The final Android launch presentation uses the full portrait artwork while slimmer native splash resources reduce unnecessary APK bloat.</li>
     <li>Native branding now travels through the same repeatable Capacitor installer pipeline used for production builds.</li>
+    <li><b>Canonical App Architecture:</b> Removed the retired runtime UX patch layer and consolidated its finished UI behavior and styling into the canonical app source.</li>
+    <li>Split the former 6,600+ line app.js monolith into 15 ordered feature modules while preserving storage formats, calculations, imports/exports, timers, and existing app behavior.</li>
+    <li><b>Regression &amp; Release Safety:</b> Expanded Playwright and source-level regression coverage around browser behavior, backups/restores, timers, native compatibility, branding, signing, and version metadata.</li>
+    <li>Made npm run verify read-only and added CI proof that verification leaves tracked repository files unchanged.</li>
+    <li>Separated the public release version from native install/build numbers and added release-continuity checks so the package version and changelog cannot silently skip a public patch release again.</li>
   </ul>
 </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.3'>

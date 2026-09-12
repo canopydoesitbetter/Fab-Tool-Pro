@@ -9,19 +9,16 @@ export function parseAppVersion(value) {
   const major=Number(match[1]);
   const minor=Number(match[2]);
   const patch=Number(match[3]);
-  if (minor>999 || patch>999) {
-    throw new Error('Minor and patch versions must each be <= 999 for Android versionCode mapping.');
-  }
+  if (minor>999 || patch>999) throw new Error('Minor and patch versions must each be <= 999.');
   return {version,major,minor,patch};
 }
 
-export function androidVersionCode(value) {
-  const {major,minor,patch}=parseAppVersion(value);
-  const code=(major*1_000_000)+(minor*1_000)+patch;
-  if (!Number.isSafeInteger(code) || code<1 || code>2_100_000_000) {
-    throw new Error(`Android versionCode ${code} is outside the supported range.`);
+export function nativeBuildNumber(value) {
+  const build=Number(value);
+  if (!Number.isInteger(build) || build<1 || build>2_100_000_000) {
+    throw new Error(`Native build number ${value} is outside the supported integer range.`);
   }
-  return code;
+  return build;
 }
 
 function writeChanged(path,next,current) {
@@ -29,18 +26,15 @@ function writeChanged(path,next,current) {
   return next!==current;
 }
 
-export function syncAndroidVersion(root,value) {
+export function syncAndroidVersion(root,value,buildNumber) {
+  parseAppVersion(value);
   const path=join(root,'android','app','build.gradle');
   if (!existsSync(path)) return {present:false,changed:false};
 
-  const code=androidVersionCode(value);
+  const code=nativeBuildNumber(buildNumber);
   const source=readFileSync(path,'utf8');
-  if (!/\bversionCode\s+\d+\b/.test(source)) {
-    throw new Error('Android build.gradle versionCode setting was not found.');
-  }
-  if (!/\bversionName\s+["'][^"']+["']/.test(source)) {
-    throw new Error('Android build.gradle versionName setting was not found.');
-  }
+  if (!/\bversionCode\s+\d+\b/.test(source)) throw new Error('Android build.gradle versionCode setting was not found.');
+  if (!/\bversionName\s+["'][^"']+["']/.test(source)) throw new Error('Android build.gradle versionName setting was not found.');
 
   const next=source
     .replace(/(\bversionCode\s+)\d+\b/,`$1${code}`)
@@ -48,8 +42,9 @@ export function syncAndroidVersion(root,value) {
   return {present:true,changed:writeChanged(path,next,source),code};
 }
 
-export function syncIosVersion(root,value) {
+export function syncIosVersion(root,value,buildNumber) {
   parseAppVersion(value);
+  const build=nativeBuildNumber(buildNumber);
   const path=join(root,'ios','App','App.xcodeproj','project.pbxproj');
   if (!existsSync(path)) return {present:false,changed:false};
 
@@ -61,6 +56,6 @@ export function syncIosVersion(root,value) {
 
   const next=source
     .replace(/\bMARKETING_VERSION\s*=\s*[^;]+;/g,`MARKETING_VERSION = ${value};`)
-    .replace(/\bCURRENT_PROJECT_VERSION\s*=\s*[^;]+;/g,`CURRENT_PROJECT_VERSION = ${value};`);
-  return {present:true,changed:writeChanged(path,next,source),marketingCount,buildCount};
+    .replace(/\bCURRENT_PROJECT_VERSION\s*=\s*[^;]+;/g,`CURRENT_PROJECT_VERSION = ${build};`);
+  return {present:true,changed:writeChanged(path,next,source),marketingCount,buildCount,build};
 }

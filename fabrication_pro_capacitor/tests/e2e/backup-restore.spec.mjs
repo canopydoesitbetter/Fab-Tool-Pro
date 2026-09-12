@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { acceptNextDialog, captureJsonDownload, expectNoHorizontalOverflow, expectWithinViewport, openApp, openTool } from './helpers.mjs';
+
+const RELEASE=JSON.parse(readFileSync(new URL('../../release.json',import.meta.url),'utf8'));
 
 const APP_KEYS=[
   'fabricationTaskLogJobsV1',
@@ -140,7 +143,7 @@ test('full backup restores all persistent categories and safely finalizes captur
   const exported=await captureJsonDownload(page,()=>page.locator('#settingsBackupBtn').click());
   expect(exported.json.format).toBe('FabriCadabraBackup');
   expect(exported.json.schemaVersion).toBe(1);
-  expect(exported.json.appVersion).toBe('1.0.5');
+  expect(exported.json.appVersion).toBe(RELEASE.version);
   expect(exported.json.sections.taskLogging.jobs.jobs).toHaveLength(1);
   expect(exported.json.sections.taskLogging.presets.presets).toHaveLength(1);
   const backedUpTask=exported.json.sections.taskLogging.jobs.jobs[0].tasks[0];
