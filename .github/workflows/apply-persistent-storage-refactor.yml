@@ -43,8 +43,7 @@ jobs:
         run: npm run test:e2e
       - name: Prove verification is read-only
         working-directory: fabrication_pro_capacitor
-        run: |
-          git -C .. status --porcelain --untracked-files=no
+        run: git -C .. status --porcelain --untracked-files=no
       - name: Commit verified generated refactor
         run: |
           set -euo pipefail
@@ -67,3 +66,4 @@ jobs:
           fi
           git commit -m 'refactor: centralize persistent data schemas'
           git push origin HEAD:work
+# rerun after verifier ownership update
