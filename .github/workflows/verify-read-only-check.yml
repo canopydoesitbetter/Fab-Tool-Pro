@@ -2,10 +2,12 @@ name: Verify Read-Only Contract
 
 on:
   push:
-    branches: [ work ]
+    branches: [ main, work ]
     paths:
       - '.github/workflows/verify-read-only-check.yml'
-      - 'fabrication_pro_capacitor/**'
+      - 'fabrication_pro_capacitor/package.json'
+      - 'fabrication_pro_capacitor/package-lock.json'
+      - 'fabrication_pro_capacitor/scripts/**'
 
 jobs:
   verify-read-only:
