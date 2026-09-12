@@ -31,19 +31,19 @@ need(!html.includes('<script src="app.js"'),'index.html must not load the legacy
 
 const owners={
   'app/bootstrap.js':['FABRI_CADABRA_VERSION','requireRecoverySnapshot','function escapeHtml'],
-  'app/storage.js':['function storageGet','function storageSet'],
+  'app/storage.js':['registerPersistentStore','loadPersistentStore','writePersistentStore','normalizePersistentStoreValue'],
   'app/drawers.js':['function openDrawer','function closeDrawer','function isDrawerOpen'],
   'app/navigation.js':['function selectTool','window.FabriCadabraApp'],
   'app/shift-schedule.js':['@shift-schedule-core-start','fabricationShiftScheduleV1','window.FabriCadabraApp.shiftSchedule'],
   'app/task-logging.js':['@tasklog-job-rename-core-start','fabricationTaskLogJobsV1','FabricationTaskLogPresets'],
-  'app/notes.js':['fabricationFabricatorNotesV1','FabricationFabricatorNotes'],
+  'app/notes.js':['fabricationFabricatorNotesV1','FabricationFabricatorNotes','migrateFabricatorNotesV1ToV2'],
   'app/checklist.js':['fabricationChecklistV1','FabricationChecklist'],
   'app/quick-reference.js':['fabricationQuickReferenceDecimalMode','fabricationQuickReferenceTable'],
   'app/calculators.js':['calculateOverhang','calculateFasteners'],
-  'app/sheet-optimizer.js':['fabricationOptimizerJobsV1','FabricationCutOptimizerJob'],
+  'app/sheet-optimizer.js':['fabricationOptimizerJobsV1','FabricationCutOptimizerJob','migrateOptimizerSavedJobsV1ToV2','migrateOptimizerSavedJobsV2ToV3'],
   'app/saw-optimizer.js':['FabricationSawOptimizerJob','renderSawJob'],
   'app/settings.js':['@shift-smart-time-start','settingsVersionValue'],
-  'app/import-export.js':['FabriCadabraBackup','FABRI_CADABRA_PERSISTENCE_KEYS','window.FabriCadabraApp.backup'],
+  'app/import-export.js':['FabriCadabraBackup','FABRI_CADABRA_BACKUP_SCHEMA_VERSION=2','migrateFullBackupV1ToV2','window.FabriCadabraApp.backup'],
   'app/self-tests.js':['runFabricationSelfTests','runFabricationBrowserSelfTests']
 };
 for (const [relativePath,markers] of Object.entries(owners)) {
