@@ -1,6 +1,15 @@
   const persistentStoreRegistry=new Map();
   const persistentStoreState=new Map();
   const persistentStorageIssues=new Map();
+  const PERSISTENT_STORE_ORDER=Object.freeze([
+    'taskLogJobs','taskLogPresets','shiftSchedule','fabricatorNotes','checklists','optimizerSavedJobs',
+    'theme','lastTool','quickReferenceTable','quickReferenceDisplayMode'
+  ]);
+
+  function persistentStoreOrderIndex(id) {
+    const index=PERSISTENT_STORE_ORDER.indexOf(id);
+    return index<0 ? PERSISTENT_STORE_ORDER.length : index;
+  }
 
   function persistentStoreDefinition(id) {
     const definition=persistentStoreRegistry.get(String(id || ''));
@@ -131,7 +140,9 @@
     }
     const result=normalizePersistentStoreValue(definition.id,raw);
     const risky=['migrated','invalid','unsupported'].includes(result.status);
-    persistentStoreState.set(definition.id,{...result,recoveryProtected:false,requiresRecoveryProtection:risky});
+    const previous=persistentStoreState.get(definition.id);
+    const recoveryProtected=!!(risky && previous?.recoveryProtected && previous.raw===result.raw && previous.status===result.status);
+    persistentStoreState.set(definition.id,{...result,recoveryProtected,requiresRecoveryProtection:risky});
     if (result.status==='invalid' || result.status==='unsupported') persistentStoreIssue(definition.id,result.status,result.error);
     else persistentStorageIssues.delete(definition.id);
     return result;
@@ -162,9 +173,11 @@
   }
 
   function listPersistentStores() {
-    return Array.from(persistentStoreRegistry.values()).map(definition=>({
-      id:definition.id,key:definition.key,version:definition.version,encoding:definition.encoding,label:definition.label
-    }));
+    return Array.from(persistentStoreRegistry.values())
+      .sort((a,b)=>persistentStoreOrderIndex(a.id)-persistentStoreOrderIndex(b.id))
+      .map(definition=>({
+        id:definition.id,key:definition.key,version:definition.version,encoding:definition.encoding,label:definition.label
+      }));
   }
 
   function getPersistentStorageIssues() {

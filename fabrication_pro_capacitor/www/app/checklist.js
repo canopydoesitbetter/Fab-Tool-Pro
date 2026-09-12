@@ -118,13 +118,20 @@
     };
   }
 
+  registerPersistentStore({
+    id:'checklists',key:FABRICATION_CHECKLIST_KEY,version:FABRICATION_CHECKLIST_VERSION,encoding:'json',label:'Checklist',
+    defaultValue:()=>({format:FABRICATION_CHECKLIST_FORMAT,version:FABRICATION_CHECKLIST_VERSION,activeTopicId:null,nextTopicId:1,nextItemId:1,topics:[]}),
+    getVersion:value=>Number(value?.version || 1),
+    normalize:normalizeChecklistRecord
+  });
+
   function persistChecklists(showError=true) {
     if (checklistSaveTimer) {
       clearTimeout(checklistSaveTimer);
       checklistSaveTimer = null;
     }
     try {
-      localStorage.setItem(FABRICATION_CHECKLIST_KEY,JSON.stringify(serializeChecklistRecord()));
+      writePersistentStore('checklists',serializeChecklistRecord());
       checklistSaveState.textContent = 'Saved on this device';
       return true;
     } catch (error) {
@@ -505,23 +512,14 @@
   }
 
   function loadChecklistsFromStorage() {
-    const raw = storageGet(FABRICATION_CHECKLIST_KEY);
-    if (!raw) {
-      renderChecklists();
-      return;
-    }
-    try {
-      const record = normalizeChecklistRecord(JSON.parse(raw));
-      fabricationChecklists = record.topics.map(topic=>({...topic,items:topic.items.map(item=>({...item}))}));
-      checklistActiveTopicId = record.activeTopicId;
-      checklistNextTopicId = record.nextTopicId;
-      checklistNextItemId = record.nextItemId;
-    } catch (error) {
-      fabricationChecklists = [];
-      checklistActiveTopicId = null;
-      checklistNextTopicId = 1;
-      checklistNextItemId = 1;
-      showChecklistStatus('Saved Checklist data could not be read. Exported backups are unaffected.','error');
+    const result=loadPersistentStore('checklists');
+    const record=result.value;
+    fabricationChecklists=record.topics.map(topic=>({...topic,items:topic.items.map(item=>({...item}))}));
+    checklistActiveTopicId=record.activeTopicId;
+    checklistNextTopicId=record.nextTopicId;
+    checklistNextItemId=record.nextItemId;
+    if (result.status==='invalid' || result.status==='unsupported') {
+      showChecklistStatus('Saved Checklist data could not be read. The original saved data was retained for recovery.','error');
     }
     renderChecklists();
   }

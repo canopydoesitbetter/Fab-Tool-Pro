@@ -10,8 +10,9 @@
   const recoveryMeta=document.getElementById('settingsRecoveryMeta');
   const MAX_BACKUP_IMPORT_BYTES=16*1024*1024;
   const RECOVERY_DB_NAME='FabriCadabraRecovery';
-  const RECOVERY_DB_VERSION=1;
+  const RECOVERY_DB_VERSION=2;
   const RECOVERY_STORE_NAME='snapshots';
+  const RECOVERY_RAW_STORE_NAME='rawStores';
   const RECOVERY_LATEST_ID='latest';
 
   if (!bridge || !backupBtn || !restoreBtn || !restoreFile || !restoreRecoveryBtn || !status || !recoveryMeta) return;
@@ -57,6 +58,7 @@
       request.onupgradeneeded=()=>{
         const db=request.result;
         if (!db.objectStoreNames.contains(RECOVERY_STORE_NAME)) db.createObjectStore(RECOVERY_STORE_NAME,{keyPath:'id'});
+        if (!db.objectStoreNames.contains(RECOVERY_RAW_STORE_NAME)) db.createObjectStore(RECOVERY_RAW_STORE_NAME,{keyPath:'id'});
       };
       request.onsuccess=()=>resolve(request.result);
       request.onerror=()=>reject(request.error || new Error('Recovery storage could not be opened.'));
@@ -120,8 +122,35 @@
     recoveryMeta.setAttribute('data-recovery-reason',snapshot.reason);
   }
 
+  async function protectPersistentStores() {
+    const storageApi=window.FabriCadabraApp?.storage;
+    if (!storageApi) return [];
+    const pending=storageApi.listStoresNeedingRecoveryProtection();
+    if (!pending.length) return [];
+    const unreadable=pending.find(store=>typeof store.raw!=='string');
+    if (unreadable) throw new Error(`${unreadable.label} could not be read, so its original bytes cannot be protected automatically. No overwrite will be allowed.`);
+    const db=await openRecoveryDb();
+    const protectedRecords=pending.map(store=>({
+      id:store.id,key:store.key,label:store.label,raw:store.raw,sourceVersion:store.sourceVersion,
+      currentVersion:store.currentVersion,status:store.status,reason:store.reason,createdAt:new Date().toISOString()
+    }));
+    try {
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(RECOVERY_RAW_STORE_NAME,'readwrite');
+        const objectStore=tx.objectStore(RECOVERY_RAW_STORE_NAME);
+        for (const record of protectedRecords) objectStore.put(record);
+        tx.oncomplete=()=>resolve();
+        tx.onerror=()=>reject(tx.error || new Error('Raw persistent data recovery protection could not be saved.'));
+        tx.onabort=()=>reject(tx.error || new Error('Raw persistent data recovery protection was aborted.'));
+      });
+    } finally { db.close(); }
+    for (const record of protectedRecords) storageApi.markRecoveryProtected(record.id);
+    return protectedRecords;
+  }
+
   async function createRecoverySnapshot(reason) {
     try {
+      await protectPersistentStores();
       await bridge.flushPendingPersistentEdits();
       const backup=bridge.buildFullBackup();
       const record=await writeRecoverySnapshot(backup,reason);
@@ -211,12 +240,14 @@
 
   window.FabriCadabraRecovery={
     create:async reason=>{ await createRecoverySnapshot(reason); },
-    readLatest:readLatestRecoverySnapshot
+    readLatest:readLatestRecoverySnapshot,
+    protectPersistentStores
   };
 
   backupBtn.addEventListener('click',backupAllData);
   restoreBtn.addEventListener('click',()=>restoreFile.click());
   restoreFile.addEventListener('change',()=>restoreBackupFile(restoreFile.files && restoreFile.files[0]));
   restoreRecoveryBtn.addEventListener('click',restoreLatestRecovery);
+  protectPersistentStores().catch(error=>console.warn('Persistent data recovery protection:',error));
   refreshRecoveryMeta();
 })();

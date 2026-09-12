@@ -278,7 +278,7 @@
     quickReferenceDecimalLabel.classList.toggle('active',decimals);
   }
 
-  function updateQuickReferenceDisplayValues() {
+  function updateQuickReferenceDisplayValues({persist=true}={}) {
     const decimals=quickReferenceDecimalMode.checked;
     updateQuickReferenceModeLabels();
 
@@ -324,7 +324,10 @@
 
     const entry=QUICK_REFERENCE_TABLES[quickReferenceSelect.value] || QUICK_REFERENCE_TABLES['fraction-addition'];
     quickReferenceExample.textContent=entry.fixedExample || (decimals ? entry.decimalExample : entry.fractionExample);
-    storageSet(QUICK_REFERENCE_DECIMAL_KEY,decimals?'decimal':'fraction');
+    if (persist) {
+      try { writePersistentStore('quickReferenceDisplayMode',decimals?'decimal':'fraction'); }
+      catch (error) { console.warn(error); }
+    }
   }
 
   function clearQuickReferenceSelectionClasses() {
@@ -377,7 +380,7 @@
     }
   }
 
-  function renderQuickReference(key) {
+  function renderQuickReference(key,{persist=true}={}) {
     const resolvedKey=Object.prototype.hasOwnProperty.call(QUICK_REFERENCE_TABLES,key) ? key : 'fraction-addition';
     const entry = QUICK_REFERENCE_TABLES[resolvedKey];
     quickReferenceSelect.value = resolvedKey;
@@ -395,9 +398,12 @@
     quickReferenceTable.setAttribute('aria-label', entry.ariaLabel || entry.title);
     if (quickReferenceDisplayMode) quickReferenceDisplayMode.style.display=entry.hideDisplayMode ? 'none' : '';
     entry.render();
-    updateQuickReferenceDisplayValues();
+    updateQuickReferenceDisplayValues({persist});
     restoreQuickReferenceSelection(resolvedKey);
-    storageSet('fabricationQuickReferenceTable', resolvedKey);
+    if (persist) {
+      try { writePersistentStore('quickReferenceTable',resolvedKey); }
+      catch (error) { console.warn(error); }
+    }
   }
 
   function selectQuickReferenceAdditionCell(cell) {
@@ -436,14 +442,32 @@
     restoreQuickReferenceSelection('gauge-thickness');
   }
 
+  registerPersistentStore({
+    id:'quickReferenceTable',key:'fabricationQuickReferenceTable',version:1,encoding:'string',label:'Quick Reference Table',
+    defaultValue:()=> 'fraction-addition',
+    normalize:value=>{
+      if (!Object.prototype.hasOwnProperty.call(QUICK_REFERENCE_TABLES,value)) throw new Error('Saved Quick Reference table is invalid.');
+      return value;
+    }
+  });
+  registerPersistentStore({
+    id:'quickReferenceDisplayMode',key:QUICK_REFERENCE_DECIMAL_KEY,version:1,encoding:'string',label:'Quick Reference Display Mode',
+    defaultValue:()=> 'fraction',
+    normalize:value=>{
+      if (!['fraction','decimal'].includes(value)) throw new Error('Saved Quick Reference display mode is invalid.');
+      return value;
+    }
+  });
+
   const quickReferenceTableCount = Object.keys(QUICK_REFERENCE_TABLES).length;
   quickReferenceCount.textContent = `${quickReferenceTableCount} table${quickReferenceTableCount === 1 ? '' : 's'}`;
-  quickReferenceDecimalMode.checked=storageGet(QUICK_REFERENCE_DECIMAL_KEY)==='decimal';
+  const quickReferenceDisplayResult=loadPersistentStore('quickReferenceDisplayMode');
+  const quickReferenceTableResult=loadPersistentStore('quickReferenceTable');
+  quickReferenceDecimalMode.checked=quickReferenceDisplayResult.value==='decimal';
   updateQuickReferenceModeLabels();
   quickReferenceSelect.addEventListener('change', () => renderQuickReference(quickReferenceSelect.value));
-  quickReferenceDecimalMode.addEventListener('change',updateQuickReferenceDisplayValues);
-  const savedQuickReference = storageGet('fabricationQuickReferenceTable');
-  renderQuickReference(savedQuickReference || 'fraction-addition');
+  quickReferenceDecimalMode.addEventListener('change',()=>updateQuickReferenceDisplayValues());
+  renderQuickReference(quickReferenceTableResult.value,{persist:false});
 
   quickReferenceTable.addEventListener('click', e => {
     const additionCell=e.target.closest('td[data-start-sixteenths][data-add-sixteenths]');

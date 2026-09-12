@@ -75,6 +75,23 @@
     return (holder.textContent || '').length;
   }
 
+  function migrateFabricatorNotesV1ToV2(raw) {
+    const data=raw && raw.fabricatorNotes ? raw.fabricatorNotes : raw;
+    if (!data || typeof data!=='object' || Array.isArray(data)) throw new Error('The file does not contain valid Fabricator Notes data.');
+    if (!Array.isArray(data.topics)) throw new Error('The Fabricator Notes file is missing its topics list.');
+    return {
+      ...data,
+      version:2,
+      topics:data.topics.map((topic,index)=>{
+        if (!topic || typeof topic!=='object' || Array.isArray(topic)) throw new Error(`Topic ${index+1} is invalid.`);
+        if (typeof topic.content!=='string') throw new Error(`Topic ${index+1} has invalid note content.`);
+        if (topic.content.length>MAX_FABRICATOR_NOTE_CONTENT) throw new Error(`Topic ${index+1} content exceeds ${MAX_FABRICATOR_NOTE_CONTENT.toLocaleString()} characters.`);
+        const {content,...rest}=topic;
+        return {...rest,contentHtml:plainTextToFabricatorNoteHtml(content)};
+      })
+    };
+  }
+
   function normalizeFabricatorNotesRecord(raw) {
     const data = raw && raw.fabricatorNotes ? raw.fabricatorNotes : raw;
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('The file does not contain valid Fabricator Notes data.');
@@ -82,6 +99,7 @@
     const version = Number(data.version || 1);
     if (!Number.isInteger(version) || version < 1) throw new Error('The Fabricator Notes file has an invalid version number.');
     if (version > FABRICATOR_NOTES_VERSION) throw new Error('These Fabricator Notes were created by a newer version of Fabrication Calculators and cannot be safely imported here.');
+    if (version===1) return normalizeFabricatorNotesRecord(migrateFabricatorNotesV1ToV2(data));
     if (!Array.isArray(data.topics)) throw new Error('The Fabricator Notes file is missing its topics list.');
     if (data.topics.length > MAX_FABRICATOR_NOTE_TOPICS) throw new Error(`The file contains more than ${MAX_FABRICATOR_NOTE_TOPICS} topics.`);
 
@@ -162,13 +180,25 @@
     return `Updated ${date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}`;
   }
 
+  registerPersistentStore({
+    id:'fabricatorNotes',key:FABRICATOR_NOTES_KEY,version:FABRICATOR_NOTES_VERSION,encoding:'json',label:'Fabricator Notes',
+    defaultValue:()=>({format:FABRICATOR_NOTES_FORMAT,version:FABRICATOR_NOTES_VERSION,activeTopicId:null,nextId:1,topics:[]}),
+    getVersion:value=>Number(value?.version || 1),
+    migrations:{1:migrateFabricatorNotesV1ToV2},
+    normalize:value=>{
+      const data=value && value.fabricatorNotes ? value.fabricatorNotes : value;
+      if (Number(data?.version)!==FABRICATOR_NOTES_VERSION) throw new Error('Fabricator Notes did not reach the current schema version.');
+      return normalizeFabricatorNotesRecord(data);
+    }
+  });
+
   function persistFabricatorNotes(showError=true) {
     if (fabricatorNotesSaveTimer) {
       clearTimeout(fabricatorNotesSaveTimer);
       fabricatorNotesSaveTimer = null;
     }
     try {
-      localStorage.setItem(FABRICATOR_NOTES_KEY,JSON.stringify(serializeFabricatorNotesRecord()));
+      writePersistentStore('fabricatorNotes',serializeFabricatorNotesRecord());
       fabricatorNotesSaveState.textContent = 'Saved on this device';
       return true;
     } catch (error) {
@@ -422,21 +452,13 @@
   }
 
   function loadFabricatorNotesFromStorage() {
-    const raw = storageGet(FABRICATOR_NOTES_KEY);
-    if (!raw) {
-      renderFabricatorNotes();
-      return;
-    }
-    try {
-      const record = normalizeFabricatorNotesRecord(JSON.parse(raw));
-      fabricatorNotes = record.topics.map(topic=>({...topic}));
-      fabricatorNotesActiveId = record.activeTopicId;
-      fabricatorNotesNextId = record.nextId;
-    } catch (error) {
-      fabricatorNotes = [];
-      fabricatorNotesActiveId = null;
-      fabricatorNotesNextId = 1;
-      showFabricatorNotesStatus('Saved Fabricator Notes data could not be read. Exported backups are unaffected.','error');
+    const result=loadPersistentStore('fabricatorNotes');
+    const record=result.value;
+    fabricatorNotes=record.topics.map(topic=>({...topic}));
+    fabricatorNotesActiveId=record.activeTopicId;
+    fabricatorNotesNextId=record.nextId;
+    if (result.status==='invalid' || result.status==='unsupported') {
+      showFabricatorNotesStatus('Saved Fabricator Notes data could not be read. The original saved data was retained for recovery.','error');
     }
     renderFabricatorNotes();
   }

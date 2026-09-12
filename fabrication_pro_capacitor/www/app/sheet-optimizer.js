@@ -129,20 +129,19 @@
   }
 
   function readSavedOptimizerJobs() {
-    const raw=storageGet(OPTIMIZER_JOBS_KEY);
-    if (!raw) return createJobDictionary();
-    try {
-      const parsed=JSON.parse(raw);
-      return createJobDictionary(parsed);
-    } catch (e) { return createJobDictionary(); }
+    const result=loadPersistentStore('optimizerSavedJobs');
+    if (result.status==='invalid' || result.status==='unsupported') {
+      showOptimizerJobStatus('Saved Sheet Optimizer jobs could not be read. The original saved data was retained for recovery.','error');
+    }
+    return createJobDictionary(result.value);
   }
 
   function writeSavedOptimizerJobs(jobs) {
     try {
-      localStorage.setItem(OPTIMIZER_JOBS_KEY, JSON.stringify(jobs));
+      writePersistentStore('optimizerSavedJobs',jobs);
       return true;
     } catch (e) {
-      showOptimizerJobStatus('This browser could not save the job locally. Use Export Job File as a backup instead.','error');
+      showOptimizerJobStatus(e?.message || 'This browser could not save the job locally. Use Export Job File as a backup instead.','error');
       return false;
     }
   }
@@ -234,6 +233,67 @@
       parts,cutPartIds
     };
   }
+
+  function optimizerSavedJobsSourceVersion(source) {
+    if (!source || typeof source!=='object' || Array.isArray(source)) return NaN;
+    const versions=Object.values(source).map(record=>Number(record?.version || 1));
+    if (!versions.length) return OPTIMIZER_JOB_FILE_VERSION;
+    if (versions.some(version=>!Number.isInteger(version) || version<1)) return NaN;
+    const future=versions.filter(version=>version>OPTIMIZER_JOB_FILE_VERSION);
+    if (future.length) return Math.max(...future);
+    return Math.min(...versions);
+  }
+
+  function migrateOptimizerSavedJobsV1ToV2(source) {
+    const out=createJobDictionary();
+    for (const [key,record] of Object.entries(source || {})) {
+      const version=Number(record?.version || 1);
+      if (version!==1) { out[key]=record; continue; }
+      if (!record || typeof record!=='object' || Array.isArray(record)) throw new Error(`Saved Sheet Optimizer job ${key} is invalid.`);
+      out[key]={
+        ...record,
+        version:2,
+        parts:Array.isArray(record.parts) ? record.parts.map(row=>({
+          ...row,
+          finishedWidth:row?.finishedWidth ?? row?.finishedW,
+          finishedHeight:row?.finishedHeight ?? row?.finishedL
+        })) : record.parts
+      };
+    }
+    return out;
+  }
+
+  function migrateOptimizerSavedJobsV2ToV3(source) {
+    const out=createJobDictionary();
+    for (const [key,record] of Object.entries(source || {})) {
+      const version=Number(record?.version || 1);
+      if (version!==2) { out[key]=record; continue; }
+      if (!record || typeof record!=='object' || Array.isArray(record)) throw new Error(`Saved Sheet Optimizer job ${key} is invalid.`);
+      out[key]={...record,version:3,grainFlowRotation:record.rotate===false};
+    }
+    return out;
+  }
+
+  function normalizeSavedOptimizerJobsDictionary(source) {
+    if (source==null) return createJobDictionary();
+    if (typeof source!=='object' || Array.isArray(source)) throw new Error('Saved Sheet Optimizer jobs are invalid.');
+    const out=createJobDictionary();
+    for (const key of Object.keys(source).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}))) {
+      const record=normalizeOptimizerJobRecord(source[key]);
+      if (record.version!==OPTIMIZER_JOB_FILE_VERSION) throw new Error(`Saved Sheet Optimizer job ${key} did not reach the current schema.`);
+      if (record.jobNumber!==key) throw new Error(`Saved Sheet Optimizer job ${key} has mismatched job metadata.`);
+      out[key]=record;
+    }
+    return out;
+  }
+
+  registerPersistentStore({
+    id:'optimizerSavedJobs',key:OPTIMIZER_JOBS_KEY,version:OPTIMIZER_JOB_FILE_VERSION,encoding:'json',label:'Sheet Optimizer Saved Jobs',
+    defaultValue:()=>createJobDictionary(),
+    getVersion:optimizerSavedJobsSourceVersion,
+    migrations:{1:migrateOptimizerSavedJobsV1ToV2,2:migrateOptimizerSavedJobsV2ToV3},
+    normalize:normalizeSavedOptimizerJobsDictionary
+  });
 
   function applyOptimizerJobRecord(record,autoOptimize=true) {
     optimizerJob=record.parts.map(row=>({...row}));

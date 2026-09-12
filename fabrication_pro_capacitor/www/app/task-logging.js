@@ -300,9 +300,22 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     return stopped;
   }
 
+  registerPersistentStore({
+    id:'taskLogJobs',key:TASK_LOG_JOBS_KEY,version:TASK_LOG_JOBS_VERSION,encoding:'json',label:'Task Logging Jobs',
+    defaultValue:()=>({format:TASK_LOG_JOBS_FORMAT,version:TASK_LOG_JOBS_VERSION,exportedAt:new Date().toISOString(),activeJobId:null,nextJobId:1,nextTaskId:1,jobs:[]}),
+    getVersion:value=>Number(value?.version || 1),
+    normalize:normalizeTaskLogJobsRecord
+  });
+  registerPersistentStore({
+    id:'taskLogPresets',key:TASK_LOG_PRESETS_KEY,version:TASK_LOG_PRESETS_VERSION,encoding:'json',label:'Task Logging Presets',
+    defaultValue:()=>({format:TASK_LOG_PRESETS_FORMAT,version:TASK_LOG_PRESETS_VERSION,exportedAt:new Date().toISOString(),nextPresetId:1,presets:[]}),
+    getVersion:value=>Number(value?.version || 1),
+    normalize:normalizeTaskLogPresetsRecord
+  });
+
   function persistTaskLogJobs(showError=true) {
     try {
-      localStorage.setItem(TASK_LOG_JOBS_KEY,JSON.stringify(serializeTaskLogJobsRecord()));
+      writePersistentStore('taskLogJobs',serializeTaskLogJobsRecord());
       taskLogSaveState.textContent='Saved on this device';
       return true;
     } catch (error) {
@@ -313,7 +326,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
 
   function persistTaskLogPresets(showError=true) {
     try {
-      localStorage.setItem(TASK_LOG_PRESETS_KEY,JSON.stringify(serializeTaskLogPresetsRecord()));
+      writePersistentStore('taskLogPresets',serializeTaskLogPresetsRecord());
       return true;
     } catch (error) {
       if (showError) showTaskLogStatus('This browser could not save preset tasks locally. Export Presets as a backup.','error');
@@ -811,29 +824,22 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
   }
 
   function loadTaskLoggingData() {
-    try {
-      const rawJobs=storageGet(TASK_LOG_JOBS_KEY);
-      if (rawJobs) {
-        const record=normalizeTaskLogJobsRecord(JSON.parse(rawJobs));
-        taskLogJobs=record.jobs;
-        taskLogActiveJobId=record.activeJobId;
-        taskLogNextJobId=record.nextJobId;
-        taskLogNextTaskId=record.nextTaskId;
-      }
-    } catch (error) {
-      taskLogJobs=[]; taskLogActiveJobId=null; taskLogNextJobId=1; taskLogNextTaskId=1;
-      showTaskLogStatus('Saved Task Logging jobs could not be read. Exported backups are unaffected.','error');
+    const jobsResult=loadPersistentStore('taskLogJobs');
+    const jobsRecord=jobsResult.value;
+    taskLogJobs=jobsRecord.jobs;
+    taskLogActiveJobId=jobsRecord.activeJobId;
+    taskLogNextJobId=jobsRecord.nextJobId;
+    taskLogNextTaskId=jobsRecord.nextTaskId;
+    if (jobsResult.status==='invalid' || jobsResult.status==='unsupported') {
+      showTaskLogStatus('Saved Task Logging jobs could not be read. The original saved data was retained for recovery.','error');
     }
-    try {
-      const rawPresets=storageGet(TASK_LOG_PRESETS_KEY);
-      if (rawPresets) {
-        const record=normalizeTaskLogPresetsRecord(JSON.parse(rawPresets));
-        taskLogPresets=record.presets;
-        taskLogNextPresetId=record.nextPresetId;
-      }
-    } catch (error) {
-      taskLogPresets=[]; taskLogNextPresetId=1;
-      showTaskLogStatus('Saved Task Logging preset tasks could not be read. Exported backups are unaffected.','error');
+
+    const presetsResult=loadPersistentStore('taskLogPresets');
+    const presetRecord=presetsResult.value;
+    taskLogPresets=presetRecord.presets;
+    taskLogNextPresetId=presetRecord.nextPresetId;
+    if (presetsResult.status==='invalid' || presetsResult.status==='unsupported') {
+      showTaskLogStatus('Saved Task Logging preset tasks could not be read. The original saved data was retained for recovery.','error');
     }
     reconcileShiftSchedule(Date.now());
     renderTaskLogging();

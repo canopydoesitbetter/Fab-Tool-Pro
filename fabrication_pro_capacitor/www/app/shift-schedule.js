@@ -249,27 +249,39 @@ function firstShiftProhibitedBoundary(startedAt,nowMs,shift,policy={}) {
     return state;
   }
 
+  registerPersistentStore({
+    id:'shiftSchedule',key:SHIFT_SCHEDULE_KEY,version:SHIFT_SCHEDULE_VERSION,encoding:'json',label:'Shift Schedule',
+    defaultValue:defaultShiftScheduleState,
+    getVersion:value=>Number(value?.version || 1),
+    normalize:value=>{
+      if (!value || typeof value!=='object' || Array.isArray(value)) throw new Error('Saved Shift Schedule data is invalid.');
+      if (value.enabled===true) {
+        const candidateConfig=normalizeShiftScheduleConfig(value.config || value);
+        const validation=validateShiftScheduleConfig(candidateConfig);
+        if (!validation.ok) throw new Error('Saved Shift Schedule is invalid: '+validation.errors.join(' '));
+      }
+      return normalizeShiftScheduleState(value);
+    }
+  });
+
   function loadShiftScheduleState() {
     shiftScheduleLoadError='';
-    const raw=storageGet(SHIFT_SCHEDULE_KEY);
-    if (!raw) return defaultShiftScheduleState();
-    try {
-      return normalizeShiftScheduleState(JSON.parse(raw));
-    } catch (error) {
-      shiftScheduleLoadError=error.message || 'Saved Shift Schedule data could not be read, so protection was turned off.';
-      return defaultShiftScheduleState();
+    const result=loadPersistentStore('shiftSchedule');
+    if (result.status==='invalid' || result.status==='unsupported') {
+      shiftScheduleLoadError=result.error?.message || 'Saved Shift Schedule data could not be read, so protection was turned off.';
     }
+    return result.value;
   }
 
   let shiftScheduleState=loadShiftScheduleState();
 
   function persistShiftScheduleState() {
     try {
-      localStorage.setItem(SHIFT_SCHEDULE_KEY,JSON.stringify(shiftScheduleState));
+      shiftScheduleState=writePersistentStore('shiftSchedule',shiftScheduleState);
       shiftScheduleStorageError='';
       return true;
     } catch (error) {
-      shiftScheduleStorageError='This browser could not save Shift Schedule settings locally.';
+      shiftScheduleStorageError=error?.message || 'This browser could not save Shift Schedule settings locally.';
       return false;
     }
   }
