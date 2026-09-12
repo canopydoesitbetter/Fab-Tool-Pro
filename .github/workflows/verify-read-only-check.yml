@@ -1,0 +1,42 @@
+name: Verify Read-Only Contract
+
+on:
+  push:
+    branches: [ work ]
+    paths:
+      - '.github/workflows/verify-read-only-check.yml'
+      - 'fabrication_pro_capacitor/**'
+
+jobs:
+  verify-read-only:
+    name: Verify leaves tracked files unchanged
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verify and prove tracked tree stays clean
+        run: |
+          set -euo pipefail
+          npm run verify
+          CHANGES="$(git -C .. status --porcelain --untracked-files=no)"
+          if [ -n "$CHANGES" ]; then
+            echo "::error::npm run verify modified tracked files:"
+            printf '%s\n' "$CHANGES"
+            git -C .. diff -- .
+            exit 1
+          fi
+          echo "npm run verify left all tracked files unchanged."
