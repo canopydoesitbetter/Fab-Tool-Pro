@@ -1,4 +1,5 @@
 name: Apply Header Branding Refactor
+# Rerun after restoring the full wrapper-neutral feature verifier.
 
 on:
   push:
