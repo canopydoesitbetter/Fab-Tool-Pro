@@ -67,10 +67,11 @@ test('Quick Reference changes tables, highlights a gauge value, and persists dec
   await expect(page.locator('#quickReferenceDecimalLabel')).toHaveClass(/\bactive\b/);
 });
 
-test('Fastener Spacing returns the known 100 inch fixture', async ({ page }) => {
+test('Fastener Spacing applies corner tolerance, tracks completion, and restores the workspace', async ({ page }) => {
   await openApp(page);
   await openTool(page, 'Fastener Spacing', '#tool-fasteners');
 
+  await expect(page.locator('#cornerTolerance')).toHaveValue('0');
   await page.locator('#maxSpacing').fill('24');
   await page.locator('#fastenerLength').fill('100');
   await page.locator('#fastenerCalculateBtn').click();
@@ -79,7 +80,50 @@ test('Fastener Spacing returns the known 100 inch fixture', async ({ page }) => 
   await expect(page.locator('#fastenerCount')).toHaveText('6');
   await expect(page.locator('#spacingFraction')).toContainText('20');
   await expect(page.locator('#spacingDecimal')).toContainText('20');
-  await expect(page.locator('#locations')).toContainText('100');
+  await expect(page.locator('[data-fastener-index="0"] .pos')).toHaveText('0"');
+  await expect(page.locator('[data-fastener-index="5"] .pos')).toHaveText('100"');
+
+  await page.locator('#cornerTolerance').fill('2');
+  await page.locator('#fastenerCalculateBtn').click();
+  await expect(page.locator('#spaceCount')).toHaveText('4');
+  await expect(page.locator('#fastenerCount')).toHaveText('5');
+  await expect(page.locator('#spacingFraction')).toContainText('24');
+  await expect(page.locator('[data-fastener-index="0"] .pos')).toHaveText('2"');
+  await expect(page.locator('[data-fastener-index="4"] .pos')).toHaveText('98"');
+
+  const thirdFastener=page.locator('[data-fastener-index="2"]');
+  await thirdFastener.click();
+  await expect(thirdFastener).toHaveAttribute('aria-pressed','true');
+  await expect(thirdFastener).toHaveClass(/\bfastener-complete\b/);
+
+  await page.reload();
+  await openTool(page, 'Fastener Spacing', '#tool-fasteners');
+  await expect(page.locator('#maxSpacing')).toHaveValue('24');
+  await expect(page.locator('#fastenerLength')).toHaveValue('100');
+  await expect(page.locator('#cornerTolerance')).toHaveValue('2');
+  await expect(page.locator('#fastenerResults')).toHaveClass(/\bshow\b/);
+  await expect(page.locator('[data-fastener-index="0"] .pos')).toHaveText('2"');
+  await expect(page.locator('[data-fastener-index="4"] .pos')).toHaveText('98"');
+  await expect(page.locator('[data-fastener-index="2"]')).toHaveAttribute('aria-pressed','true');
+
+  await page.locator('#cornerTolerance').fill('3');
+  await page.locator('#fastenerCalculateBtn').click();
+  await expect(page.locator('[data-fastener-index="2"]')).toHaveAttribute('aria-pressed','false');
+  await expect(page.locator('[data-fastener-index="0"] .pos')).toHaveText('3"');
+  await expect(page.locator('[data-fastener-index="4"] .pos')).toHaveText('97"');
+
+  await page.locator('#fastenerClearBtn').click();
+  await expect(page.locator('#maxSpacing')).toHaveValue('');
+  await expect(page.locator('#fastenerLength')).toHaveValue('');
+  await expect(page.locator('#cornerTolerance')).toHaveValue('0');
+  await expect(page.locator('#fastenerResults')).not.toHaveClass(/\bshow\b/);
+
+  await page.reload();
+  await openTool(page, 'Fastener Spacing', '#tool-fasteners');
+  await expect(page.locator('#maxSpacing')).toHaveValue('');
+  await expect(page.locator('#fastenerLength')).toHaveValue('');
+  await expect(page.locator('#cornerTolerance')).toHaveValue('0');
+  await expect(page.locator('#fastenerResults')).not.toHaveClass(/\bshow\b/);
 });
 
 test('Aluminum Overhang returns deterministic one-piece cuts for 100 by 84', async ({ page }) => {
