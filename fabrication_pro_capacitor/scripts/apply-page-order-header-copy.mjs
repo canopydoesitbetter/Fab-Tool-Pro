@@ -9,7 +9,7 @@ const releasePath = path.join(root, 'release.json');
 const verifyFeaturesPath = path.join(root, 'scripts', 'verify-features.mjs');
 const verifyHeaderPath = path.join(root, 'scripts', 'verify-header-branding.mjs');
 
-const desiredPanelOrder = [
+const desiredPageOrder = [
   'tasklog',
   'notes',
   'checklist',
@@ -18,8 +18,7 @@ const desiredPanelOrder = [
   'fasteners',
   'optimizer',
   'saw',
-  'overhang',
-  'settings'
+  'overhang'
 ];
 
 function replaceOnce(source, from, to, label) {
@@ -47,33 +46,33 @@ const oldHeaderCopy = '<p class="brand-copy">The multi-tool built specifically f
 const newHeaderCopy = '<p class="brand-copy">Built for efficient shop fabrication. — Navigate with the [ <strong>≡</strong> Pages ] button in the top right corner.</p>';
 html = replaceOnce(html, oldHeaderCopy, newHeaderCopy, 'header brand copy');
 
-const panelStartPattern = /<section id="tool-([^"]+)" class="tool-panel(?: active)?">/g;
-const panels = [];
-for (let match = panelStartPattern.exec(html); match; match = panelStartPattern.exec(html)) {
+const pagePanelStartPattern = /<section id="tool-([^"]+)" class="tool-panel(?: active)?">/g;
+const pagePanels = [];
+for (let match = pagePanelStartPattern.exec(html); match; match = pagePanelStartPattern.exec(html)) {
   const start = match.index;
   const end = findSectionEnd(html, start);
-  panels.push({ tool: match[1], start, end, block: html.slice(start, end) });
-  panelStartPattern.lastIndex = end;
+  pagePanels.push({ tool: match[1], start, end, block: html.slice(start, end) });
+  pagePanelStartPattern.lastIndex = end;
 }
 
-const actualTools = panels.map(panel => panel.tool);
-const expectedCurrentTools = ['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator','settings'];
-if (JSON.stringify(actualTools) !== JSON.stringify(expectedCurrentTools)) {
-  throw new Error(`Unexpected current panel order: ${actualTools.join(' > ')}`);
+const actualPageTools = pagePanels.map(panel => panel.tool);
+const expectedCurrentPageTools = ['overhang','fasteners','optimizer','saw','tasklog','notes','checklist','reference','calculator'];
+if (JSON.stringify(actualPageTools) !== JSON.stringify(expectedCurrentPageTools)) {
+  throw new Error(`Unexpected current Pages panel order: ${actualPageTools.join(' > ')}`);
 }
-if (panels.length !== desiredPanelOrder.length) throw new Error(`Expected ${desiredPanelOrder.length} tool panels, found ${panels.length}`);
+if (pagePanels.length !== desiredPageOrder.length) throw new Error(`Expected ${desiredPageOrder.length} Pages panels, found ${pagePanels.length}`);
 
-for (let i = 0; i < panels.length - 1; i += 1) {
-  const gap = html.slice(panels[i].end, panels[i + 1].start);
-  if (gap.trim()) throw new Error(`Non-whitespace content found between ${panels[i].tool} and ${panels[i + 1].tool}; refusing unsafe reorder`);
+for (let i = 0; i < pagePanels.length - 1; i += 1) {
+  const gap = html.slice(pagePanels[i].end, pagePanels[i + 1].start);
+  if (gap.trim()) throw new Error(`Non-whitespace content found between ${pagePanels[i].tool} and ${pagePanels[i + 1].tool}; refusing unsafe reorder`);
 }
 
-const byTool = new Map(panels.map(panel => [panel.tool, panel.block]));
-for (const tool of desiredPanelOrder) {
-  if (!byTool.has(tool)) throw new Error(`Missing tool panel ${tool}`);
+const byTool = new Map(pagePanels.map(panel => [panel.tool, panel.block]));
+for (const tool of desiredPageOrder) {
+  if (!byTool.has(tool)) throw new Error(`Missing Pages panel ${tool}`);
 }
-const reordered = desiredPanelOrder.map(tool => byTool.get(tool)).join('\n\n');
-html = html.slice(0, panels[0].start) + reordered + html.slice(panels.at(-1).end);
+const reordered = desiredPageOrder.map(tool => byTool.get(tool)).join('\n\n');
+html = html.slice(0, pagePanels[0].start) + reordered + html.slice(pagePanels.at(-1).end);
 
 const changelogAnchor = '          <li><b>Header &amp; Pages Branding:</b> Added the exact approved Fabri-Cadabra app logo beside the header guidance, removed the repeated app-name heading from the topbar, and moved the Fabri-Cadabra name into a dedicated branded masthead at the top of the Pages drawer.</li>';
 const changelogAddition = `${changelogAnchor}\n          <li><b>Page Order &amp; Header Copy:</b> Reordered the physical tool sections in <code>index.html</code> to match the Pages drawer, retained Settings last, and shortened the header guidance to the current fabrication/navigation copy.</li>`;
@@ -82,7 +81,7 @@ fs.writeFileSync(indexPath, html);
 
 let verifyFeatures = fs.readFileSync(verifyFeaturesPath, 'utf8');
 const navContract = `const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^\\"]+)"/g)].map(match=>match[1]);\nif(new Set(navTools).size!==navTools.length) throw new Error('Pages drawer contains duplicate data-tool identifiers.');\nif(JSON.stringify(navTools)!==JSON.stringify(expectedNavTools)) throw new Error(\`Pages drawer order changed unexpectedly. Expected \${expectedNavTools.join(' > ')}, got \${navTools.join(' > ')}.\`);`;
-const navAndPanelContract = `${navContract}\nconst panelTools=[...html.matchAll(/<section id="tool-([^\\"]+)" class="tool-panel(?: active)?">/g)].map(match=>match[1]);\nconst expectedPanelTools=[...expectedNavTools,'settings'];\nif(JSON.stringify(panelTools)!==JSON.stringify(expectedPanelTools)) throw new Error(\`Physical tool-panel order must match Pages drawer order with Settings last. Expected \${expectedPanelTools.join(' > ')}, got \${panelTools.join(' > ')}.\`);`;
+const navAndPanelContract = `${navContract}\nconst panelTools=[...html.matchAll(/<section id="tool-([^\\"]+)" class="tool-panel[^\\"]*">/g)].map(match=>match[1]);\nconst expectedPanelTools=[...expectedNavTools,'settings'];\nif(JSON.stringify(panelTools)!==JSON.stringify(expectedPanelTools)) throw new Error(\`Physical tool-panel order must match Pages drawer order with Settings last. Expected \${expectedPanelTools.join(' > ')}, got \${panelTools.join(' > ')}.\`);`;
 verifyFeatures = replaceOnce(verifyFeatures, navContract, navAndPanelContract, 'Pages navigation verification block');
 verifyFeatures = replaceOnce(
   verifyFeatures,
