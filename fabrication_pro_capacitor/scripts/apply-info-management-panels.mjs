@@ -9,6 +9,10 @@ const stylesPath = path.join(root, 'www', 'styles.css');
 const taskLogPath = path.join(root, 'www', 'app', 'task-logging.js');
 const verifyPath = path.join(root, 'scripts', 'verify-features.mjs');
 const releasePath = path.join(root, 'release.json');
+const uiPanelsTestPath = path.join(root, 'tests', 'e2e', 'ui-panels.spec.mjs');
+const notesChecklistTestPath = path.join(root, 'tests', 'e2e', 'notes-checklist.spec.mjs');
+const optimizersTestPath = path.join(root, 'tests', 'e2e', 'optimizers.spec.mjs');
+const backupRestoreTestPath = path.join(root, 'tests', 'e2e', 'backup-restore.spec.mjs');
 
 function replaceOnce(source, from, to, label) {
   const first = source.indexOf(from);
@@ -60,7 +64,6 @@ html = replaceOnce(html, newTitle, newTitle + drawerMarkup, 'Task Logging title 
 
 html = convertCard(html, '<h2>Checklist Management</h2>', 'checklistManagementDetails', 'Checklist Management', 'Topics • Import • Export');
 html = convertCard(html, '<h2>Job Management ', 'optimizerManagementDetails', 'Job Management <span id="optimizerActiveJobChip" class="job-number-chip" style="display:none"></span>', 'Save • Load • Import • Export');
-// remove the duplicate chip left by the original h2 body conversion if present nowhere else; convertCard removed the entire h2.
 html = convertCard(html, '<h2>Saw Job File</h2>', 'sawManagementDetails', 'Saw Job File', 'Import • Export');
 
 const changelogAnchor = '          <li><b>Page Order &amp; Header Copy:</b> Reordered the physical tool sections in <code>index.html</code> to match the Pages drawer, retained Settings last, and shortened the header guidance to the current fabrication/navigation copy.</li>';
@@ -98,6 +101,53 @@ const verifierAddition = `${verifierAnchor}\nfor(const marker of [\n  'id="taskL
 verify = replaceOnce(verify, verifierAnchor, verifierAddition, 'feature verifier insertion point');
 fs.writeFileSync(verifyPath, verify);
 
+let uiPanelsTest = fs.readFileSync(uiPanelsTestPath, 'utf8');
+uiPanelsTest = replaceOnce(uiPanelsTest,
+  `  const side = await drawer.evaluate(element => ({\n    left: getComputedStyle(element).left,\n    right: getComputedStyle(element).right,\n    transform: getComputedStyle(element).transform\n  }));\n  expect(side.left).toBe('0px');\n  expect(side.right).toBe('auto');`,
+  `  const side = await drawer.evaluate(element => ({ left: getComputedStyle(element).left }));\n  const box = await drawer.boundingBox();\n  expect(side.left).toBe('0px');\n  expect(box).not.toBeNull();\n  expect(Math.abs(box.x)).toBeLessThanOrEqual(1);`,
+  'left drawer browser assertion'
+);
+fs.writeFileSync(uiPanelsTestPath, uiPanelsTest);
+
+let notesChecklistTest = fs.readFileSync(notesChecklistTestPath, 'utf8');
+notesChecklistTest = replaceOnce(notesChecklistTest,
+  `async function openChecklist(page) {\n  await openApp(page);\n  await openTool(page, 'Checklist', '#tool-checklist');\n}`,
+  `async function openChecklist(page) {\n  await openApp(page);\n  await openTool(page, 'Checklist', '#tool-checklist');\n  const details = page.locator('#checklistManagementDetails');\n  if (!(await details.evaluate(element => element.open))) await details.locator('> summary').click();\n  await expect(details).toHaveAttribute('open', '');\n}`,
+  'Checklist test page helper'
+);
+fs.writeFileSync(notesChecklistTestPath, notesChecklistTest);
+
+let optimizersTest = fs.readFileSync(optimizersTestPath, 'utf8');
+optimizersTest = replaceOnce(optimizersTest,
+  `async function openSheetOptimizer(page) {\n  await openApp(page);\n  await openTool(page, 'Sheet Optimizer', '#tool-optimizer');\n}`,
+  `async function openSheetOptimizer(page) {\n  await openApp(page);\n  await openTool(page, 'Sheet Optimizer', '#tool-optimizer');\n  const details = page.locator('#optimizerManagementDetails');\n  if (!(await details.evaluate(element => element.open))) await details.locator('> summary').click();\n  await expect(details).toHaveAttribute('open', '');\n}`,
+  'Sheet Optimizer test page helper'
+);
+optimizersTest = replaceOnce(optimizersTest,
+  `async function openSawOptimizer(page) {\n  await openApp(page);\n  await openTool(page, 'Saw Optimizer', '#tool-saw');\n}`,
+  `async function openSawOptimizer(page) {\n  await openApp(page);\n  await openTool(page, 'Saw Optimizer', '#tool-saw');\n  const details = page.locator('#sawManagementDetails');\n  if (!(await details.evaluate(element => element.open))) await details.locator('> summary').click();\n  await expect(details).toHaveAttribute('open', '');\n}`,
+  'Saw Optimizer test page helper'
+);
+fs.writeFileSync(optimizersTestPath, optimizersTest);
+
+let backupRestoreTest = fs.readFileSync(backupRestoreTestPath, 'utf8');
+backupRestoreTest = replaceOnce(backupRestoreTest,
+  `async function createChecklistFixture(page) {\n  await openTool(page,'Checklist','#tool-checklist');\n  await page.locator('#checklistNewTopicBtn').click();`,
+  `async function createChecklistFixture(page) {\n  await openTool(page,'Checklist','#tool-checklist');\n  const details=page.locator('#checklistManagementDetails');\n  if (!(await details.evaluate(el=>el.open))) await details.locator('> summary').click();\n  await expect(details).toHaveAttribute('open','');\n  await page.locator('#checklistNewTopicBtn').click();`,
+  'backup Checklist fixture'
+);
+backupRestoreTest = replaceOnce(backupRestoreTest,
+  `async function createOptimizerFixture(page) {\n  await openTool(page,'Sheet Optimizer','#tool-optimizer');\n  await page.locator('#optimizerJobNumber').fill('BACKUP-100');`,
+  `async function createOptimizerFixture(page) {\n  await openTool(page,'Sheet Optimizer','#tool-optimizer');\n  const details=page.locator('#optimizerManagementDetails');\n  if (!(await details.evaluate(el=>el.open))) await details.locator('> summary').click();\n  await expect(details).toHaveAttribute('open','');\n  await page.locator('#optimizerJobNumber').fill('BACKUP-100');`,
+  'backup Sheet Optimizer fixture'
+);
+backupRestoreTest = replaceOnce(backupRestoreTest,
+  `  await openTool(page,'Sheet Optimizer','#tool-optimizer');\n  await expect(page.locator('#optimizerSavedJobs')).toContainText('BACKUP-100');`,
+  `  await openTool(page,'Sheet Optimizer','#tool-optimizer');\n  const optimizerManagement=page.locator('#optimizerManagementDetails');\n  if (!(await optimizerManagement.evaluate(el=>el.open))) await optimizerManagement.locator('> summary').click();\n  await expect(optimizerManagement).toHaveAttribute('open','');\n  await expect(page.locator('#optimizerSavedJobs')).toContainText('BACKUP-100');`,
+  'backup restored optimizer management interaction'
+);
+fs.writeFileSync(backupRestoreTestPath, backupRestoreTest);
+
 const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
 if (release.version !== '1.0.5' || Number(release.buildNumber) !== 1000011 || release.previousVersion !== '1.0.4') {
   throw new Error(`Unexpected release baseline: ${JSON.stringify(release)}`);
@@ -105,4 +155,4 @@ if (release.version !== '1.0.5' || Number(release.buildNumber) !== 1000011 || re
 release.buildNumber = 1000012;
 fs.writeFileSync(releasePath, `${JSON.stringify(release, null, 2)}\n`);
 
-console.log('Applied Fabri-Cadabra 1.0.5 Task Logging Info drawer, collapsible management panels, and native build 1000012.');
+console.log('Applied Fabri-Cadabra 1.0.5 Task Logging Info drawer, collapsible management panels, updated regression interactions, and native build 1000012.');
