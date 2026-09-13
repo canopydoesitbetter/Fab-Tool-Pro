@@ -54,7 +54,10 @@ jobs:
         run: |
           set -euo pipefail
           git diff --check
-          git diff --name-only | sort > /tmp/actual.txt
+          {
+            git diff --name-only
+            git ls-files --others --exclude-standard
+          } | sort -u > /tmp/actual.txt
           printf '%s\n' \
             'fabrication_pro_capacitor/package.json' \
             'fabrication_pro_capacitor/release.json' \
