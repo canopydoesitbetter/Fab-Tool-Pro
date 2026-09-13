@@ -32,6 +32,26 @@ jobs:
         working-directory: fabrication_pro_capacitor
         run: node scripts/apply-info-management-panels.mjs
 
+      - name: Normalize converted management markup
+        working-directory: fabrication_pro_capacitor
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'www/index.html';
+          let html = fs.readFileSync(path, 'utf8');
+          for (const id of ['checklistManagementDetails','optimizerManagementDetails','sawManagementDetails']) {
+            const start = html.indexOf(`<details id="${id}"`);
+            if (start < 0) throw new Error(`Missing ${id}`);
+            const endMarker = '</details>';
+            const end = html.indexOf(endMarker, start);
+            if (end < 0) throw new Error(`Unclosed ${id}`);
+            const endExclusive = end + endMarker.length;
+            const clean = html.slice(start, endExclusive).replace(/[ \t]+$/gm, '');
+            html = html.slice(0, start) + clean + html.slice(endExclusive);
+          }
+          fs.writeFileSync(path, html);
+          NODE
+
       - name: Install dependencies
         working-directory: fabrication_pro_capacitor
         run: npm ci
