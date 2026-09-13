@@ -41,7 +41,7 @@ test('Pages drawer carries the Fabri-Cadabra name above the navigation label', a
   await expectNoHorizontalOverflow(page);
 });
 
-test('physical tool panel order matches the Pages drawer order', async ({ page }) => {
+test('physical tool panel order matches the Pages drawer order with Settings last', async ({ page }) => {
   await openApp(page);
 
   const drawerOrder = await page.locator('#pageMenuDrawer .fab-page-link').evaluateAll(buttons =>
@@ -52,5 +52,5 @@ test('physical tool panel order matches the Pages drawer order', async ({ page }
   );
 
   expect(drawerOrder).toEqual(EXPECTED_PAGE_ORDER);
-  expect(panelOrder).toEqual(EXPECTED_PAGE_ORDER);
+  expect(panelOrder).toEqual([...EXPECTED_PAGE_ORDER, 'settings']);
 });
