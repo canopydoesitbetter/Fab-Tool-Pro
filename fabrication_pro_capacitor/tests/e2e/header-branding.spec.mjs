@@ -1,6 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { openApp, expectNoHorizontalOverflow } from './helpers.mjs';
 
+const EXPECTED_PAGE_ORDER = [
+  'tasklog',
+  'notes',
+  'checklist',
+  'calculator',
+  'reference',
+  'fasteners',
+  'optimizer',
+  'saw',
+  'overhang'
+];
+
 test('header uses the approved app logo without repeating the app name', async ({ page }) => {
   await openApp(page);
 
@@ -9,7 +21,7 @@ test('header uses the approved app logo without repeating the app name', async (
   await expect(logo).toHaveAttribute('src', 'app-logo.jpg');
   await expect(logo).toHaveAttribute('alt', 'Fabri-Cadabra');
   await expect(page.locator('.topbar .brand h1')).toHaveCount(0);
-  await expect(page.locator('.topbar .brand-copy')).toContainText('The multi-tool built specifically for efficient shop fabrication.');
+  await expect(page.locator('.topbar .brand-copy')).toHaveText('Built for efficient shop fabrication. — Navigate with the [ ≡ Pages ] button in the top right corner.');
   await expectNoHorizontalOverflow(page);
 });
 
@@ -27,4 +39,18 @@ test('Pages drawer carries the Fabri-Cadabra name above the navigation label', a
   expect(pagesBox).not.toBeNull();
   expect(brandBox.y).toBeLessThan(pagesBox.y);
   await expectNoHorizontalOverflow(page);
+});
+
+test('physical tool panel order matches the Pages drawer order', async ({ page }) => {
+  await openApp(page);
+
+  const drawerOrder = await page.locator('#pageMenuDrawer .fab-page-link').evaluateAll(buttons =>
+    buttons.map(button => button.dataset.tool)
+  );
+  const panelOrder = await page.locator('main.app > section.tool-panel[id^="tool-"]').evaluateAll(panels =>
+    panels.map(panel => panel.id.replace(/^tool-/, ''))
+  );
+
+  expect(drawerOrder).toEqual(EXPECTED_PAGE_ORDER);
+  expect(panelOrder).toEqual(EXPECTED_PAGE_ORDER);
 });
