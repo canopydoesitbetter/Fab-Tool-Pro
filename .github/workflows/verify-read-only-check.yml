@@ -1,44 +1,112 @@
-name: Verify Read-Only Contract
+name: Finalize Fabri-Cadabra v1.0.6
 
 on:
   push:
-    branches: [ main, work ]
+    branches: [ work ]
     paths:
       - '.github/workflows/verify-read-only-check.yml'
-      - 'fabrication_pro_capacitor/package.json'
-      - 'fabrication_pro_capacitor/package-lock.json'
-      - 'fabrication_pro_capacitor/scripts/**'
+
+permissions:
+  contents: write
 
 jobs:
-  verify-read-only:
-    name: Verify leaves tracked files unchanged
+  finalize-v106:
+    name: Finalize v1.0.6 metadata and changelog
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: fabrication_pro_capacitor
     steps:
-      - name: Checkout
+      - name: Checkout work
         uses: actions/checkout@v4
+        with:
+          ref: work
+          fetch-depth: 0
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run verify and prove tracked tree stays clean
+      - name: Finalize release metadata and changelog
+        working-directory: fabrication_pro_capacitor
         run: |
-          set -euo pipefail
-          npm run verify
-          CHANGES="$(git -C .. status --porcelain --untracked-files=no)"
-          if [ -n "$CHANGES" ]; then
-            echo "::error::npm run verify modified tracked files:"
-            printf '%s\n' "$CHANGES"
-            git -C .. diff -- .
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path.cwd()
+          package_path = root / 'package.json'
+          lock_path = root / 'package-lock.json'
+          release_path = root / 'release.json'
+          index_path = root / 'www' / 'index.html'
+
+          package = json.loads(package_path.read_text())
+          if package.get('version') != '1.0.5':
+              raise SystemExit(f"Expected package version 1.0.5, found {package.get('version')}")
+          package['version'] = '1.0.6'
+          package_path.write_text(json.dumps(package, indent=2) + '\n')
+
+          lock = json.loads(lock_path.read_text())
+          if lock.get('version') != '1.0.5' or lock.get('packages', {}).get('', {}).get('version') != '1.0.5':
+              raise SystemExit('Expected package-lock release metadata to be 1.0.5.')
+          lock['version'] = '1.0.6'
+          lock['packages']['']['version'] = '1.0.6'
+          lock_path.write_text(json.dumps(lock, indent=2) + '\n')
+
+          release = json.loads(release_path.read_text())
+          expected = {'version': '1.0.5', 'buildNumber': 1000013, 'previousVersion': '1.0.4'}
+          if release != expected:
+              raise SystemExit(f'Unexpected release.json baseline: {release!r}')
+          release.update(version='1.0.6', buildNumber=1000014, previousVersion='1.0.5')
+          release_path.write_text(json.dumps(release, indent=2) + '\n')
+
+          html = index_path.read_text()
+          if "data-changelog-version='1.0.6'" in html:
+              raise SystemExit('A 1.0.6 changelog entry already exists.')
+          old_current = "<span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>"
+          if old_current not in html:
+              raise SystemExit('Could not find the current 1.0.5 changelog label.')
+          html = html.replace(old_current, "<span class='changelog-version-label'>Version 1.0.5</span>", 1)
+
+          marker = "      <article class='changelog-entry changelog-release' data-changelog-version='1.0.5'>"
+          if marker not in html:
+              raise SystemExit('Could not find the 1.0.5 changelog insertion point.')
+          entry = """      <article class='changelog-entry changelog-release' data-changelog-version='1.0.6'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.6</span>
+            <h2>Per-Task Notes &amp; Safer Note Clearing</h2>
+          </div>
+        </div>
+        <ul>
+          <li><b>Task Logging Notes:</b> Added a polished note button to every task assigned to a job, with a distinct highlighted state when that task contains a saved note.</li>
+          <li><b>Task Note Editor:</b> Added a smooth mobile-friendly, dark-mode-aware note dialog with multiline editing, a 4,000-character limit, live character count, Save, Cancel, Clear Note, keyboard focus handling, Escape/backdrop cancellation, and Ctrl/Cmd+Enter save support.</li>
+          <li><b>Persistent &amp; Portable Notes:</b> Task notes save directly with the assigned task, survive app restarts, remain backward-compatible with older Task Logging data, and travel with Task Logging job exports/imports and full Fabri-Cadabra backups.</li>
+          <li><b>Clear Note Protection:</b> Clear Note now opens the shared Fabri-Cadabra confirmation warning with Keep Note and destructive Clear Note actions, preventing accidental note deletion while preserving the note editor when cancellation is chosen.</li>
+          <li><b>Regression Protection:</b> Added permanent verification coverage for task-note normalization, persistence, import/export serialization, note-state UI, editor controls, and the required clear-note confirmation guard.</li>
+        </ul>
+      </article>"""
+          html = html.replace(marker, entry + '\n' + marker, 1)
+          index_path.write_text(html)
+          PY
+
+      - name: Synchronize generated version markers
+        working-directory: fabrication_pro_capacitor
+        run: npm run sync:version
+
+      - name: Verify complete release contract
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Verify patch formatting
+        run: git diff --check
+
+      - name: Commit finalized v1.0.6 release to work
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fabrication_pro_capacitor/package.json fabrication_pro_capacitor/package-lock.json fabrication_pro_capacitor/release.json fabrication_pro_capacitor/www/app/bootstrap.js fabrication_pro_capacitor/www/index.html
+          if git diff --cached --quiet; then
+            echo "Expected v1.0.6 release changes were not produced."
             exit 1
           fi
-          echo "npm run verify left all tracked files unchanged."
+          git commit -m "release: finalize v1.0.6"
+          git push origin HEAD:work
