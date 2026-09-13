@@ -6,15 +6,20 @@ async function openTool(page, label) {
   await page.locator('#pageMenuDrawer .fab-page-link', { hasText: label }).click();
 }
 
+async function expectDrawerAtLeft(drawer) {
+  await expect.poll(async () => {
+    const box = await drawer.boundingBox();
+    return box ? Math.abs(box.x) : Number.POSITIVE_INFINITY;
+  }).toBeLessThanOrEqual(1);
+}
+
 async function expectLeftDrawer(page, buttonSelector, drawerSelector, closeSelector) {
   const button = page.locator(buttonSelector);
   const drawer = page.locator(drawerSelector);
   await button.click();
   await expect(drawer).toHaveAttribute('aria-hidden', 'false');
   await expect(drawer).toHaveClass(/drawer-left/);
-  const box = await drawer.boundingBox();
-  expect(box).not.toBeNull();
-  expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
+  await expectDrawerAtLeft(drawer);
   await page.locator(closeSelector).click();
   await expect(drawer).toHaveAttribute('aria-hidden', 'true');
   await expect(button).toBeFocused();
@@ -36,10 +41,8 @@ test('Task Logging Info opens as a left-side drawer with the intro and timer beh
   await expect(drawer).toContainText('Screen lock / page change:');
 
   const side = await drawer.evaluate(element => ({ left: getComputedStyle(element).left }));
-  const box = await drawer.boundingBox();
   expect(side.left).toBe('0px');
-  expect(box).not.toBeNull();
-  expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
+  await expectDrawerAtLeft(drawer);
 
   await page.locator('#taskLogInfoCloseBtn').click();
   await expect(drawer).toHaveAttribute('aria-hidden', 'true');
@@ -87,9 +90,7 @@ test('Basic Calculator Guide matches the page Info control and opens from the le
   await expect(drawer).toHaveClass(/drawer-left/);
   await expect(drawer).toContainText('Calculator Guide');
   await expect(drawer).toContainText('Function definitions');
-  const box = await drawer.boundingBox();
-  expect(box).not.toBeNull();
-  expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
+  await expectDrawerAtLeft(drawer);
 
   await page.locator('#calculatorGuideCloseBtn').click();
   await expect(drawer).toHaveAttribute('aria-hidden', 'true');
@@ -127,9 +128,7 @@ test('Sheet, Saw, and Aluminum Overhang guidance lives in matching left-side Inf
     await expect(drawer).toHaveClass(/drawer-left/);
     await expect(drawer).toContainText(entry.intro);
     await expect(drawer).toContainText(entry.rules);
-    const box = await drawer.boundingBox();
-    expect(box).not.toBeNull();
-    expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
+    await expectDrawerAtLeft(drawer);
     await page.locator(entry.close).click();
     await expect(drawer).toHaveAttribute('aria-hidden', 'true');
     await expect(page.locator(entry.button)).toBeFocused();
