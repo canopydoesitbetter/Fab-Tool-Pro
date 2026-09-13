@@ -1,0 +1,78 @@
+name: Apply Info Drawer and Management Panels
+
+on:
+  push:
+    branches:
+      - work
+    paths:
+      - fabrication_pro_capacitor/scripts/apply-info-management-panels.mjs
+      - .github/workflows/apply-info-management-panels.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work
+        uses: actions/checkout@v4
+        with:
+          ref: work
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Apply approved Info drawer and management panels
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/apply-info-management-panels.mjs
+
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: fabrication_pro_capacitor
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify source contracts
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Run browser regression suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run test:e2e
+
+      - name: Guard intended diff only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --name-only | sort > /tmp/actual.txt
+          printf '%s\n' \
+            'fabrication_pro_capacitor/release.json' \
+            'fabrication_pro_capacitor/scripts/verify-features.mjs' \
+            'fabrication_pro_capacitor/www/app/task-logging.js' \
+            'fabrication_pro_capacitor/www/index.html' \
+            'fabrication_pro_capacitor/www/styles.css' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'canopydoesitbetter'
+          git config user.email 'canopy.2126@gmail.com'
+          git add fabrication_pro_capacitor/release.json \
+                  fabrication_pro_capacitor/scripts/verify-features.mjs \
+                  fabrication_pro_capacitor/www/app/task-logging.js \
+                  fabrication_pro_capacitor/www/index.html \
+                  fabrication_pro_capacitor/www/styles.css
+          git commit -m 'feat: add Task Logging info drawer and collapsible management panels'
+          git push origin HEAD:work
