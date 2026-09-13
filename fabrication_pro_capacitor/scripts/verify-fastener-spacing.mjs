@@ -63,6 +63,8 @@ requireMatch(app,/selectedFastenerIndexes\.has\(i\)/,'Rendered fastener boxes mu
 requireMatch(app,/selectedFastenerIndexes\.(add|delete)\(/,'Tapping a fastener box must toggle its completed state.');
 requireMatch(app,/writePersistentStore\(FASTENER_SPACING_STORE_ID\s*,\s*defaultFastenerSpacingState\(\)\)/,'Clear must wipe the saved Fastener Spacing workspace and completed progress.');
 requireMatch(app,/fastenerProgressFill\.style\.width\s*=/,'The completion progress bar must update its fill width from current fastener progress.');
+requireMatch(app,/fastenerProgressText\.textContent\s*=\s*`\$\{completed\} of \$\{total\} fasteners complete`/,'The completion display must report completed and total fastener counts.');
+requireMatch(app,/diagramEl\.classList\.remove\(['"]diagram['"]\)/,'The old diagram presentation class must be removed when installing the completion display.');
 requireMatch(app,/role=["']progressbar["']/,'The completion display must expose progressbar semantics for assistive technology.');
 requireMatch(app,/aria-valuemax=["']0["'][^>]*aria-valuenow=["']0["']/,'The completion progress bar must expose numeric progress values.');
 if (app.includes("diagramEl.innerHTML = '<div class=\"rail\"></div>'") || app.includes('data-fastener-dot')) throw new Error('The old rail-and-dot fastener diagram must be replaced by the completion progress display.');
