@@ -11,7 +11,8 @@ const STORE_IDS=[
   'theme',
   'lastTool',
   'quickReferenceTable',
-  'quickReferenceDisplayMode'
+  'quickReferenceDisplayMode',
+  'fastenerSpacing'
 ];
 
 const STRUCTURED_STORE_IDS=[
@@ -20,7 +21,8 @@ const STRUCTURED_STORE_IDS=[
   'shiftSchedule',
   'fabricatorNotes',
   'checklists',
-  'optimizerSavedJobs'
+  'optimizerSavedJobs',
+  'fastenerSpacing'
 ];
 
 async function readRawRecoveryRecord(page,id) {
