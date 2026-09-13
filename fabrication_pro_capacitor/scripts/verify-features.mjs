@@ -105,6 +105,24 @@ if(!styles.includes('.tasklog-remove-task') || !styles.includes('display:none !i
   throw new Error('Inline task removal must be hidden so tasks can only be removed from the preset drawer.');
 }
 for(const marker of [
+  'id="taskLogInfoBtn"',
+  'id="taskLogInfoBackdrop"',
+  'id="taskLogInfoDrawer" class="cut-list-drawer drawer-left tasklog-info-drawer"',
+  'id="taskLogInfoCloseBtn"',
+  'id="checklistManagementDetails" class="card management-details"',
+  'id="optimizerManagementDetails" class="card management-details"',
+  'id="sawManagementDetails" class="card management-details"'
+]) {
+  if(!html.includes(marker)) throw new Error(`Info/management panel markup missing: ${marker}`);
+}
+for(const id of ['checklistManagementDetails','optimizerManagementDetails','sawManagementDetails']) {
+  if(new RegExp(`<details[^>]*id="${id}"[^>]*\\sopen(?:\\s|>)`).test(html)) throw new Error(`${id} must be collapsed by default.`);
+}
+if(!styles.includes('.cut-list-drawer.drawer-left') || !styles.includes('transform:translateX(-102%)')) throw new Error('Task Logging Info drawer must be styled as a left-side drawer.');
+for(const marker of ["setTaskLogInfoDrawerOpen","openDrawer('taskLogInfoDrawer'","closeDrawer('taskLogInfoDrawer'"]) {
+  if(!app.includes(marker)) throw new Error(`Task Logging Info drawer behavior missing: ${marker}`);
+}
+for(const marker of [
   'data-tasklog-remove-assigned',
   "openDrawer('fabricatorNotesTopicsDrawer'",
   "closeDrawer('fabricatorNotesTopicsDrawer'",

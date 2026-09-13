@@ -3621,3 +3621,44 @@ body.app-confirm-open { overflow:hidden; }
   .app-header-logo { width:58px; height:58px; border-radius:15px; }
   .topbar .brand-copy { font-size:.84rem; }
 }
+
+
+/* Task Logging Info drawer and management-panel consistency (1.0.5). */
+.tasklog-title-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.tasklog-title-row h2 { margin:0; }
+.tasklog-info-btn {
+  flex:0 0 auto;
+  min-height:42px;
+  padding:8px 14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card2);
+  color:var(--accent);
+  font-weight:900;
+}
+.cut-list-drawer.drawer-left {
+  left:0;
+  right:auto;
+  border-left:0;
+  border-right:1px solid var(--border);
+  box-shadow:18px 0 46px rgba(0,0,0,.28);
+  transform:translateX(-102%);
+}
+.cut-list-drawer.drawer-left.open { transform:translateX(0); }
+.tasklog-info-body { display:grid; gap:14px; }
+.tasklog-info-intro {
+  margin:0;
+  color:var(--muted);
+  line-height:1.5;
+  font-size:.94rem;
+}
+.tasklog-info-timer-card { margin:0; }
+@media (max-width:640px) {
+  .tasklog-title-row { align-items:center; }
+  .tasklog-info-btn { min-height:40px; padding:7px 12px; }
+}

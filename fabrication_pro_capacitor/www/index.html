@@ -31,11 +31,30 @@
 
     <section id="tool-tasklog" class="tool-panel active">
       <div class="tool-title tasklog-title-row">
-        <div>
-          <h2>Task Logging</h2>
-          <p>Create jobs, assign reusable preset tasks, and track real fabrication time with persistent start/stop timers. Timers are timestamp-based, so locking the phone or switching pages does not lose elapsed time.</p>
-        </div>
+        <h2>Task Logging</h2>
+        <button id="taskLogInfoBtn" class="tasklog-info-btn" type="button" aria-expanded="false" aria-controls="taskLogInfoDrawer">Info</button>
       </div>
+      <div id="taskLogInfoBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
+      <aside id="taskLogInfoDrawer" class="cut-list-drawer drawer-left tasklog-info-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="taskLogInfoDrawerTitle">
+        <div class="cut-list-drawer-head">
+          <strong id="taskLogInfoDrawerTitle">Task Logging Info</strong>
+          <button id="taskLogInfoCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Task Logging Info">×</button>
+        </div>
+        <div class="cut-list-drawer-body tasklog-info-body">
+          <p class="tasklog-info-intro">Create jobs, assign reusable preset tasks, and track real fabrication time with persistent start/stop timers. Timers are timestamp-based, so locking the phone or switching pages does not lose elapsed time.</p>
+          <section class="card tasklog-info-timer-card">
+            <h2>Timer Behavior</h2>
+            <div class="rules">
+              <div class="rule"><b>One active task:</b> starting a different task automatically stops the currently running task at the same timestamp, preventing overlapping labor time.</div>
+              <div class="rule"><b>Screen lock / page change:</b> the running timer is stored as an absolute start timestamp. The visible counter may pause while a browser is suspended, but elapsed time is recalculated correctly when the app becomes active again.</div>
+              <div class="rule"><b>Phone/browser restart:</b> running state is saved immediately when Start is pressed. Reopening this HTML resumes the elapsed-time calculation from the stored timestamp.</div>
+              <div class="rule"><b>Portable backups:</b> job and preset libraries use separate versioned JSON formats. If a job backup contains a running timer, importing it safely stops that timer at the backup's export timestamp so transfer time is not counted as labor.</div>
+            </div>
+            <div class="note">Timer accuracy depends on the device clock. Manually changing the phone's date or time while a task is running can affect the measured elapsed time.</div>
+          </section>
+        </div>
+      </aside>
+
 
       <div id="taskLogShiftStatus" class="tasklog-shift-status" role="status" aria-live="polite">Shift Schedule Off</div>
 
@@ -160,16 +179,6 @@
         </section>
       </div>
 
-      <section class="card">
-        <h2>Timer Behavior</h2>
-        <div class="rules">
-          <div class="rule"><b>One active task:</b> starting a different task automatically stops the currently running task at the same timestamp, preventing overlapping labor time.</div>
-          <div class="rule"><b>Screen lock / page change:</b> the running timer is stored as an absolute start timestamp. The visible counter may pause while a browser is suspended, but elapsed time is recalculated correctly when the app becomes active again.</div>
-          <div class="rule"><b>Phone/browser restart:</b> running state is saved immediately when Start is pressed. Reopening this HTML resumes the elapsed-time calculation from the stored timestamp.</div>
-          <div class="rule"><b>Portable backups:</b> job and preset libraries use separate versioned JSON formats. If a job backup contains a running timer, importing it safely stops that timer at the backup's export timestamp so transfer time is not counted as labor.</div>
-        </div>
-        <div class="note">Timer accuracy depends on the device clock. Manually changing the phone's date or time while a task is running can affect the measured elapsed time.</div>
-      </section>
     </section>
 
 <section id="tool-notes" class="tool-panel">
@@ -238,8 +247,10 @@
         <p>Create checklist topics for shop tasks, inspections, fabrication steps, or reminders. Add items inside each topic and check them off as work is completed.</p>
       </div>
 
-      <section class="card">
-        <h2>Checklist Management</h2>
+      <details id="checklistManagementDetails" class="card management-details">
+        <summary class="management-summary"><span>Checklist Management</span><span class="management-summary-state">Topics • Import • Export</span></summary>
+        <div class="management-details-body">
+
         <div class="checklist-actions">
           <button id="checklistNewTopicBtn" class="btn" type="button">New Topic</button>
           <button id="checklistExportBtn" class="btn secondary" type="button">Export Checklists</button>
@@ -248,7 +259,9 @@
         <input id="checklistImportFile" type="file" accept="application/json,.json" hidden />
         <div id="checklistStatus" class="status" role="status" aria-live="polite"></div>
         <span class="hint">Topics, checklist items, and checked status save automatically on this device. Export creates a portable JSON backup.</span>
-      </section>
+
+        </div>
+      </details>
 
       <div class="checklist-workspace">
         <section class="card checklist-topics-card">
@@ -471,8 +484,10 @@
         </button>
       </div>
 
-      <section class="card">
-        <h2>Job Management <span id="optimizerActiveJobChip" class="job-number-chip" style="display:none"></span></h2>
+      <details id="optimizerManagementDetails" class="card management-details">
+        <summary class="management-summary"><span>Job Management <span id="optimizerActiveJobChip" class="job-number-chip" style="display:none"></span></span><span class="management-summary-state">Save • Load • Import • Export</span></summary>
+        <div class="management-details-body">
+
         <div class="job-manager-grid">
           <div>
             <label for="optimizerJobNumber">Current Job #</label>
@@ -497,7 +512,9 @@
         <input id="optimizerImportFile" type="file" accept="application/json,.json" hidden />
         <div id="optimizerJobStatus" class="status" role="status" aria-live="polite"></div>
         <span class="hint">Saved jobs stay on this device. Export creates a portable JSON backup that can be imported on another phone or computer.</span>
-      </section>
+
+        </div>
+      </details>
 
       <section class="card">
         <h2 class="add-parts-heading"><span>Add Parts to Job</span><span class="heading-note">- Rough Opening needed; cut rules automatically applied</span></h2>
@@ -631,8 +648,10 @@
         </div>
       </section>
 
-      <section class="card">
-        <h2>Saw Job File</h2>
+      <details id="sawManagementDetails" class="card management-details">
+        <summary class="management-summary"><span>Saw Job File</span><span class="management-summary-state">Import • Export</span></summary>
+        <div class="management-details-body">
+
         <div class="job-manager-actions two">
           <button id="sawExportJobBtn" class="btn secondary" type="button">Export Job File</button>
           <button id="sawImportJobBtn" class="btn secondary" type="button">Import Job File</button>
@@ -640,7 +659,9 @@
         <input id="sawImportFile" type="file" accept="application/json,.json" hidden />
         <div id="sawJobFileStatus" class="status" role="status" aria-live="polite"></div>
         <span class="hint">Export saves the tube length, part list, quantities, labels, and individual cut/uncut marks in a portable JSON file. Import loads the job but does not automatically optimize it.</span>
-      </section>
+
+        </div>
+      </details>
 
       <section class="card">
         <h2>Add Parts</h2>
@@ -913,6 +934,7 @@
           <li><b>Shift Schedule Confirmation:</b> Gave Enable and Disable Shift Schedule dedicated confirmation titles and action labels so schedule controls can never inherit Clock In or Clock Out wording from explanatory text.</li>
           <li><b>Header &amp; Pages Branding:</b> Added the exact approved Fabri-Cadabra app logo beside the header guidance, removed the repeated app-name heading from the topbar, and moved the Fabri-Cadabra name into a dedicated branded masthead at the top of the Pages drawer.</li>
           <li><b>Page Order &amp; Header Copy:</b> Reordered the physical tool sections in <code>index.html</code> to match the Pages drawer, retained Settings last, and shortened the header guidance to the current fabrication/navigation copy.</li>
+          <li><b>Task Logging Info &amp; Management Panels:</b> Moved the Task Logging introduction and Timer Behavior guidance into a dedicated left-side Info drawer beside the page title, and made Checklist Management, Sheet Optimizer Job Management, and Saw Optimizer Saw Job File panels collapsible by default using the app's standard management-panel treatment.</li>
           <li><b>Repository Maintenance:</b> Audited and removed completed temporary branding, feature, fix, refactor, release, test, and verification branches after confirming no useful unmerged work remained; <code>main</code> and <code>work</code> are the only retained long-lived branches.</li>
           <li>Added permanent source and browser regression coverage so important workflows cannot silently fall back to <code>window.confirm()</code> and the approved header branding cannot drift.</li>
         </ul>

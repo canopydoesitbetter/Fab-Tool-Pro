@@ -4,6 +4,9 @@ import { acceptNextDialog, captureJsonDownload, openApp, openTool } from './help
 async function openSheetOptimizer(page) {
   await openApp(page);
   await openTool(page, 'Sheet Optimizer', '#tool-optimizer');
+  const details = page.locator('#optimizerManagementDetails');
+  if (!(await details.evaluate(element => element.open))) await details.locator('> summary').click();
+  await expect(details).toHaveAttribute('open', '');
 }
 
 async function addSheetPart(page, { label = 'E2E Panel', width = '22', height = '30', qty = '1' } = {}) {
@@ -22,6 +25,9 @@ async function addSheetPart(page, { label = 'E2E Panel', width = '22', height = 
 async function openSawOptimizer(page) {
   await openApp(page);
   await openTool(page, 'Saw Optimizer', '#tool-saw');
+  const details = page.locator('#sawManagementDetails');
+  if (!(await details.evaluate(element => element.open))) await details.locator('> summary').click();
+  await expect(details).toHaveAttribute('open', '');
 }
 
 async function addSawPart(page, { label = 'E2E Upright', length = '93', qty = '2' } = {}) {

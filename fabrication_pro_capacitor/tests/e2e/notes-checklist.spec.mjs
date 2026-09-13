@@ -21,6 +21,9 @@ async function createNote(page, title, content) {
 async function openChecklist(page) {
   await openApp(page);
   await openTool(page, 'Checklist', '#tool-checklist');
+  const details = page.locator('#checklistManagementDetails');
+  if (!(await details.evaluate(element => element.open))) await details.locator('> summary').click();
+  await expect(details).toHaveAttribute('open', '');
 }
 
 async function createChecklist(page, title, items) {

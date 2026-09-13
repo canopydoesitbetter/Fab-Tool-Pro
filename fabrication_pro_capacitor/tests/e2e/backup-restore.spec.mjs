@@ -82,6 +82,9 @@ async function createNotesFixture(page) {
 
 async function createChecklistFixture(page) {
   await openTool(page,'Checklist','#tool-checklist');
+  const details=page.locator('#checklistManagementDetails');
+  if (!(await details.evaluate(el=>el.open))) await details.locator('> summary').click();
+  await expect(details).toHaveAttribute('open','');
   await page.locator('#checklistNewTopicBtn').click();
   await page.locator('#checklistTitle').fill('Backup Checklist');
   for (const item of ['Inspect welds','Verify dimensions']) {
@@ -94,6 +97,9 @@ async function createChecklistFixture(page) {
 
 async function createOptimizerFixture(page) {
   await openTool(page,'Sheet Optimizer','#tool-optimizer');
+  const details=page.locator('#optimizerManagementDetails');
+  if (!(await details.evaluate(el=>el.open))) await details.locator('> summary').click();
+  await expect(details).toHaveAttribute('open','');
   await page.locator('#optimizerJobNumber').fill('BACKUP-100');
   await page.locator('#optimizerProduct').selectOption('exterior');
   await page.locator('#optimizerLabel').fill('Backup Panel');
@@ -205,6 +211,9 @@ test('full backup restores all persistent categories and safely finalizes captur
   await expect(page.locator('#checklistProgressText')).toHaveText('1 of 2 complete');
 
   await openTool(page,'Sheet Optimizer','#tool-optimizer');
+  const optimizerManagement=page.locator('#optimizerManagementDetails');
+  if (!(await optimizerManagement.evaluate(el=>el.open))) await optimizerManagement.locator('> summary').click();
+  await expect(optimizerManagement).toHaveAttribute('open','');
   await expect(page.locator('#optimizerSavedJobs')).toContainText('BACKUP-100');
   await page.locator('#optimizerSavedJobs').selectOption('BACKUP-100');
   await page.locator('#optimizerLoadJobBtn').click();

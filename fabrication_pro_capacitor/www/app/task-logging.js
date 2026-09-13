@@ -31,6 +31,10 @@
   const taskLogPresetBackdrop = document.getElementById('taskLogPresetBackdrop');
   const taskLogPresetCloseBtn = document.getElementById('taskLogPresetCloseBtn');
   const taskLogPresetDrawerMeta = document.getElementById('taskLogPresetDrawerMeta');
+  const taskLogInfoBtn = document.getElementById('taskLogInfoBtn');
+  const taskLogInfoDrawer = document.getElementById('taskLogInfoDrawer');
+  const taskLogInfoBackdrop = document.getElementById('taskLogInfoBackdrop');
+  const taskLogInfoCloseBtn = document.getElementById('taskLogInfoCloseBtn');
   const taskLogStatus = document.getElementById('taskLogStatus');
   const taskLogRunningBanner = document.getElementById('taskLogRunningBanner');
   const taskLogRunningLabel = document.getElementById('taskLogRunningLabel');
@@ -356,6 +360,11 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
   function setTaskLogPresetDrawerOpen(open) {
     if (open) openDrawer('taskLogPresetDrawer',document.activeElement); else closeDrawer('taskLogPresetDrawer');
     taskLogPresetMenuBtn.setAttribute('aria-expanded',open?'true':'false');
+  }
+
+  function setTaskLogInfoDrawerOpen(open) {
+    if (open) openDrawer('taskLogInfoDrawer',document.activeElement); else closeDrawer('taskLogInfoDrawer');
+    taskLogInfoBtn.setAttribute('aria-expanded',open?'true':'false');
   }
 
   function formatTaskLogSessionMoment(value) {
@@ -846,6 +855,12 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
   }
 
   taskLogNewJobBtn.addEventListener('click',createTaskLogJob);
+  taskLogInfoBtn.addEventListener('click',()=>setTaskLogInfoDrawerOpen(!taskLogInfoDrawer.classList.contains('open')));
+  taskLogInfoCloseBtn.addEventListener('click',()=>setTaskLogInfoDrawerOpen(false));
+  taskLogInfoBackdrop.addEventListener('click',()=>setTaskLogInfoDrawerOpen(false));
+  taskLogInfoDrawer.addEventListener('keydown',e=>{
+    if (e.key==='Escape') { e.preventDefault(); setTaskLogInfoDrawerOpen(false); }
+  });
   taskLogPresetMenuBtn.addEventListener('click',()=>setTaskLogPresetDrawerOpen(!taskLogPresetDrawer.classList.contains('open')));
   taskLogPresetCloseBtn.addEventListener('click',()=>setTaskLogPresetDrawerOpen(false));
   taskLogPresetBackdrop.addEventListener('click',()=>setTaskLogPresetDrawerOpen(false));

@@ -21,13 +21,11 @@ test('Task Logging Info opens as a left-side drawer with the intro and timer beh
   await expect(drawer).toContainText('One active task:');
   await expect(drawer).toContainText('Screen lock / page change:');
 
-  const side = await drawer.evaluate(element => ({
-    left: getComputedStyle(element).left,
-    right: getComputedStyle(element).right,
-    transform: getComputedStyle(element).transform
-  }));
+  const side = await drawer.evaluate(element => ({ left: getComputedStyle(element).left }));
+  const box = await drawer.boundingBox();
   expect(side.left).toBe('0px');
-  expect(side.right).toBe('auto');
+  expect(box).not.toBeNull();
+  expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
 
   await page.locator('#taskLogInfoCloseBtn').click();
   await expect(drawer).toHaveAttribute('aria-hidden', 'true');
