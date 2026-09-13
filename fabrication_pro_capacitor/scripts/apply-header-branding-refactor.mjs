@@ -56,7 +56,37 @@ if (release.version !== '1.0.5' || Number(release.buildNumber) !== 1000009 || re
 release.buildNumber = 1000010;
 fs.writeFileSync(releasePath, `${JSON.stringify(release, null, 2)}\n`);
 
-const verifier = `import fs from 'node:fs';\nimport path from 'node:path';\nimport { fileURLToPath } from 'node:url';\n\nconst here = path.dirname(fileURLToPath(import.meta.url));\nconst root = path.resolve(here, '..');\nconst html = fs.readFileSync(path.join(root, 'www', 'index.html'), 'utf8');\nconst approved = fs.readFileSync(path.join(root, 'assets', 'native-branding', 'approved-icon-source.jpg'));\nconst webLogo = fs.readFileSync(path.join(root, 'www', 'app-logo.jpg'));\n\nfunction requireText(value, label) {\n  if (!html.includes(value)) throw new Error(\\\`Missing header branding contract marker: \\${label}\\\`);\n}\n\nrequireText('id="appHeaderLogo" class="app-header-logo" src="app-logo.jpg" alt="Fabri-Cadabra"', 'approved header logo');\nrequireText('class="brand header-brand"', 'header brand layout');\nrequireText('class="brand-copy"', 'header guidance copy');\nrequireText('id="pageMenuBrandName">Fabri-Cadabra</strong>', 'Pages drawer brand name');\nrequireText('id="pageMenuDrawerTitle">Pages</span>', 'Pages drawer navigation label');\n\nconst topbarStart = html.indexOf('<header class="topbar">');\nconst topbarEnd = html.indexOf('</header>', topbarStart);\nif (topbarStart < 0 || topbarEnd < 0) throw new Error('Topbar markup not found');\nconst topbar = html.slice(topbarStart, topbarEnd);\nif (topbar.includes('<h1>Fabri-Cadabra</h1>')) throw new Error('Fabri-Cadabra must not be repeated as a topbar heading');\nif (!approved.equals(webLogo)) throw new Error('Web header logo must remain byte-for-byte identical to the approved icon source');\n\nconsole.log('Header and Pages drawer branding contract: OK (approved logo exact, app name relocated, responsive brand structure present)');\n`;
+const verifier = [
+  "import fs from 'node:fs';",
+  "import path from 'node:path';",
+  "import { fileURLToPath } from 'node:url';",
+  '',
+  "const here = path.dirname(fileURLToPath(import.meta.url));",
+  "const root = path.resolve(here, '..');",
+  "const html = fs.readFileSync(path.join(root, 'www', 'index.html'), 'utf8');",
+  "const approved = fs.readFileSync(path.join(root, 'assets', 'native-branding', 'approved-icon-source.jpg'));",
+  "const webLogo = fs.readFileSync(path.join(root, 'www', 'app-logo.jpg'));",
+  '',
+  'function requireText(value, label) {',
+  "  if (!html.includes(value)) throw new Error('Missing header branding contract marker: ' + label);",
+  '}',
+  '',
+  "requireText('id=\"appHeaderLogo\" class=\"app-header-logo\" src=\"app-logo.jpg\" alt=\"Fabri-Cadabra\"', 'approved header logo');",
+  "requireText('class=\"brand header-brand\"', 'header brand layout');",
+  "requireText('class=\"brand-copy\"', 'header guidance copy');",
+  "requireText('id=\"pageMenuBrandName\">Fabri-Cadabra</strong>', 'Pages drawer brand name');",
+  "requireText('id=\"pageMenuDrawerTitle\">Pages</span>', 'Pages drawer navigation label');",
+  '',
+  "const topbarStart = html.indexOf('<header class=\"topbar\">');",
+  "const topbarEnd = html.indexOf('</header>', topbarStart);",
+  "if (topbarStart < 0 || topbarEnd < 0) throw new Error('Topbar markup not found');",
+  "const topbar = html.slice(topbarStart, topbarEnd);",
+  "if (topbar.includes('<h1>Fabri-Cadabra</h1>')) throw new Error('Fabri-Cadabra must not be repeated as a topbar heading');",
+  "if (!approved.equals(webLogo)) throw new Error('Web header logo must remain byte-for-byte identical to the approved icon source');",
+  '',
+  "console.log('Header and Pages drawer branding contract: OK (approved logo exact, app name relocated, responsive brand structure present)');",
+  ''
+].join('\n');
 fs.writeFileSync(verifierPath, verifier);
 
 const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
