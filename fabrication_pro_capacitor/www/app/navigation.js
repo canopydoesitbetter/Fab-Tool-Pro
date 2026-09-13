@@ -94,6 +94,33 @@
     }
   });
 
+  function bindPageInfoDrawer(buttonId,drawerId) {
+    const button=document.getElementById(buttonId);
+    const drawer=document.getElementById(drawerId);
+    const backdrop=document.getElementById(drawerId.replace(/Drawer$/,'Backdrop'));
+    const closeButton=drawer?.querySelector('.cut-list-close-btn');
+    if (!button || !drawer || !backdrop || !closeButton) throw new Error(`Page Info drawer markup is incomplete: ${drawerId}`);
+    const setOpen=open=>{
+      if (open) openDrawer(drawerId,button); else closeDrawer(drawerId,button);
+      button.setAttribute('aria-expanded',open?'true':'false');
+    };
+    button.addEventListener('click',()=>setOpen(!isDrawerOpen(drawerId)));
+    closeButton.addEventListener('click',()=>setOpen(false));
+    backdrop.addEventListener('click',()=>setOpen(false));
+    drawer.addEventListener('keydown',event=>{
+      if (event.key==='Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(false);
+      }
+    });
+  }
+  [
+    ['optimizerInfoBtn','optimizerInfoDrawer'],
+    ['sawInfoBtn','sawInfoDrawer'],
+    ['overhangInfoBtn','overhangInfoDrawer']
+  ].forEach(([buttonId,drawerId])=>bindPageInfoDrawer(buttonId,drawerId));
+
   suppressToolPersistence=true;
   selectTool(DEFAULT_TOOL);
   suppressToolPersistence=false;

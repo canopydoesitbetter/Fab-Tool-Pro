@@ -227,8 +227,8 @@
 
   const QUICK_REFERENCE_TABLES = {
     'fraction-addition': {
-      title:'Fraction Addition Chart',
-      description:'Add common shop fractions in 1/16" increments. Pick the starting measurement on the left, then move across to the amount being added.',
+      title:'Fraction Addition Chart — 1/16',
+      description:'',
       heading:'Start ↓ + Add →',
       badge:'1/16" increments',
       fractionExample:'Example: 5/16" + 7/16" = 3/4"',
@@ -239,7 +239,7 @@
     },
     'fraction-decimal': {
       title:'Fraction Addition Chart — 1/32',
-      description:'Add common shop fractions in 1/32" increments. Pick the starting measurement on the left, then move across to the amount being added.',
+      description:'',
       heading:'Start ↓ + Add →',
       badge:'1/32" increments',
       fractionExample:'Example: 5/32" + 7/32" = 3/8"',
@@ -250,7 +250,7 @@
     },
     'fraction-sixtyfourths': {
       title:'Fraction Addition Chart — 1/64',
-      description:'Add common shop fractions in 1/64" increments. Pick the starting measurement on the left, then move across to the amount being added.',
+      description:'',
       heading:'Start ↓ + Add →',
       badge:'1/64" increments',
       fractionExample:'Example: 5/64" + 7/64" = 3/16"',
@@ -385,7 +385,8 @@
     const entry = QUICK_REFERENCE_TABLES[resolvedKey];
     quickReferenceSelect.value = resolvedKey;
     quickReferenceTitle.textContent = entry.title;
-    quickReferenceDescription.textContent = entry.description;
+    quickReferenceDescription.textContent = entry.description || '';
+    quickReferenceDescription.hidden = !entry.description;
     quickReferenceTableHeading.textContent = entry.heading;
     quickReferenceBadge.textContent = entry.badge || '';
     (entry.keyItems || []).forEach((item,index)=>{

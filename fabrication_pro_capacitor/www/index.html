@@ -32,7 +32,7 @@
     <section id="tool-tasklog" class="tool-panel active">
       <div class="tool-title tasklog-title-row">
         <h2>Task Logging</h2>
-        <button id="taskLogInfoBtn" class="tasklog-info-btn" type="button" aria-expanded="false" aria-controls="taskLogInfoDrawer">Info</button>
+        <button id="taskLogInfoBtn" class="tasklog-info-btn page-info-btn" type="button" aria-expanded="false" aria-controls="taskLogInfoDrawer">Info</button>
       </div>
       <div id="taskLogInfoBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
       <aside id="taskLogInfoDrawer" class="cut-list-drawer drawer-left tasklog-info-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="taskLogInfoDrawerTitle">
@@ -184,7 +184,6 @@
 <section id="tool-notes" class="tool-panel">
       <div class="tool-title">
         <h2>Fabricator Notes</h2>
-        <p>Create shop topics and keep detailed notes inside each topic. Notes support bold, italic, and underline formatting, save automatically on this device, and can be exported as a portable JSON backup.</p>
       </div>
 
       <details id="fabricatorNotesManagementDetails" class="card management-details">
@@ -244,7 +243,6 @@
 <section id="tool-checklist" class="tool-panel">
       <div class="tool-title">
         <h2>Checklist</h2>
-        <p>Create checklist topics for shop tasks, inspections, fabrication steps, or reminders. Add items inside each topic and check them off as work is completed.</p>
       </div>
 
       <details id="checklistManagementDetails" class="card management-details">
@@ -305,9 +303,9 @@
     </section>
 
 <section id="tool-calculator" class="tool-panel">
-    <div class="tool-title fab-calculator-title-row">
-      <div><h2>Basic Calculator</h2><p>Fast shop arithmetic with memory, percentages, roots, powers, rounding, keyboard input, and repeated operations.</p></div>
-      <button id="calculatorGuideBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="calculatorGuideDrawer"><span class="hamburger" aria-hidden="true">☰</span><span>Calculator Guide</span></button>
+    <div class="tool-title fab-calculator-title-row page-title-action-row">
+      <h2>Basic Calculator</h2>
+      <button id="calculatorGuideBtn" class="page-info-btn" type="button" aria-expanded="false" aria-controls="calculatorGuideDrawer">Guide</button>
     </div>
     <section class="card fab-calc-shell" aria-label="Basic calculator">
       <div id="calculatorDisplay" class="fab-calc-display" role="status" aria-live="polite">0</div>
@@ -372,8 +370,8 @@
       <section class="card quick-ref-hero">
         <div class="quick-ref-title-row">
           <div>
-            <h2 id="quickReferenceTitle">Fraction Addition Chart</h2>
-            <p id="quickReferenceDescription">Add common shop fractions in 1/16&quot; increments. Pick the starting measurement on the left, then move across to the amount being added.</p>
+            <h2 id="quickReferenceTitle">Fraction Addition Chart — 1/16</h2>
+            <p id="quickReferenceDescription" hidden></p>
           </div>
           <span id="quickReferenceBadge" class="quick-ref-badge">1/16&quot; increments</span>
         </div>
@@ -472,17 +470,38 @@
     </section>
 
 <section id="tool-optimizer" class="tool-panel">
-      <div class="tool-title optimizer-title-row">
-        <div>
-          <h2>Sheet Optimizer</h2>
-          <p>Add finished panel sizes and quantities. The optimizer evaluates the entire job together, reorders parts as needed, and assigns cuts across stock sheets. .063 Aluminum and ACP are automatically constrained to full-edge shear cuts; other materials use free-form nesting.</p>
+      <div class="tool-title optimizer-title-row page-title-action-row">
+        <div class="page-title-heading"><h2>Sheet Optimizer</h2></div>
+        <div class="page-title-actions">
+          <button id="optimizerInfoBtn" class="page-info-btn" type="button" aria-expanded="false" aria-controls="optimizerInfoDrawer">Info</button>
+          <button id="optimizerCutListMenuBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="optimizerCutListDrawer">
+            <span class="hamburger" aria-hidden="true">☰</span>
+            <span>Cut List</span>
+            <span id="optimizerCutListMeta" class="count">0</span>
+          </button>
         </div>
-        <button id="optimizerCutListMenuBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="optimizerCutListDrawer">
-          <span class="hamburger" aria-hidden="true">☰</span>
-          <span>Cut List</span>
-          <span id="optimizerCutListMeta" class="count">0</span>
-        </button>
       </div>
+      <div id="optimizerInfoBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
+      <aside id="optimizerInfoDrawer" class="cut-list-drawer drawer-left page-info-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="optimizerInfoDrawerTitle">
+        <div class="cut-list-drawer-head">
+          <strong id="optimizerInfoDrawerTitle">Sheet Optimizer Info</strong>
+          <button id="optimizerInfoCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Sheet Optimizer Info">×</button>
+        </div>
+        <div class="cut-list-drawer-body page-info-body">
+          <p class="page-info-intro">Add finished panel sizes and quantities. The optimizer evaluates the entire job together, reorders parts as needed, and assigns cuts across stock sheets. .063 Aluminum and ACP are automatically constrained to full-edge shear cuts; other materials use free-form nesting.</p>
+          <section class="card page-info-rules-card">
+                  <h2>Automatic Product & Material Rules</h2>
+                  <div class="rules">
+                    <div class="rule"><b>.063 Exterior Panel:</b> add 1&quot; flange on every side, so 2&quot; is added to both finished height and width. Uses .063 Aluminum, 120&quot; × 48&quot; sheet, max cut 119½&quot; × 47½&quot;.</div>
+                    <div class="rule"><b>.063 Exterior Door Panel:</b> add ¾&quot; flange on every side, so 1½&quot; is added to both finished height and width. Uses .063 Aluminum, 120&quot; × 48&quot; sheet, max cut 119½&quot; × 47½&quot;.</div>
+                    <div class="rule"><b>Interior ACP Panel:</b> subtract ⅛&quot; from finished height and width. Uses ACP Aluminum, 120&quot; × 48&quot; sheet, max cut 119½&quot; × 47½&quot;.</div>
+                    <div class="rule"><b>Insulation Panel:</b> subtract ½&quot; from finished height and width. Uses Cellulose, 120&quot; × 48&quot; usable sheet.</div>
+                    <div class="rule"><b>Plywood Reinforcement:</b> subtract ¾&quot; from finished height and width. Uses Plywood, 95⅞&quot; × 47⅞&quot; usable sheet.</div>
+                  </div>
+                  <div class="note"><b>Shear rule:</b> .063 Aluminum and ACP layouts are guillotine/shear-compatible. Every separating cut is validated internally as a full-edge cut across the current rectangular section—no stopped cuts into the middle of material are allowed. Whole-job optimization still ignores entry order when assigning parts to sheets. Cellulose and plywood keep free-form nesting with dotted internal cut paths. <b>Grain Flow Rotation:</b> OFF allows free 90° nesting. ON locks each part to its entered Width × Height orientation, with Width along the sheet's long/grain axis and Height along the short axis. No kerf or gap is added because none was specified.</div>
+                </section>
+        </div>
+      </aside>
 
       <details id="optimizerManagementDetails" class="card management-details">
         <summary class="management-summary"><span>Job Management <span id="optimizerActiveJobChip" class="job-number-chip" style="display:none"></span></span><span class="management-summary-state">Save • Load • Import • Export</span></summary>
@@ -606,32 +625,40 @@
         </section>
         <div id="optimizerSheets"></div>
       </section>
-
-      <section class="card">
-        <h2>Automatic Product & Material Rules</h2>
-        <div class="rules">
-          <div class="rule"><b>.063 Exterior Panel:</b> add 1&quot; flange on every side, so 2&quot; is added to both finished height and width. Uses .063 Aluminum, 120&quot; × 48&quot; sheet, max cut 119½&quot; × 47½&quot;.</div>
-          <div class="rule"><b>.063 Exterior Door Panel:</b> add ¾&quot; flange on every side, so 1½&quot; is added to both finished height and width. Uses .063 Aluminum, 120&quot; × 48&quot; sheet, max cut 119½&quot; × 47½&quot;.</div>
-          <div class="rule"><b>Interior ACP Panel:</b> subtract ⅛&quot; from finished height and width. Uses ACP Aluminum, 120&quot; × 48&quot; sheet, max cut 119½&quot; × 47½&quot;.</div>
-          <div class="rule"><b>Insulation Panel:</b> subtract ½&quot; from finished height and width. Uses Cellulose, 120&quot; × 48&quot; usable sheet.</div>
-          <div class="rule"><b>Plywood Reinforcement:</b> subtract ¾&quot; from finished height and width. Uses Plywood, 95⅞&quot; × 47⅞&quot; usable sheet.</div>
-        </div>
-        <div class="note"><b>Shear rule:</b> .063 Aluminum and ACP layouts are guillotine/shear-compatible. Every separating cut is validated internally as a full-edge cut across the current rectangular section—no stopped cuts into the middle of material are allowed. Whole-job optimization still ignores entry order when assigning parts to sheets. Cellulose and plywood keep free-form nesting with dotted internal cut paths. <b>Grain Flow Rotation:</b> OFF allows free 90° nesting. ON locks each part to its entered Width × Height orientation, with Width along the sheet's long/grain axis and Height along the short axis. No kerf or gap is added because none was specified.</div>
-      </section>
     </section>
 
 <section id="tool-saw" class="tool-panel">
-      <div class="tool-title optimizer-title-row">
-        <div>
-          <h2>Saw Optimizer</h2>
-          <p>Enter the stock tube length, add every required part, then optimize the full job to reduce the number of tubes and leftover material.</p>
+      <div class="tool-title optimizer-title-row page-title-action-row">
+        <div class="page-title-heading"><h2>Saw Optimizer</h2></div>
+        <div class="page-title-actions">
+          <button id="sawInfoBtn" class="page-info-btn" type="button" aria-expanded="false" aria-controls="sawInfoDrawer">Info</button>
+          <button id="sawCutListMenuBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="sawCutListDrawer">
+            <span class="hamburger" aria-hidden="true">☰</span>
+            <span>Part List</span>
+            <span id="sawCutListMeta" class="count">0</span>
+          </button>
         </div>
-        <button id="sawCutListMenuBtn" class="cut-list-menu-btn" type="button" aria-expanded="false" aria-controls="sawCutListDrawer">
-          <span class="hamburger" aria-hidden="true">☰</span>
-          <span>Part List</span>
-          <span id="sawCutListMeta" class="count">0</span>
-        </button>
       </div>
+      <div id="sawInfoBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
+      <aside id="sawInfoDrawer" class="cut-list-drawer drawer-left page-info-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sawInfoDrawerTitle">
+        <div class="cut-list-drawer-head">
+          <strong id="sawInfoDrawerTitle">Saw Optimizer Info</strong>
+          <button id="sawInfoCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Saw Optimizer Info">×</button>
+        </div>
+        <div class="cut-list-drawer-body page-info-body">
+          <p class="page-info-intro">Enter the stock tube length, add every required part, then optimize the full job to reduce the number of tubes and leftover material.</p>
+          <section class="card page-info-rules-card">
+                  <h2>Saw Optimization Rule</h2>
+                  <div class="rules">
+                    <div class="rule"><b>Kerf:</b> a fixed 1/4&quot; is consumed between adjacent finished pieces cut from the same stock tube.</div>
+                    <div class="rule"><b>Optimization:</b> entry order does not control cutting order. The full part list is regrouped to minimize stock tube count and then reduce leftover material.</div>
+                    <div class="rule"><b>Cut tracking:</b> each physical piece can be marked Cut or Uncut from the optimized tube list. The Part List drawer summarizes cut progress for each entered row.</div>
+                    <div class="rule"><b>Job files:</b> export creates a portable JSON backup containing tube length, parts, quantities, labels, and individual cut-status marks. Import validates and loads that data, then waits for you to press Optimize Job.</div>
+                  </div>
+                  <div class="note">The tube diagrams show exact part-length proportions, kerf locations, stock-position references, and remaining offcut. Kerf is only charged <b>between adjacent pieces</b>; there is no extra kerf automatically charged at the beginning or end of a stock tube.</div>
+                </section>
+        </div>
+      </aside>
 
       <section class="card">
         <h2>Stock Tube</h2>
@@ -707,24 +734,33 @@
         </section>
         <div id="sawTubeResults" class="saw-tube-list"></div>
       </section>
-
-      <section class="card">
-        <h2>Saw Optimization Rule</h2>
-        <div class="rules">
-          <div class="rule"><b>Kerf:</b> a fixed 1/4&quot; is consumed between adjacent finished pieces cut from the same stock tube.</div>
-          <div class="rule"><b>Optimization:</b> entry order does not control cutting order. The full part list is regrouped to minimize stock tube count and then reduce leftover material.</div>
-          <div class="rule"><b>Cut tracking:</b> each physical piece can be marked Cut or Uncut from the optimized tube list. The Part List drawer summarizes cut progress for each entered row.</div>
-          <div class="rule"><b>Job files:</b> export creates a portable JSON backup containing tube length, parts, quantities, labels, and individual cut-status marks. Import validates and loads that data, then waits for you to press Optimize Job.</div>
-        </div>
-        <div class="note">The tube diagrams show exact part-length proportions, kerf locations, stock-position references, and remaining offcut. Kerf is only charged <b>between adjacent pieces</b>; there is no extra kerf automatically charged at the beginning or end of a stock tube.</div>
-      </section>
     </section>
 
 <section id="tool-overhang" class="tool-panel">
-      <div class="tool-title">
+      <div class="tool-title page-title-action-row">
         <h2>Aluminum Overhang Cut Calculator</h2>
-        <p>Enter the finished overhang dimensions. The tool will automatically add corner & seam flanges.</p>
+        <button id="overhangInfoBtn" class="page-info-btn" type="button" aria-expanded="false" aria-controls="overhangInfoDrawer">Info</button>
       </div>
+      <div id="overhangInfoBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
+      <aside id="overhangInfoDrawer" class="cut-list-drawer drawer-left page-info-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="overhangInfoDrawerTitle">
+        <div class="cut-list-drawer-head">
+          <strong id="overhangInfoDrawerTitle">Aluminum Overhang Info</strong>
+          <button id="overhangInfoCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Aluminum Overhang Info">×</button>
+        </div>
+        <div class="cut-list-drawer-body page-info-body">
+          <p class="page-info-intro">Enter the finished overhang dimensions. The tool will automatically add corner & seam flanges.</p>
+          <section class="card page-info-rules-card">
+                  <h2>Fabrication Rules Used</h2>
+                  <div class="rules">
+                    <div class="rule"><b>Raw sheet:</b> 120&quot; long. Maximum usable cut length: <b>119½&quot;</b>.</div>
+                    <div class="rule"><b>Long side:</b> adds a 1&quot; corner flange at each outer end.</div>
+                    <div class="rule"><b>Short side:</b> no corner flanges. It attaches to the long-side corner flanges.</div>
+                    <div class="rule"><b>Split pieces:</b> finished coverage is divided equally. Each seam edge receives a 1&quot; seam flange.</div>
+                  </div>
+                  <div class="note">The 119½&quot; limit is applied to the <b>actual cut blank</b>, including flange material. Therefore a one-piece long side can cover up to 117½&quot; finished length.</div>
+                </section>
+        </div>
+      </aside>
 
       <section class="card">
         <h2>Finished Overhang Size</h2>
@@ -748,17 +784,6 @@
       <section class="grid-two">
         <div id="longResult" class="result"></div>
         <div id="shortResult" class="result"></div>
-      </section>
-
-      <section class="card">
-        <h2>Fabrication Rules Used</h2>
-        <div class="rules">
-          <div class="rule"><b>Raw sheet:</b> 120&quot; long. Maximum usable cut length: <b>119½&quot;</b>.</div>
-          <div class="rule"><b>Long side:</b> adds a 1&quot; corner flange at each outer end.</div>
-          <div class="rule"><b>Short side:</b> no corner flanges. It attaches to the long-side corner flanges.</div>
-          <div class="rule"><b>Split pieces:</b> finished coverage is divided equally. Each seam edge receives a 1&quot; seam flange.</div>
-        </div>
-        <div class="note">The 119½&quot; limit is applied to the <b>actual cut blank</b>, including flange material. Therefore a one-piece long side can cover up to 117½&quot; finished length.</div>
       </section>
     </section>
 
@@ -935,6 +960,7 @@
           <li><b>Header &amp; Pages Branding:</b> Added the exact approved Fabri-Cadabra app logo beside the header guidance, removed the repeated app-name heading from the topbar, and moved the Fabri-Cadabra name into a dedicated branded masthead at the top of the Pages drawer.</li>
           <li><b>Page Order &amp; Header Copy:</b> Reordered the physical tool sections in <code>index.html</code> to match the Pages drawer, retained Settings last, and shortened the header guidance to the current fabrication/navigation copy.</li>
           <li><b>Task Logging Info &amp; Management Panels:</b> Moved the Task Logging introduction and Timer Behavior guidance into a dedicated left-side Info drawer beside the page title, and made Checklist Management, Sheet Optimizer Job Management, and Saw Optimizer Saw Job File panels collapsible by default using the app's standard management-panel treatment.</li>
+          <li><b>Guide &amp; Info Drawer Polish:</b> Standardized the Calculator Guide plus Sheet Optimizer, Saw Optimizer, and Aluminum Overhang guidance as compact title-row Guide/Info controls with left-side drawers; moved fabrication rule panels into those drawers, removed redundant page introductions, and simplified the fraction Quick Reference headings and descriptions.</li>
           <li><b>Repository Maintenance:</b> Audited and removed completed temporary branding, feature, fix, refactor, release, test, and verification branches after confirming no useful unmerged work remained; <code>main</code> and <code>work</code> are the only retained long-lived branches.</li>
           <li>Added permanent source and browser regression coverage so important workflows cannot silently fall back to <code>window.confirm()</code> and the approved header branding cannot drift.</li>
         </ul>
@@ -1157,7 +1183,7 @@
   </aside>
 
   <div id="calculatorGuideBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
-  <aside id="calculatorGuideDrawer" class="cut-list-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="calculatorGuideDrawerTitle">
+  <aside id="calculatorGuideDrawer" class="cut-list-drawer drawer-left" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="calculatorGuideDrawerTitle">
     <div class="cut-list-drawer-head"><strong id="calculatorGuideDrawerTitle">Calculator Guide</strong><button id="calculatorGuideCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Calculator Guide">×</button></div>
     <div class="cut-list-drawer-body">
       <section class="fab-guide-section"><h3>Function definitions</h3><ul class="fab-guide-list">

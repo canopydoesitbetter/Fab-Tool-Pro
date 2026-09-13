@@ -3631,7 +3631,8 @@ body.app-confirm-open { overflow:hidden; }
   gap:12px;
 }
 .tasklog-title-row h2 { margin:0; }
-.tasklog-info-btn {
+.tasklog-info-btn,
+.page-info-btn {
   flex:0 0 auto;
   min-height:42px;
   padding:8px 14px;
@@ -3660,5 +3661,38 @@ body.app-confirm-open { overflow:hidden; }
 .tasklog-info-timer-card { margin:0; }
 @media (max-width:640px) {
   .tasklog-title-row { align-items:center; }
-  .tasklog-info-btn { min-height:40px; padding:7px 12px; }
+  .tasklog-info-btn, .page-info-btn { min-height:40px; padding:7px 12px; }
+}
+
+
+/* Shared Guide/Info title controls and left-side guidance drawers (1.0.5). */
+.page-title-action-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.page-title-action-row h2 { margin:0; }
+.page-title-heading { min-width:0; }
+.page-title-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  flex:0 0 auto;
+}
+.page-info-body { display:grid; gap:14px; }
+.page-info-intro {
+  margin:0;
+  color:var(--muted);
+  line-height:1.5;
+  font-size:.94rem;
+}
+.page-info-rules-card { margin:0; }
+@media (max-width:520px) {
+  .fab-calculator-title-row.page-title-action-row { flex-direction:row; align-items:center; }
+  .page-title-actions { gap:8px; }
+}
+@media print {
+  #optimizerInfoBackdrop,#optimizerInfoDrawer,#sawInfoBackdrop,#sawInfoDrawer,#overhangInfoBackdrop,#overhangInfoDrawer { display:none!important; }
 }

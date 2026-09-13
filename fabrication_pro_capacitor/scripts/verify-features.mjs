@@ -119,6 +119,49 @@ for(const id of ['checklistManagementDetails','optimizerManagementDetails','sawM
   if(new RegExp(`<details[^>]*id="${id}"[^>]*\\sopen(?:\\s|>)`).test(html)) throw new Error(`${id} must be collapsed by default.`);
 }
 if(!styles.includes('.cut-list-drawer.drawer-left') || !styles.includes('transform:translateX(-102%)')) throw new Error('Task Logging Info drawer must be styled as a left-side drawer.');
+for(const marker of [
+  'id="taskLogInfoBtn" class="tasklog-info-btn page-info-btn"',
+  'id="calculatorGuideBtn" class="page-info-btn"',
+  'id="calculatorGuideDrawer" class="cut-list-drawer drawer-left"',
+  'id="optimizerInfoBtn" class="page-info-btn"',
+  'id="optimizerInfoDrawer" class="cut-list-drawer drawer-left page-info-drawer"',
+  'id="sawInfoBtn" class="page-info-btn"',
+  'id="sawInfoDrawer" class="cut-list-drawer drawer-left page-info-drawer"',
+  'id="overhangInfoBtn" class="page-info-btn"',
+  'id="overhangInfoDrawer" class="cut-list-drawer drawer-left page-info-drawer"'
+]) {
+  if(!html.includes(marker)) throw new Error(`Shared Guide/Info drawer markup missing: ${marker}`);
+}
+for(const removed of [
+  'Fast shop arithmetic with memory, percentages, roots, powers, rounding, keyboard input, and repeated operations.',
+  'Create shop topics and keep detailed notes inside each topic. Notes support bold, italic, and underline formatting, save automatically on this device, and can be exported as a portable JSON backup.',
+  'Create checklist topics for shop tasks, inspections, fabrication steps, or reminders. Add items inside each topic and check them off as work is completed.'
+]) {
+  if(html.includes(removed)) throw new Error(`Removed page-introduction copy is still present: ${removed}`);
+}
+for(const heading of ['Automatic Product & Material Rules','Saw Optimization Rule','Fabrication Rules Used']) {
+  const count=html.split(heading).length-1;
+  if(count!==1) throw new Error(`Expected exactly one guidance rules heading for ${heading}; found ${count}.`);
+}
+for(const marker of [
+  "title:'Fraction Addition Chart — 1/16'",
+  "description:''",
+  'quickReferenceDescription.hidden = !entry.description;',
+  'function bindPageInfoDrawer(buttonId,drawerId)',
+  "['optimizerInfoBtn','optimizerInfoDrawer']",
+  "['sawInfoBtn','sawInfoDrawer']",
+  "['overhangInfoBtn','overhangInfoDrawer']"
+]) {
+  if(!app.includes(marker)) throw new Error(`Guide/Info behavior marker missing: ${marker}`);
+}
+for(const removed of [
+  'Add common shop fractions in 1/16" increments. Pick the starting measurement on the left, then move across to the amount being added.',
+  'Add common shop fractions in 1/32" increments. Pick the starting measurement on the left, then move across to the amount being added.',
+  'Add common shop fractions in 1/64" increments. Pick the starting measurement on the left, then move across to the amount being added.'
+]) {
+  if(app.includes(removed)) throw new Error(`Removed Quick Reference fraction description is still present: ${removed}`);
+}
+if(!styles.includes('.page-info-btn') || !styles.includes('.page-title-action-row') || !styles.includes('.page-info-body')) throw new Error('Shared Guide/Info drawer styling is incomplete.');
 for(const marker of ["setTaskLogInfoDrawerOpen","openDrawer('taskLogInfoDrawer'","closeDrawer('taskLogInfoDrawer'"]) {
   if(!app.includes(marker)) throw new Error(`Task Logging Info drawer behavior missing: ${marker}`);
 }
