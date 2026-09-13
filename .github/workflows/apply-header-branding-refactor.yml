@@ -1,0 +1,83 @@
+name: Apply Header Branding Refactor
+
+on:
+  push:
+    branches:
+      - work
+    paths:
+      - fabrication_pro_capacitor/scripts/apply-header-branding-refactor.mjs
+      - .github/workflows/apply-header-branding-refactor.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    if: contains(github.event.head_commit.message, 'chore: stage header branding refactor')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work
+        uses: actions/checkout@v4
+        with:
+          ref: work
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Apply approved header branding update
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/apply-header-branding-refactor.mjs
+
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: fabrication_pro_capacitor
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify source contracts
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Run browser regression suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run test:e2e
+
+      - name: Guard intended diff only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --name-only | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          fabrication_pro_capacitor/package.json
+          fabrication_pro_capacitor/release.json
+          fabrication_pro_capacitor/scripts/verify-header-branding.mjs
+          fabrication_pro_capacitor/www/app-logo.jpg
+          fabrication_pro_capacitor/www/index.html
+          fabrication_pro_capacitor/www/styles.css
+          EOF
+          sed -i 's/^          //' /tmp/expected.txt
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'canopydoesitbetter'
+          git config user.email 'canopy.2126@gmail.com'
+          git add fabrication_pro_capacitor/package.json \
+                  fabrication_pro_capacitor/release.json \
+                  fabrication_pro_capacitor/scripts/verify-header-branding.mjs \
+                  fabrication_pro_capacitor/www/app-logo.jpg \
+                  fabrication_pro_capacitor/www/index.html \
+                  fabrication_pro_capacitor/www/styles.css
+          git commit -m 'feat: polish app header and Pages branding'
+          git push origin HEAD:work
