@@ -3558,3 +3558,66 @@ body.app-confirm-open { overflow:hidden; }
 .app-confirm-dialog :is(button):focus-visible { outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent),0 3px 0 var(--button-edge),var(--button-depth); }
 @media (max-width:520px) { .app-confirm-actions { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion: reduce) { .app-confirm-backdrop,.app-confirm-dialog { transition:none; } }
+
+
+/* v1.0.5 — header and Pages drawer branding */
+.topbar .header-brand {
+  flex:1 1 430px;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.app-header-logo {
+  flex:0 0 auto;
+  width:clamp(62px,8vw,76px);
+  height:clamp(62px,8vw,76px);
+  object-fit:cover;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.34);
+  box-shadow:0 8px 20px rgba(0,0,0,.24);
+}
+.topbar .brand-copy {
+  flex:1 1 auto;
+  min-width:0;
+  margin:0;
+}
+.fab-page-drawer-head {
+  align-items:center;
+  gap:12px;
+  min-height:76px;
+}
+.fab-page-drawer-brand {
+  display:flex;
+  flex:1 1 auto;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+#pageMenuBrandName {
+  display:block;
+  color:var(--text);
+  font-size:1.28rem;
+  line-height:1.05;
+  font-weight:950;
+  letter-spacing:-.025em;
+}
+#pageMenuDrawerTitle {
+  display:block;
+  color:var(--muted);
+  font-size:.73rem;
+  line-height:1.2;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+@media (max-width:760px) {
+  .topbar .brand-row { flex-wrap:wrap; }
+  .topbar .header-brand { flex-basis:100%; }
+  .app-header-logo { width:64px; height:64px; border-radius:16px; }
+}
+@media (max-width:420px) {
+  .topbar .header-brand { gap:11px; }
+  .app-header-logo { width:58px; height:58px; border-radius:15px; }
+  .topbar .brand-copy { font-size:.84rem; }
+}

@@ -17,9 +17,9 @@
   <main class="app">
     <header class="topbar">
       <div class="brand-row">
-        <div class="brand">
-          <h1>Fabri-Cadabra</h1>
-          <p>The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.</p>
+        <div class="brand header-brand">
+          <img id="appHeaderLogo" class="app-header-logo" src="app-logo.jpg" alt="Fabri-Cadabra" />
+          <p class="brand-copy">The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.</p>
         </div>
         <div id="shiftClockControl" class="shift-clock-control" aria-live="polite">
           <span id="shiftClockStatus" class="shift-clock-status">Shift Schedule Off</span>
@@ -868,8 +868,14 @@
     <div class="footer">Designed by Canopy.</div>
   </main>
   <div id="pageMenuBackdrop" class="cut-list-backdrop" aria-hidden="true"></div>
-  <aside id="pageMenuDrawer" class="cut-list-drawer fab-page-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="pageMenuDrawerTitle">
-    <div class="cut-list-drawer-head"><strong id="pageMenuDrawerTitle">Pages</strong><button id="pageMenuCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Pages">×</button></div>
+  <aside id="pageMenuDrawer" class="cut-list-drawer fab-page-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="pageMenuBrandName pageMenuDrawerTitle">
+    <div class="cut-list-drawer-head fab-page-drawer-head">
+      <div class="fab-page-drawer-brand">
+        <strong id="pageMenuBrandName">Fabri-Cadabra</strong>
+        <span id="pageMenuDrawerTitle">Pages</span>
+      </div>
+      <button id="pageMenuCloseBtn" class="cut-list-close-btn" type="button" aria-label="Close Pages">×</button>
+    </div>
     <div class="cut-list-drawer-body"><nav class="fab-page-list" aria-label="Fabrication tools">
   <button class="fab-page-link" type="button" data-tool="tasklog">Task Logging</button>
   <button class="fab-page-link" type="button" data-tool="notes">Fabricator Notes</button>
@@ -899,13 +905,15 @@
         <div class='changelog-entry-heading'>
           <div>
             <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>
-            <h2>App-Styled Confirmation Dialogs</h2>
+            <h2>Interface Polish &amp; App-Styled Confirmations</h2>
           </div>
         </div>
         <ul>
           <li><b>Fabri-Cadabra Confirmation Dialogs:</b> Replaced browser-native confirmation popups across Clock Out, Shift Schedule controls, destructive deletes and clears, overwrite/import/restore actions, and optimizer cut-status changes with one reusable app-styled modal featuring configurable titles and button labels, danger styling, keyboard focus trapping, Escape cancellation, backdrop cancellation, and previous-focus restoration.</li>
           <li><b>Shift Schedule Confirmation:</b> Gave Enable and Disable Shift Schedule dedicated confirmation titles and action labels so schedule controls can never inherit Clock In or Clock Out wording from explanatory text.</li>
-          <li>Added permanent source and browser regression coverage so important workflows cannot silently fall back to <code>window.confirm()</code>.</li>
+          <li><b>Header &amp; Pages Branding:</b> Added the exact approved Fabri-Cadabra app logo beside the header guidance, removed the repeated app-name heading from the topbar, and moved the Fabri-Cadabra name into a dedicated branded masthead at the top of the Pages drawer.</li>
+          <li><b>Repository Maintenance:</b> Audited and removed completed temporary branding, feature, fix, refactor, release, test, and verification branches after confirming no useful unmerged work remained; <code>main</code> and <code>work</code> are the only retained long-lived branches.</li>
+          <li>Added permanent source and browser regression coverage so important workflows cannot silently fall back to <code>window.confirm()</code> and the approved header branding cannot drift.</li>
         </ul>
       </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.4'>

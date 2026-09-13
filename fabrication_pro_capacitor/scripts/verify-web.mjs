@@ -27,7 +27,7 @@ if (!html.includes('<link rel="stylesheet" href="styles.css" />')) throw new Err
 if (/ux\.js|ux\.css/.test(html)) throw new Error('index.html must not reference the retired runtime UX patch assets.');
 if (/<style(?:\s|>)/i.test(html)) throw new Error('Inline application <style> remains in index.html.');
 if (/<script(?![^>]*\bsrc=)[^>]*>[\s\S]{200,}<\/script>/i.test(html)) throw new Error('Large inline application script remains in index.html.');
-if (!/<title>Fabri-Cadabra<\/title>/.test(html) || !/<h1>Fabri-Cadabra<\/h1>/.test(html)) throw new Error('Fabri-Cadabra must be canonical in document title and brand heading.');
+if (!/<title>Fabri-Cadabra<\/title>/.test(html) || !/id="pageMenuBrandName">Fabri-Cadabra<\/strong>/.test(html)) throw new Error('Fabri-Cadabra must be canonical in document title and Pages drawer brand identity.');
 if (html.includes('Fabrication Calculators')) throw new Error('Legacy Fabrication Calculators product name remains in live HTML.');
 if (/class="tool-menu"/.test(html) || /class="tool-tab/.test(html)) throw new Error('Legacy tool-menu/tool-tab markup remains.');
 if (html.includes('fabri-cadabra.js')) throw new Error('Legacy runtime enhancement is still referenced.');
