@@ -947,10 +947,25 @@
         <button id='settingsChangelogCloseBtn' class='cut-list-close-btn' type='button' aria-label='Close Changelog'>×</button>
       </div>
       <div class='cut-list-drawer-body settings-changelog-body'>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.6'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.6</span>
+            <h2>Per-Task Notes &amp; Safer Note Clearing</h2>
+          </div>
+        </div>
+        <ul>
+          <li><b>Task Logging Notes:</b> Added a polished note button to every task assigned to a job, with a distinct highlighted state when that task contains a saved note.</li>
+          <li><b>Task Note Editor:</b> Added a smooth mobile-friendly, dark-mode-aware note dialog with multiline editing, a 4,000-character limit, live character count, Save, Cancel, Clear Note, keyboard focus handling, Escape/backdrop cancellation, and Ctrl/Cmd+Enter save support.</li>
+          <li><b>Persistent &amp; Portable Notes:</b> Task notes save directly with the assigned task, survive app restarts, remain backward-compatible with older Task Logging data, and travel with Task Logging job exports/imports and full Fabri-Cadabra backups.</li>
+          <li><b>Clear Note Protection:</b> Clear Note now opens the shared Fabri-Cadabra confirmation warning with Keep Note and destructive Clear Note actions, preventing accidental note deletion while preserving the note editor when cancellation is chosen.</li>
+          <li><b>Regression Protection:</b> Added permanent verification coverage for task-note normalization, persistence, import/export serialization, note-state UI, editor controls, and the required clear-note confirmation guard.</li>
+        </ul>
+      </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.5'>
         <div class='changelog-entry-heading'>
           <div>
-            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>
+            <span class='changelog-version-label'>Version 1.0.5</span>
             <h2>Interface Polish &amp; App-Styled Confirmations</h2>
           </div>
         </div>
