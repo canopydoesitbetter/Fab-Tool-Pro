@@ -947,10 +947,25 @@
         <button id='settingsChangelogCloseBtn' class='cut-list-close-btn' type='button' aria-label='Close Changelog'>×</button>
       </div>
       <div class='cut-list-drawer-body settings-changelog-body'>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.7'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.7</span>
+            <h2>Fastener Spacing Workflow Upgrade</h2>
+          </div>
+        </div>
+        <ul>
+          <li><b>Corner Tolerance:</b> Added an optional Corner Tolerance input that offsets the first and last fasteners equally from the true part edges while keeping all displayed fastener locations measured from the true edge.</li>
+          <li><b>Equalized Spacing:</b> Fastener spacing now calculates across the tolerance-adjusted usable span while continuing to respect the selected Max Spacing limit. A 0&quot; tolerance preserves the established whole-length behavior.</li>
+          <li><b>Tap-to-Complete Progress:</b> Each calculated fastener location is now a tappable completion control with a clear completed state, making the layout usable as an installation checklist directly from the shop floor.</li>
+          <li><b>Persistent Workspace:</b> Max Spacing, Length, Corner Tolerance, the calculated layout, and completed fasteners now survive page changes, app restarts, and device shutdowns. Changing the layout safely clears incompatible old progress, and Clear removes the saved workspace.</li>
+          <li><b>Backup &amp; Regression Protection:</b> Fastener Spacing is now part of Fabri-Cadabra's centralized persistence, recovery, and full-backup system, with permanent automated coverage for tolerance math, progress persistence, layout reset behavior, and storage integration.</li>
+        </ul>
+      </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.6'>
         <div class='changelog-entry-heading'>
           <div>
-            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.6</span>
+            <span class='changelog-version-label'>Version 1.0.6</span>
             <h2>Per-Task Notes &amp; Safer Note Clearing</h2>
           </div>
         </div>
