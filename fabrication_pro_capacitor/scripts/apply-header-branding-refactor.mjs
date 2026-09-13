@@ -11,6 +11,7 @@ const releasePath = path.join(root, 'release.json');
 const approvedIconPath = path.join(root, 'assets', 'native-branding', 'approved-icon-source.jpg');
 const webLogoPath = path.join(root, 'www', 'app-logo.jpg');
 const verifierPath = path.join(root, 'scripts', 'verify-header-branding.mjs');
+const verifyWebPath = path.join(root, 'scripts', 'verify-web.mjs');
 
 function replaceOnce(source, from, to, label) {
   const index = source.indexOf(from);
@@ -48,6 +49,12 @@ css += `\n\n${marker}\n.topbar .header-brand {\n  flex:1 1 430px;\n  min-width:0
 fs.writeFileSync(stylesPath, css);
 
 fs.copyFileSync(approvedIconPath, webLogoPath);
+
+let verifyWeb = fs.readFileSync(verifyWebPath, 'utf8');
+const oldNameCheck = "if (!/<title>Fabri-Cadabra<\\/title>/.test(html) || !/<h1>Fabri-Cadabra<\\/h1>/.test(html)) throw new Error('Fabri-Cadabra must be canonical in document title and brand heading.');";
+const newNameCheck = "if (!/<title>Fabri-Cadabra<\\/title>/.test(html) || !/id=\"pageMenuBrandName\">Fabri-Cadabra<\\/strong>/.test(html)) throw new Error('Fabri-Cadabra must be canonical in document title and Pages drawer brand identity.');";
+verifyWeb = replaceOnce(verifyWeb, oldNameCheck, newNameCheck, 'canonical product-name web verification');
+fs.writeFileSync(verifyWebPath, verifyWeb);
 
 const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
 if (release.version !== '1.0.5' || Number(release.buildNumber) !== 1000009 || release.previousVersion !== '1.0.4') {
