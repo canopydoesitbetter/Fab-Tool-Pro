@@ -39,7 +39,7 @@ requireMatch(app,/note:normalizeTaskLogTaskNote\(task\.note\s*\?\?\s*''\s*,MAX_T
 requireMatch(app,/note:normalizeTaskLogTaskNote\(task\.note\s*\?\?\s*''\s*,MAX_TASK_LOG_NOTE\),/,'Task Logging serialization must include each task note in job exports and persistent storage.');
 requireMatch(app,/data-tasklog-note="\$\{task\.id\}"/,'Each assigned task must render a task-note button.');
 requireMatch(app,/tasklog-note-btn\$\{task\.note\?' has-note':''\}/,'Tasks with notes must render a distinct visual note state.');
-requireMatch(app,/async\s+function\s+clearTaskLogNoteFromDialog\s*\(/,'Clear Note must use an asynchronous confirmation flow.');
+requireMatch(app,/async\s+function\s+confirmTaskLogNoteClear\s*\(/,'Clear Note must use an asynchronous confirmation guard.');
 requireMatch(app,/await\s+confirmAppAction\s*\(\s*\{/,'Clear Note must use the shared Fabri-Cadabra confirmation dialog.');
 for (const required of [
   'taskLogNoteDialog',
@@ -58,7 +58,12 @@ for (const required of [
   "title:'Clear Task Note?'",
   "confirmLabel:'Clear Note'",
   "cancelLabel:'Keep Note'",
-  'danger:true'
+  'danger:true',
+  "event.stopPropagation()",
+  "clearBtn.dataset.tasklogClearConfirmed='true'",
+  "document.addEventListener('click',confirmTaskLogNoteClear,true)",
+  "noteBackdrop.style.zIndex='320'",
+  "noteDialog.style.zIndex='321'"
 ]) {
   if (!app.includes(required)) throw new Error(`Task-note interaction contract is missing: ${required}`);
 }
