@@ -14,7 +14,7 @@ function requireText(value, label) {
 
 requireText('id="appHeaderLogo" class="app-header-logo" src="app-logo.jpg" alt="Fabri-Cadabra"', 'approved header logo');
 requireText('class="brand header-brand"', 'header brand layout');
-requireText('class="brand-copy"', 'header guidance copy');
+requireText('class="brand-copy">Built for efficient shop fabrication. — Navigate with the [ <strong>≡</strong> Pages ] button in the top right corner.</p>', 'canonical header guidance copy');
 requireText('id="pageMenuBrandName">Fabri-Cadabra</strong>', 'Pages drawer brand name');
 requireText('id="pageMenuDrawerTitle">Pages</span>', 'Pages drawer navigation label');
 

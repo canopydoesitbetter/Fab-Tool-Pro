@@ -21,6 +21,9 @@ const expectedNavTools=['tasklog','notes','checklist','calculator','reference','
 const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^"]+)"/g)].map(match=>match[1]);
 if(new Set(navTools).size!==navTools.length) throw new Error('Pages drawer contains duplicate data-tool identifiers.');
 if(JSON.stringify(navTools)!==JSON.stringify(expectedNavTools)) throw new Error(`Pages drawer order changed unexpectedly. Expected ${expectedNavTools.join(' > ')}, got ${navTools.join(' > ')}.`);
+const panelTools=[...html.matchAll(/<section id="tool-([^"]+)" class="tool-panel[^"]*">/g)].map(match=>match[1]);
+const expectedPanelTools=[...expectedNavTools,'settings'];
+if(JSON.stringify(panelTools)!==JSON.stringify(expectedPanelTools)) throw new Error(`Physical tool-panel order must match Pages drawer order with Settings last. Expected ${expectedPanelTools.join(' > ')}, got ${panelTools.join(' > ')}.`);
 for (const tool of tools) {
   const nav=navTools.filter(value=>value===tool).length;
   const panel=(html.match(new RegExp(`id="tool-${tool}"`,'g'))||[]).length;
@@ -50,7 +53,7 @@ for(const section of ['Function definitions','Addition and subtraction','Multipl
 for(const action of ['memory-clear','memory-recall','memory-subtract','memory-add','clear-context','sqrt','percent','pi','power','round-2','round-0']) {
   if(!html.includes(`data-calc-action="${action}"`)) throw new Error(`Missing static calculator action: ${action}`);
 }
-const tagline='The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.';
+const tagline='Built for efficient shop fabrication. — Navigate with the [ <strong>≡</strong> Pages ] button in the top right corner.';
 if(!html.includes(tagline)) throw new Error('Canonical Fabri-Cadabra introductory copy is missing or changed.');
 if(!html.includes('<h2>Sheet Optimizer</h2>')) throw new Error('Optimizer page header must read Sheet Optimizer.');
 const activePanels=[...html.matchAll(/<section id="tool-([^"]+)" class="tool-panel active">/g)].map(match=>match[1]);
