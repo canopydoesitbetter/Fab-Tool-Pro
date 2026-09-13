@@ -57,6 +57,10 @@ jobs:
           printf '%s\n' \
             'fabrication_pro_capacitor/release.json' \
             'fabrication_pro_capacitor/scripts/verify-features.mjs' \
+            'fabrication_pro_capacitor/tests/e2e/backup-restore.spec.mjs' \
+            'fabrication_pro_capacitor/tests/e2e/notes-checklist.spec.mjs' \
+            'fabrication_pro_capacitor/tests/e2e/optimizers.spec.mjs' \
+            'fabrication_pro_capacitor/tests/e2e/ui-panels.spec.mjs' \
             'fabrication_pro_capacitor/www/app/task-logging.js' \
             'fabrication_pro_capacitor/www/index.html' \
             'fabrication_pro_capacitor/www/styles.css' \
@@ -71,6 +75,10 @@ jobs:
           git config user.email 'canopy.2126@gmail.com'
           git add fabrication_pro_capacitor/release.json \
                   fabrication_pro_capacitor/scripts/verify-features.mjs \
+                  fabrication_pro_capacitor/tests/e2e/backup-restore.spec.mjs \
+                  fabrication_pro_capacitor/tests/e2e/notes-checklist.spec.mjs \
+                  fabrication_pro_capacitor/tests/e2e/optimizers.spec.mjs \
+                  fabrication_pro_capacitor/tests/e2e/ui-panels.spec.mjs \
                   fabrication_pro_capacitor/www/app/task-logging.js \
                   fabrication_pro_capacitor/www/index.html \
                   fabrication_pro_capacitor/www/styles.css
