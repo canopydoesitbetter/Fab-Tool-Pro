@@ -37,17 +37,19 @@ if (Math.abs(unevenTolerance.positions[0]-3)>1e-9 || Math.abs(unevenTolerance.po
 if (fastenerLayoutSignature(twoInchTolerance)!==fastenerLayoutSignature(buildFastenerSpacingLayout(24,100,2))) throw new Error('Identical fastener layouts must produce a stable signature so progress can be preserved.');
 if (fastenerLayoutSignature(twoInchTolerance)===fastenerLayoutSignature(unevenTolerance)) throw new Error('Different fastener layouts must produce different signatures so stale progress is reset.');
 
+requireMatch(app,/const\s+FASTENER_SPACING_STORE_ID\s*=\s*['"]fastenerSpacing['"]\s*;/,'Fastener Spacing must use its own persistent-store registry id.');
 requireMatch(app,/const\s+FASTENER_SPACING_STATE_KEY\s*=\s*['"]fabricationFastenerSpacingV1['"]\s*;/,'Fastener Spacing must use its own versioned persistent storage key.');
 for (const marker of [
   'cornerTolerance',
   'Corner Tolerance',
   'saveFastenerSpacingState',
   'restoreFastenerSpacingState',
+  'registerPersistentStore',
+  'loadPersistentStore(FASTENER_SPACING_STORE_ID)',
+  'writePersistentStore(FASTENER_SPACING_STORE_ID',
   'data-fastener-index',
   'aria-pressed',
-  'fastener-complete',
-  'localStorage.setItem(FASTENER_SPACING_STATE_KEY',
-  'localStorage.removeItem(FASTENER_SPACING_STATE_KEY)'
+  'fastener-complete'
 ]) {
   if (!app.includes(marker)) throw new Error(`Fastener Spacing persistence/selection contract is missing: ${marker}`);
 }
@@ -55,6 +57,7 @@ requireMatch(app,/cornerTolerance\s*\*\s*2\s*>=\s*length/,'Corner Tolerance must
 requireMatch(app,/layoutSignature\s*!==\s*fastenerProgressSignature/,'Completed fastener progress must reset when the calculated layout changes.');
 requireMatch(app,/selectedFastenerIndexes\.has\(i\)/,'Rendered fastener boxes must restore their completed state by index.');
 requireMatch(app,/selectedFastenerIndexes\.(add|delete)\(/,'Tapping a fastener box must toggle its completed state.');
+requireMatch(app,/writePersistentStore\(FASTENER_SPACING_STORE_ID\s*,\s*defaultFastenerSpacingState\(\)\)/,'Clear must wipe the saved Fastener Spacing workspace and completed progress.');
 if (!String(pkg.scripts?.['verify:fastener-spacing'] || '').includes('verify-fastener-spacing.mjs')) throw new Error('package.json must expose verify:fastener-spacing.');
 if (!String(pkg.scripts?.verify || '').includes('npm run verify:fastener-spacing')) throw new Error('Aggregate npm run verify must include the Fastener Spacing regression test.');
 
