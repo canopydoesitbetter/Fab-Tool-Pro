@@ -25,3 +25,41 @@
     return String(text).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
 
+
+  async function confirmTaskLogNoteClear(event) {
+    const clearBtn=event.target?.closest?.('#taskLogNoteClearBtn');
+    if (!clearBtn || clearBtn.dataset.tasklogClearConfirmed==='true') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const noteBackdrop=document.getElementById('taskLogNoteBackdrop');
+    const noteDialog=document.getElementById('taskLogNoteDialog');
+    const previousBackdropZ=noteBackdrop?.style.zIndex || '';
+    const previousDialogZ=noteDialog?.style.zIndex || '';
+    const taskLabel=String(document.getElementById('taskLogNoteTaskLabel')?.textContent || '').trim();
+
+    if (noteBackdrop) noteBackdrop.style.zIndex='320';
+    if (noteDialog) noteDialog.style.zIndex='321';
+
+    try {
+      const confirmed=await confirmAppAction({
+        title:'Clear Task Note?',
+        message:`Permanently clear this note${taskLabel?` for ${taskLabel}`:''}? This action cannot be undone.`,
+        confirmLabel:'Clear Note',
+        cancelLabel:'Keep Note',
+        danger:true
+      });
+      if (!confirmed) return;
+
+      clearBtn.dataset.tasklogClearConfirmed='true';
+      clearBtn.click();
+    } finally {
+      delete clearBtn.dataset.tasklogClearConfirmed;
+      if (noteBackdrop) noteBackdrop.style.zIndex=previousBackdropZ;
+      if (noteDialog) noteDialog.style.zIndex=previousDialogZ;
+    }
+  }
+
+  document.addEventListener('click',confirmTaskLogNoteClear,true);
+
