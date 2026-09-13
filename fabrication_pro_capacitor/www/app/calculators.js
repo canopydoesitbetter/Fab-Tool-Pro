@@ -184,7 +184,7 @@
 
   function normalizeFastenerSpacingState(value) {
     const source=value && typeof value==='object' && !Array.isArray(value) ? value : {};
-    const text=(candidate,fallback='')=>String(candidate ?? fallback).trim().slice(0,40);
+    const text=(candidate,fallback='',limit=40)=>String(candidate ?? fallback).trim().slice(0,limit);
     const completed=Array.isArray(source.completedFasteners)
       ? Array.from(new Set(source.completedFasteners.map(Number).filter(index=>Number.isInteger(index) && index>=0 && index<=1000))).sort((a,b)=>a-b)
       : [];
@@ -193,7 +193,7 @@
       maxSpacing:text(source.maxSpacing),
       length:text(source.length),
       cornerTolerance:text(source.cornerTolerance,'0'),
-      layoutSignature:text(source.layoutSignature),
+      layoutSignature:text(source.layoutSignature,'',4096),
       completedFasteners:completed
     };
   }
