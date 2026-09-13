@@ -13,7 +13,6 @@ permissions:
 
 jobs:
   apply-and-verify:
-    if: contains(github.event.head_commit.message, 'chore: stage header branding refactor')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout work
@@ -55,16 +54,14 @@ jobs:
           set -euo pipefail
           git diff --check
           git diff --name-only | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
-          fabrication_pro_capacitor/package.json
-          fabrication_pro_capacitor/release.json
-          fabrication_pro_capacitor/scripts/verify-header-branding.mjs
-          fabrication_pro_capacitor/www/app-logo.jpg
-          fabrication_pro_capacitor/www/index.html
-          fabrication_pro_capacitor/www/styles.css
-          EOF
-          sed -i 's/^          //' /tmp/expected.txt
-          sort -o /tmp/expected.txt /tmp/expected.txt
+          printf '%s\n' \
+            'fabrication_pro_capacitor/package.json' \
+            'fabrication_pro_capacitor/release.json' \
+            'fabrication_pro_capacitor/scripts/verify-header-branding.mjs' \
+            'fabrication_pro_capacitor/www/app-logo.jpg' \
+            'fabrication_pro_capacitor/www/index.html' \
+            'fabrication_pro_capacitor/www/styles.css' \
+            | sort > /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
 
       - name: Commit verified implementation
