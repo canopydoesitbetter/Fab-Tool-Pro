@@ -49,16 +49,22 @@ for (const marker of [
   'writePersistentStore(FASTENER_SPACING_STORE_ID',
   'data-fastener-index',
   'aria-pressed',
-  'fastener-complete'
+  'fastener-complete',
+  'fastener-progress',
+  'fastenerProgressText',
+  'fastenerProgressFill',
+  'updateFastenerProgress'
 ]) {
-  if (!app.includes(marker)) throw new Error(`Fastener Spacing persistence/selection contract is missing: ${marker}`);
+  if (!app.includes(marker)) throw new Error(`Fastener Spacing persistence/selection/progress contract is missing: ${marker}`);
 }
 requireMatch(app,/cornerTolerance\s*\*\s*2\s*>=\s*length/,'Corner Tolerance must be validated so the two end tolerances cannot consume the full part length.');
 requireMatch(app,/layoutSignature\s*!==\s*fastenerProgressSignature/,'Completed fastener progress must reset when the calculated layout changes.');
 requireMatch(app,/selectedFastenerIndexes\.has\(i\)/,'Rendered fastener boxes must restore their completed state by index.');
 requireMatch(app,/selectedFastenerIndexes\.(add|delete)\(/,'Tapping a fastener box must toggle its completed state.');
 requireMatch(app,/writePersistentStore\(FASTENER_SPACING_STORE_ID\s*,\s*defaultFastenerSpacingState\(\)\)/,'Clear must wipe the saved Fastener Spacing workspace and completed progress.');
+requireMatch(app,/fastenerProgressFill\.style\.width\s*=/,'The completion progress bar must update its fill width from current fastener progress.');
+if (app.includes("diagramEl.innerHTML = '<div class=\"rail\"></div>'") || app.includes('data-fastener-dot')) throw new Error('The old rail-and-dot fastener diagram must be replaced by the completion progress display.');
 if (!String(pkg.scripts?.['verify:fastener-spacing'] || '').includes('verify-fastener-spacing.mjs')) throw new Error('package.json must expose verify:fastener-spacing.');
 if (!String(pkg.scripts?.verify || '').includes('npm run verify:fastener-spacing')) throw new Error('Aggregate npm run verify must include the Fastener Spacing regression test.');
 
-console.log('Fastener Spacing corner tolerance, selectable progress, and persistence contract: OK');
+console.log('Fastener Spacing corner tolerance, selectable progress, persistence, and completion display contract: OK');
