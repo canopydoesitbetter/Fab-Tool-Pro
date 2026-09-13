@@ -6,7 +6,7 @@ const need=(condition,message)=>{if(!condition)throw new Error(message);};
 const storage=readFileSync(join(root,'www','app','storage.js'),'utf8');
 const backup=readFileSync(join(root,'www','app','import-export.js'),'utf8');
 const packageJson=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
-const appFiles=['navigation.js','shift-schedule.js','task-logging.js','notes.js','checklist.js','quick-reference.js','sheet-optimizer.js','import-export.js']
+const appFiles=['navigation.js','shift-schedule.js','task-logging.js','notes.js','checklist.js','quick-reference.js','calculators.js','sheet-optimizer.js','import-export.js']
   .map(name=>readFileSync(join(root,'www','app',name),'utf8')).join('\n');
 
 const REQUIRED_KEYS=[
@@ -19,7 +19,8 @@ const REQUIRED_KEYS=[
   'fabricationTheme',
   'fabricationTool',
   'fabricationQuickReferenceTable',
-  'fabricationQuickReferenceDecimalMode'
+  'fabricationQuickReferenceDecimalMode',
+  'fabricationFastenerSpacingV1'
 ];
 
 for (const marker of [
@@ -46,4 +47,4 @@ need(backup.includes('migrateFullBackupV1ToV2'),'Persistent storage contract: fu
 need(appFiles.includes('migrateFabricatorNotesV1ToV2'),'Persistent storage contract: Fabricator Notes must expose an explicit v1 -> v2 migration.');
 need(appFiles.includes('normalizeOptimizerJobRecord'),'Persistent storage contract: optimizer compatibility must keep the established normalizer.');
 
-console.log('Persistent storage contract: OK (10 stores, migrations, recovery protection, backup schema v2)');
+console.log('Persistent storage contract: OK (11 stores, migrations, recovery protection, backup schema v2)');
