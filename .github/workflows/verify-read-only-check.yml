@@ -1,99 +1,44 @@
-name: Finalize Fabri-Cadabra v1.0.6
+name: Verify Read-Only Contract
 
 on:
   push:
-    branches: [ work ]
+    branches: [ main, work ]
     paths:
       - '.github/workflows/verify-read-only-check.yml'
-
-permissions:
-  contents: write
+      - 'fabrication_pro_capacitor/package.json'
+      - 'fabrication_pro_capacitor/package-lock.json'
+      - 'fabrication_pro_capacitor/scripts/**'
 
 jobs:
-  finalize-v106:
-    name: Finalize v1.0.6 metadata and changelog
+  verify-read-only:
+    name: Verify leaves tracked files unchanged
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fabrication_pro_capacitor
     steps:
-      - name: Checkout work
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: work
-          fetch-depth: 0
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
 
-      - name: Finalize release metadata and changelog
-        working-directory: fabrication_pro_capacitor
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verify and prove tracked tree stays clean
         run: |
-          python - <<'PY'
-          import base64
-          import json
-          from pathlib import Path
-
-          root = Path.cwd()
-          package_path = root / 'package.json'
-          lock_path = root / 'package-lock.json'
-          release_path = root / 'release.json'
-          index_path = root / 'www' / 'index.html'
-
-          package = json.loads(package_path.read_text())
-          if package.get('version') != '1.0.5':
-              raise SystemExit(f"Expected package version 1.0.5, found {package.get('version')}")
-          package['version'] = '1.0.6'
-          package_path.write_text(json.dumps(package, indent=2) + '\n')
-
-          lock = json.loads(lock_path.read_text())
-          if lock.get('version') != '1.0.5' or lock.get('packages', {}).get('', {}).get('version') != '1.0.5':
-              raise SystemExit('Expected package-lock release metadata to be 1.0.5.')
-          lock['version'] = '1.0.6'
-          lock['packages']['']['version'] = '1.0.6'
-          lock_path.write_text(json.dumps(lock, indent=2) + '\n')
-
-          release = json.loads(release_path.read_text())
-          expected = {'version': '1.0.5', 'buildNumber': 1000013, 'previousVersion': '1.0.4'}
-          if release != expected:
-              raise SystemExit(f'Unexpected release.json baseline: {release!r}')
-          release.update(version='1.0.6', buildNumber=1000014, previousVersion='1.0.5')
-          release_path.write_text(json.dumps(release, indent=2) + '\n')
-
-          html = index_path.read_text()
-          if "data-changelog-version='1.0.6'" in html:
-              raise SystemExit('A 1.0.6 changelog entry already exists.')
-          old_current = "<span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.5</span>"
-          if old_current not in html:
-              raise SystemExit('Could not find the current 1.0.5 changelog label.')
-          html = html.replace(old_current, "<span class='changelog-version-label'>Version 1.0.5</span>", 1)
-          marker = "      <article class='changelog-entry changelog-release' data-changelog-version='1.0.5'>"
-          if marker not in html:
-              raise SystemExit('Could not find the 1.0.5 changelog insertion point.')
-          encoded = 'ICAgICAgPGFydGljbGUgY2xhc3M9J2NoYW5nZWxvZy1lbnRyeSBjaGFuZ2Vsb2ctcmVsZWFzZScgZGF0YS1jaGFuZ2Vsb2ctdmVyc2lvbj0nMS4wLjYnPgogICAgICAgIDxkaXYgY2xhc3M9J2NoYW5nZWxvZy1lbnRyeS1oZWFkaW5nJz4KICAgICAgICAgIDxkaXY+CiAgICAgICAgICAgIDxzcGFuIGlkPSdzZXR0aW5nc0N1cnJlbnRDaGFuZ2Vsb2dWZXJzaW9uJyBjbGFzcz0nY2hhbmdlbG9nLXZlcnNpb24tbGFiZWwnPlZlcnNpb24gMS4wLjY8L3NwYW4+CiAgICAgICAgICAgIDxoMj5QZXItVGFzayBOb3RlcyAmYW1wOyBTYWZlciBOb3RlIENsZWFyaW5nPC9oMj4KICAgICAgICAgIDwvZGl2PgogICAgICAgIDwvZGl2PgogICAgICAgIDx1bD4KICAgICAgICAgIDxsaT48Yj5UYXNrIExvZ2dpbmcgTm90ZXM6PC9iPiBBZGRlZCBhIHBvbGlzaGVkIG5vdGUgYnV0dG9uIHRvIGV2ZXJ5IHRhc2sgYXNzaWduZWQgdG8gYSBqb2IsIHdpdGggYSBkaXN0aW5jdCBoaWdobGlnaHRlZCBzdGF0ZSB3aGVuIHRoYXQgdGFzayBjb250YWlucyBhIHNhdmVkIG5vdGUuPC9saT4KICAgICAgICAgIDxsaT48Yj5UYXNrIE5vdGUgRWRpdG9yOjwvYj4gQWRkZWQgYSBzbW9vdGggbW9iaWxlLWZyaWVuZGx5LCBkYXJrLW1vZGUtYXdhcmUgbm90ZSBkaWFsb2cgd2l0aCBtdWx0aWxpbmUgZWRpdGluZywgYSA0LDAwMC1jaGFyYWN0ZXIgbGltaXQsIGxpdmUgY2hhcmFjdGVyIGNvdW50LCBTYXZlLCBDYW5jZWwsIENsZWFyIE5vdGUsIGtleWJvYXJkIGZvY3VzIGhhbmRsaW5nLCBFc2NhcGUvYmFja2Ryb3AgY2FuY2VsbGF0aW9uLCBhbmQgQ3RybC9DbWQrRW50ZXIgc2F2ZSBzdXBwb3J0LjwvbGk+CiAgICAgICAgICA8bGk+PGI+UGVyc2lzdGVudCAmYW1wOyBQb3J0YWJsZSBOb3Rlczo8L2I+IFRhc2sgbm90ZXMgc2F2ZSBkaXJlY3RseSB3aXRoIHRoZSBhc3NpZ25lZCB0YXNrLCBzdXJ2aXZlIGFwcCByZXN0YXJ0cywgcmVtYWluIGJhY2t3YXJkLWNvbXBhdGlibGUgd2l0aCBvbGRlciBUYXNrIExvZ2dpbmcgZGF0YSwgYW5kIHRyYXZlbCB3aXRoIFRhc2sgTG9nZ2luZyBqb2IgZXhwb3J0cy9pbXBvcnRzIGFuZCBmdWxsIEZhYnJpLUNhZGFicmEgYmFja3Vwcy48L2xpPgogICAgICAgICAgPGxpPjxiPkNsZWFyIE5vdGUgUHJvdGVjdGlvbjo8L2I+IENsZWFyIE5vdGUgbm93IG9wZW5zIHRoZSBzaGFyZWQgRmFicmktQ2FkYWJyYSBjb25maXJtYXRpb24gd2FybmluZyB3aXRoIEtlZXAgTm90ZSBhbmQgZGVzdHJ1Y3RpdmUgQ2xlYXIgTm90ZSBhY3Rpb25zLCBwcmV2ZW50aW5nIGFjY2lkZW50YWwgbm90ZSBkZWxldGlvbiB3aGlsZSBwcmVzZXJ2aW5nIHRoZSBub3RlIGVkaXRvciB3aGVuIGNhbmNlbGxhdGlvbiBpcyBjaG9zZW4uPC9saT4KICAgICAgICAgIDxsaT48Yj5SZWdyZXNzaW9uIFByb3RlY3Rpb246PC9iPiBBZGRlZCBwZXJtYW5lbnQgdmVyaWZpY2F0aW9uIGNvdmVyYWdlIGZvciB0YXNrLW5vdGUgbm9ybWFsaXphdGlvbiwgcGVyc2lzdGVuY2UsIGltcG9ydC9leHBvcnQgc2VyaWFsaXphdGlvbiwgbm90ZS1zdGF0ZSBVSSwgZWRpdG9yIGNvbnRyb2xzLCBhbmQgdGhlIHJlcXVpcmVkIGNsZWFyLW5vdGUgY29uZmlybWF0aW9uIGd1YXJkLjwvbGk+CiAgICAgICAgPC91bD4KICAgICAgPC9hcnRpY2xlPg=='
-          entry = base64.b64decode(encoded).decode()
-          html = html.replace(marker, entry + '\n' + marker, 1)
-          index_path.write_text(html)
-          PY
-
-      - name: Synchronize generated version markers
-        working-directory: fabrication_pro_capacitor
-        run: npm run sync:version
-
-      - name: Verify complete release contract
-        working-directory: fabrication_pro_capacitor
-        run: npm run verify
-
-      - name: Verify patch formatting
-        run: git diff --check
-
-      - name: Commit finalized v1.0.6 release to work
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add fabrication_pro_capacitor/package.json fabrication_pro_capacitor/package-lock.json fabrication_pro_capacitor/release.json fabrication_pro_capacitor/www/app/bootstrap.js fabrication_pro_capacitor/www/index.html
-          if git diff --cached --quiet; then
-            echo "Expected v1.0.6 release changes were not produced."
+          set -euo pipefail
+          npm run verify
+          CHANGES="$(git -C .. status --porcelain --untracked-files=no)"
+          if [ -n "$CHANGES" ]; then
+            echo "::error::npm run verify modified tracked files:"
+            printf '%s\n' "$CHANGES"
+            git -C .. diff -- .
             exit 1
           fi
-          git commit -m "release: finalize v1.0.6"
-          git push origin HEAD:work
+          echo "npm run verify left all tracked files unchanged."
