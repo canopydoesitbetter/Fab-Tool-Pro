@@ -71,7 +71,9 @@ const byTool = new Map(pagePanels.map(panel => [panel.tool, panel.block]));
 for (const tool of desiredPageOrder) {
   if (!byTool.has(tool)) throw new Error(`Missing Pages panel ${tool}`);
 }
-const reordered = desiredPageOrder.map(tool => byTool.get(tool)).join('\n\n');
+const reordered = desiredPageOrder
+  .map(tool => byTool.get(tool).replace(/[ \t]+$/gm, ''))
+  .join('\n\n');
 html = html.slice(0, pagePanels[0].start) + reordered + html.slice(pagePanels.at(-1).end);
 
 const changelogAnchor = '          <li><b>Header &amp; Pages Branding:</b> Added the exact approved Fabri-Cadabra app logo beside the header guidance, removed the repeated app-name heading from the topbar, and moved the Fabri-Cadabra name into a dedicated branded masthead at the top of the Pages drawer.</li>';
