@@ -46,13 +46,13 @@ test.describe('@mobile narrow 360px viewport', () => {
     await openTool(page, 'Sheet Optimizer', '#tool-optimizer');
     await expectNoHorizontalOverflow(page);
     await expectWithinViewport(page, '#tool-optimizer');
-    await expectWithinViewport(page, '#tool-optimizer .card');
+    await expectWithinViewport(page, '#tool-optimizer > .card');
     await expectWithinViewport(page, '#optimizerAddBtn');
     await expectWithinViewport(page, '#optimizerRunBtn');
 
     await openTool(page, 'Saw Optimizer', '#tool-saw');
     await expectNoHorizontalOverflow(page);
     await expectWithinViewport(page, '#tool-saw');
-    await expectWithinViewport(page, '#tool-saw .card');
+    await expectWithinViewport(page, '#tool-saw > .card');
   });
 });
