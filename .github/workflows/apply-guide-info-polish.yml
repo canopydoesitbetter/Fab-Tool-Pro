@@ -47,18 +47,25 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           path=Path('fabrication_pro_capacitor/scripts/apply-guide-info-polish.mjs')
-          lines=path.read_text(encoding='utf-8').splitlines()
-          matches=[i for i,line in enumerate(lines) if 'const count=(html.match(new RegExp(heading.replace' in line]
-          if len(matches) != 1:
-              raise SystemExit(f'Expected one verifier heading-count template line, found {len(matches)}')
-          lines[matches[0]]='  const count=html.split(heading).length-1;'
-          path.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          text=path.read_text(encoding='utf-8')
+          anchor="\\nfor(const heading of ['Automatic Product & Material Rules','Saw Optimization Rule','Fabrication Rules Used']) {\\n"
+          start=text.find(anchor)
+          if start < 0:
+              raise SystemExit('Verifier heading-count template block was not found')
+          count_start=text.find('\\n  const count=',start)
+          count_end=text.find('\\n  if(count!==1)',count_start)
+          if count_start < 0 or count_end < 0:
+              raise SystemExit('Verifier heading-count template boundaries were not found')
+          text=text[:count_start]+"\\n  const count=html.split(heading).length-1;"+text[count_end:]
+          path.write_text(text,encoding='utf-8')
           PY
           node --check fabrication_pro_capacitor/scripts/apply-guide-info-polish.mjs
 
       - name: Apply approved Guide and Info polish
         working-directory: fabrication_pro_capacitor
-        run: node scripts/apply-guide-info-polish.mjs
+        run: |
+          node scripts/apply-guide-info-polish.mjs
+          node --check scripts/verify-features.mjs
 
       - name: Restore one-time generator source
         shell: bash
