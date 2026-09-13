@@ -151,9 +151,14 @@
         #tool-fasteners .fastener-location-toggle.fastener-complete{background:var(--good-bg);border-color:var(--good);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--good) 35%,transparent);}
         #tool-fasteners .fastener-location-toggle.fastener-complete .num,#tool-fasteners .fastener-location-toggle.fastener-complete .pos{color:var(--good);}
         #tool-fasteners .fastener-location-toggle.fastener-complete .fastener-check{background:var(--good);border-color:var(--good);color:var(--card);}
-        #tool-fasteners .dot.fastener-complete{background:var(--good);box-shadow:0 0 0 4px color-mix(in srgb,var(--good) 22%,transparent);}
+        #tool-fasteners .fastener-progress{margin:18px 0 8px;padding:13px 15px;border:1px solid var(--border);border-radius:14px;background:var(--card);}
+        #tool-fasteners .fastener-progress-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;}
+        #tool-fasteners .fastener-progress-label{font-size:.76rem;font-weight:900;letter-spacing:.055em;text-transform:uppercase;color:var(--muted);}
+        #tool-fasteners .fastener-progress-text{font-size:.9rem;font-weight:900;color:var(--text);text-align:right;}
+        #tool-fasteners .fastener-progress-track{height:8px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--border) 72%,transparent);}
+        #tool-fasteners .fastener-progress-fill{height:100%;width:0;border-radius:inherit;background:var(--good);transition:width .18s ease;}
         @media (max-width:700px){#tool-fasteners .fastener-inputs{grid-template-columns:1fr;}}
-        @media (prefers-reduced-motion:reduce){#tool-fasteners .fastener-location-toggle,#tool-fasteners .fastener-location-toggle .fastener-check{transition:none;}}
+        @media (prefers-reduced-motion:reduce){#tool-fasteners .fastener-location-toggle,#tool-fasteners .fastener-location-toggle .fastener-check,#tool-fasteners .fastener-progress-fill{transition:none;}}
       `;
       document.head.appendChild(style);
     }
@@ -170,6 +175,19 @@
   const fastenerCountEl = document.getElementById('fastenerCount');
   const locationsEl = document.getElementById('locations');
   const diagramEl = document.getElementById('diagram');
+  diagramEl.classList.remove('diagram');
+  diagramEl.classList.add('fastener-progress');
+  diagramEl.innerHTML = `
+    <div class="fastener-progress-head">
+      <span class="fastener-progress-label">Completion</span>
+      <span id="fastenerProgressText" class="fastener-progress-text">0 of 0 fasteners complete</span>
+    </div>
+    <div class="fastener-progress-track" role="progressbar" aria-label="Fastener completion" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+      <div id="fastenerProgressFill" class="fastener-progress-fill"></div>
+    </div>`;
+  const fastenerProgressText = document.getElementById('fastenerProgressText');
+  const fastenerProgressFill = document.getElementById('fastenerProgressFill');
+  const fastenerProgressTrack = diagramEl.querySelector('.fastener-progress-track');
 
   function defaultFastenerSpacingState() {
     return {
@@ -270,6 +288,16 @@
     catch (error) { console.warn('Fastener Spacing could not be saved.',error); }
   }
 
+  function updateFastenerProgress(totalFasteners) {
+    const total=Math.max(0,Number(totalFasteners)||0);
+    const completed=Array.from(selectedFastenerIndexes).filter(index=>index>=0 && index<total).length;
+    const percent=total>0 ? (completed/total)*100 : 0;
+    fastenerProgressText.textContent=`${completed} of ${total} fasteners complete`;
+    fastenerProgressFill.style.width=`${percent}%`;
+    fastenerProgressTrack.setAttribute('aria-valuemax',String(total));
+    fastenerProgressTrack.setAttribute('aria-valuenow',String(completed));
+  }
+
   function setFastenerCompletionVisual(index,complete) {
     const item=locationsEl.querySelector(`[data-fastener-index="${index}"]`);
     if (item) {
@@ -277,8 +305,7 @@
       item.setAttribute('aria-pressed',complete?'true':'false');
       item.title=complete?'Marked complete — tap to unmark':'Tap to mark this fastener complete';
     }
-    const dot=diagramEl.querySelector(`[data-fastener-dot="${index}"]`);
-    if (dot) dot.classList.toggle('fastener-complete',complete);
+    updateFastenerProgress(Number(fastenerCountEl.textContent)||0);
   }
 
   function calculateFasteners(options={}) {
@@ -334,7 +361,7 @@
     spacingDecimalEl.textContent = decimalText(exactSpacing);
     fastenerCountEl.textContent = fasteners;
     locationsEl.innerHTML = '';
-    diagramEl.innerHTML = '<div class="rail"></div>';
+    updateFastenerProgress(fasteners);
 
     for (let i=0; i<=spaces; i++) {
       const exactPosition=positions[i];
@@ -351,20 +378,6 @@
       item.innerHTML = `<span class="fastener-check" aria-hidden="true">✓</span><span class="num">Fastener ${i+1}</span><span class="pos">${toFraction16(displayPosition)}</span>`;
       locationsEl.appendChild(item);
 
-      const dot = document.createElement('div');
-      dot.className = `dot${complete?' fastener-complete':''}`;
-      dot.dataset.fastenerDot=String(i);
-      dot.style.left = ((exactPosition / length) * 100) + '%';
-      dot.title = `Fastener ${i+1}: ${toFraction16(displayPosition)} from true edge`;
-      diagramEl.appendChild(dot);
-
-      if (i === 0 || i === spaces) {
-        const label = document.createElement('div');
-        label.className = 'end-label';
-        label.style.left = ((exactPosition / length) * 100) + '%';
-        label.textContent = toFraction16(displayPosition);
-        diagramEl.appendChild(label);
-      }
     }
 
     fastenerResults.classList.add('show');
@@ -392,7 +405,7 @@
     clearFastenerError();
     fastenerResults.classList.remove('show');
     locationsEl.innerHTML = '';
-    diagramEl.innerHTML = '';
+    updateFastenerProgress(0);
     try { writePersistentStore(FASTENER_SPACING_STORE_ID,defaultFastenerSpacingState()); }
     catch (error) { console.warn('Fastener Spacing saved state could not be cleared.',error); }
     maxSpacingInput.focus();
