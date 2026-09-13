@@ -29,6 +29,7 @@ jobs:
         working-directory: fabrication_pro_capacitor
         run: |
           python - <<'PY'
+          import base64
           import json
           from pathlib import Path
 
@@ -65,25 +66,11 @@ jobs:
           if old_current not in html:
               raise SystemExit('Could not find the current 1.0.5 changelog label.')
           html = html.replace(old_current, "<span class='changelog-version-label'>Version 1.0.5</span>", 1)
-
           marker = "      <article class='changelog-entry changelog-release' data-changelog-version='1.0.5'>"
           if marker not in html:
               raise SystemExit('Could not find the 1.0.5 changelog insertion point.')
-          entry = """      <article class='changelog-entry changelog-release' data-changelog-version='1.0.6'>
-        <div class='changelog-entry-heading'>
-          <div>
-            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.6</span>
-            <h2>Per-Task Notes &amp; Safer Note Clearing</h2>
-          </div>
-        </div>
-        <ul>
-          <li><b>Task Logging Notes:</b> Added a polished note button to every task assigned to a job, with a distinct highlighted state when that task contains a saved note.</li>
-          <li><b>Task Note Editor:</b> Added a smooth mobile-friendly, dark-mode-aware note dialog with multiline editing, a 4,000-character limit, live character count, Save, Cancel, Clear Note, keyboard focus handling, Escape/backdrop cancellation, and Ctrl/Cmd+Enter save support.</li>
-          <li><b>Persistent &amp; Portable Notes:</b> Task notes save directly with the assigned task, survive app restarts, remain backward-compatible with older Task Logging data, and travel with Task Logging job exports/imports and full Fabri-Cadabra backups.</li>
-          <li><b>Clear Note Protection:</b> Clear Note now opens the shared Fabri-Cadabra confirmation warning with Keep Note and destructive Clear Note actions, preventing accidental note deletion while preserving the note editor when cancellation is chosen.</li>
-          <li><b>Regression Protection:</b> Added permanent verification coverage for task-note normalization, persistence, import/export serialization, note-state UI, editor controls, and the required clear-note confirmation guard.</li>
-        </ul>
-      </article>"""
+          encoded = 'ICAgICAgPGFydGljbGUgY2xhc3M9J2NoYW5nZWxvZy1lbnRyeSBjaGFuZ2Vsb2ctcmVsZWFzZScgZGF0YS1jaGFuZ2Vsb2ctdmVyc2lvbj0nMS4wLjYnPgogICAgICAgIDxkaXYgY2xhc3M9J2NoYW5nZWxvZy1lbnRyeS1oZWFkaW5nJz4KICAgICAgICAgIDxkaXY+CiAgICAgICAgICAgIDxzcGFuIGlkPSdzZXR0aW5nc0N1cnJlbnRDaGFuZ2Vsb2dWZXJzaW9uJyBjbGFzcz0nY2hhbmdlbG9nLXZlcnNpb24tbGFiZWwnPlZlcnNpb24gMS4wLjY8L3NwYW4+CiAgICAgICAgICAgIDxoMj5QZXItVGFzayBOb3RlcyAmYW1wOyBTYWZlciBOb3RlIENsZWFyaW5nPC9oMj4KICAgICAgICAgIDwvZGl2PgogICAgICAgIDwvZGl2PgogICAgICAgIDx1bD4KICAgICAgICAgIDxsaT48Yj5UYXNrIExvZ2dpbmcgTm90ZXM6PC9iPiBBZGRlZCBhIHBvbGlzaGVkIG5vdGUgYnV0dG9uIHRvIGV2ZXJ5IHRhc2sgYXNzaWduZWQgdG8gYSBqb2IsIHdpdGggYSBkaXN0aW5jdCBoaWdobGlnaHRlZCBzdGF0ZSB3aGVuIHRoYXQgdGFzayBjb250YWlucyBhIHNhdmVkIG5vdGUuPC9saT4KICAgICAgICAgIDxsaT48Yj5UYXNrIE5vdGUgRWRpdG9yOjwvYj4gQWRkZWQgYSBzbW9vdGggbW9iaWxlLWZyaWVuZGx5LCBkYXJrLW1vZGUtYXdhcmUgbm90ZSBkaWFsb2cgd2l0aCBtdWx0aWxpbmUgZWRpdGluZywgYSA0LDAwMC1jaGFyYWN0ZXIgbGltaXQsIGxpdmUgY2hhcmFjdGVyIGNvdW50LCBTYXZlLCBDYW5jZWwsIENsZWFyIE5vdGUsIGtleWJvYXJkIGZvY3VzIGhhbmRsaW5nLCBFc2NhcGUvYmFja2Ryb3AgY2FuY2VsbGF0aW9uLCBhbmQgQ3RybC9DbWQrRW50ZXIgc2F2ZSBzdXBwb3J0LjwvbGk+CiAgICAgICAgICA8bGk+PGI+UGVyc2lzdGVudCAmYW1wOyBQb3J0YWJsZSBOb3Rlczo8L2I+IFRhc2sgbm90ZXMgc2F2ZSBkaXJlY3RseSB3aXRoIHRoZSBhc3NpZ25lZCB0YXNrLCBzdXJ2aXZlIGFwcCByZXN0YXJ0cywgcmVtYWluIGJhY2t3YXJkLWNvbXBhdGlibGUgd2l0aCBvbGRlciBUYXNrIExvZ2dpbmcgZGF0YSwgYW5kIHRyYXZlbCB3aXRoIFRhc2sgTG9nZ2luZyBqb2IgZXhwb3J0cy9pbXBvcnRzIGFuZCBmdWxsIEZhYnJpLUNhZGFicmEgYmFja3Vwcy48L2xpPgogICAgICAgICAgPGxpPjxiPkNsZWFyIE5vdGUgUHJvdGVjdGlvbjo8L2I+IENsZWFyIE5vdGUgbm93IG9wZW5zIHRoZSBzaGFyZWQgRmFicmktQ2FkYWJyYSBjb25maXJtYXRpb24gd2FybmluZyB3aXRoIEtlZXAgTm90ZSBhbmQgZGVzdHJ1Y3RpdmUgQ2xlYXIgTm90ZSBhY3Rpb25zLCBwcmV2ZW50aW5nIGFjY2lkZW50YWwgbm90ZSBkZWxldGlvbiB3aGlsZSBwcmVzZXJ2aW5nIHRoZSBub3RlIGVkaXRvciB3aGVuIGNhbmNlbGxhdGlvbiBpcyBjaG9zZW4uPC9saT4KICAgICAgICAgIDxsaT48Yj5SZWdyZXNzaW9uIFByb3RlY3Rpb246PC9iPiBBZGRlZCBwZXJtYW5lbnQgdmVyaWZpY2F0aW9uIGNvdmVyYWdlIGZvciB0YXNrLW5vdGUgbm9ybWFsaXphdGlvbiwgcGVyc2lzdGVuY2UsIGltcG9ydC9leHBvcnQgc2VyaWFsaXphdGlvbiwgbm90ZS1zdGF0ZSBVSSwgZWRpdG9yIGNvbnRyb2xzLCBhbmQgdGhlIHJlcXVpcmVkIGNsZWFyLW5vdGUgY29uZmlybWF0aW9uIGd1YXJkLjwvbGk+CiAgICAgICAgPC91bD4KICAgICAgPC9hcnRpY2xlPg=='
+          entry = base64.b64decode(encoded).decode()
           html = html.replace(marker, entry + '\n' + marker, 1)
           index_path.write_text(html)
           PY
