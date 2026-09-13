@@ -1,0 +1,76 @@
+name: Apply Page Order and Header Copy
+
+on:
+  push:
+    branches:
+      - work
+    paths:
+      - fabrication_pro_capacitor/scripts/apply-page-order-header-copy.mjs
+      - .github/workflows/apply-page-order-header-copy.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work
+        uses: actions/checkout@v4
+        with:
+          ref: work
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Apply approved page order and header copy
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/apply-page-order-header-copy.mjs
+
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: fabrication_pro_capacitor
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify source contracts
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Run browser regression suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run test:e2e
+
+      - name: Guard intended diff only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --name-only | sort > /tmp/actual.txt
+          printf '%s\n' \
+            'fabrication_pro_capacitor/release.json' \
+            'fabrication_pro_capacitor/scripts/verify-features.mjs' \
+            'fabrication_pro_capacitor/scripts/verify-header-branding.mjs' \
+            'fabrication_pro_capacitor/www/index.html' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'canopydoesitbetter'
+          git config user.email 'canopy.2126@gmail.com'
+          git add fabrication_pro_capacitor/release.json \
+                  fabrication_pro_capacitor/scripts/verify-features.mjs \
+                  fabrication_pro_capacitor/scripts/verify-header-branding.mjs \
+                  fabrication_pro_capacitor/www/index.html
+          git commit -m 'refactor: align HTML page order with navigation'
+          git push origin HEAD:work
