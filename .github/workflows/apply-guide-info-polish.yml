@@ -1,0 +1,102 @@
+name: Apply Guide Info Polish
+
+on:
+  push:
+    branches: [work]
+    paths:
+      - '.github/workflows/apply-guide-info-polish.yml'
+      - 'fabrication_pro_capacitor/scripts/apply-guide-info-polish.mjs'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-guide-info-polish-work
+  cancel-in-progress: false
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work
+        uses: actions/checkout@v4
+        with:
+          ref: work
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: fabrication_pro_capacitor/package-lock.json
+
+      - name: Guard expected starting branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "work"
+          git fetch origin main work
+          test "$(git rev-parse origin/main)" = "d861297ef6004e2fc340d412e7dec3b46d31b6bf"
+          test "$(git merge-base origin/main HEAD)" = "d861297ef6004e2fc340d412e7dec3b46d31b6bf"
+
+      - name: Apply approved Guide and Info polish
+        working-directory: fabrication_pro_capacitor
+        run: node scripts/apply-guide-info-polish.mjs
+
+      - name: Install dependencies
+        working-directory: fabrication_pro_capacitor
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: fabrication_pro_capacitor
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify source contracts
+        working-directory: fabrication_pro_capacitor
+        run: npm run verify
+
+      - name: Run browser regression suite
+        working-directory: fabrication_pro_capacitor
+        run: npm run test:e2e
+
+      - name: Guard intended diff only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          mapfile -t changed < <(git diff --name-only | sort)
+          expected=(
+            "fabrication_pro_capacitor/release.json"
+            "fabrication_pro_capacitor/scripts/verify-features.mjs"
+            "fabrication_pro_capacitor/www/app/navigation.js"
+            "fabrication_pro_capacitor/www/app/quick-reference.js"
+            "fabrication_pro_capacitor/www/index.html"
+            "fabrication_pro_capacitor/www/styles.css"
+          )
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          if [ "${changed[*]}" != "${expected_sorted[*]}" ]; then
+            echo "Unexpected working-tree diff."
+            echo "Expected:"
+            printf '  %s\n' "${expected_sorted[@]}"
+            echo "Actual:"
+            printf '  %s\n' "${changed[@]}"
+            exit 1
+          fi
+          test -z "$(git ls-files --others --exclude-standard)"
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "canopydoesitbetter"
+          git config user.email "canopy.2126@gmail.com"
+          git add \
+            fabrication_pro_capacitor/release.json \
+            fabrication_pro_capacitor/scripts/verify-features.mjs \
+            fabrication_pro_capacitor/www/app/navigation.js \
+            fabrication_pro_capacitor/www/app/quick-reference.js \
+            fabrication_pro_capacitor/www/index.html \
+            fabrication_pro_capacitor/www/styles.css
+          git commit -m "feat: standardize guide and info drawers"
+          git push origin HEAD:work
