@@ -9,6 +9,7 @@
   const MAX_TASK_LOG_TASKS_PER_JOB = 100;
   const MAX_TASK_LOG_PRESETS = 150;
   const MAX_TASK_LOG_NAME = 120;
+  const MAX_TASK_LOG_NOTE = 4000;
   const MAX_TASK_LOG_SESSIONS_PER_TASK = 1000;
   const MAX_TASK_LOG_IMPORT_BYTES = 2 * 1024 * 1024;
 
@@ -87,6 +88,188 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
 }
 // @tasklog-job-rename-core-end
 
+// @tasklog-task-note-core-start
+function normalizeTaskLogTaskNote(value,maxLength=4000) {
+  const normalized=String(value ?? '').replace(/\r\n?/g,'\n').trim();
+  const limit=Number.isInteger(maxLength) && maxLength>0 ? maxLength : 4000;
+  return normalized.slice(0,limit);
+}
+
+function applyTaskLogTaskNote(job,task,value,updatedAt,maxLength=4000) {
+  if (!job || typeof job!=='object' || !task || typeof task!=='object') return false;
+  const timestamp=String(updatedAt || new Date().toISOString());
+  task.note=normalizeTaskLogTaskNote(value,maxLength);
+  task.updatedAt=timestamp;
+  job.updatedAt=timestamp;
+  return true;
+}
+// @tasklog-task-note-core-end
+
+  function installTaskLogNoteUi() {
+    if (!document.getElementById('taskLogNoteStyles')) {
+      const style=document.createElement('style');
+      style.id='taskLogNoteStyles';
+      style.textContent=`
+        .tasklog-note-btn {
+          position:relative;
+          width:44px;
+          min-width:44px;
+          height:44px;
+          padding:0;
+          display:grid;
+          place-items:center;
+          border:1px solid var(--border);
+          border-radius:12px;
+          background:var(--card);
+          color:var(--accent);
+          box-shadow:0 3px 0 var(--button-edge),0 6px 12px rgba(22,34,43,.12);
+        }
+        .tasklog-note-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+        .tasklog-note-btn.has-note {
+          border-color:color-mix(in srgb,var(--accent) 70%,var(--border));
+          background:linear-gradient(145deg,var(--accent),var(--accent2));
+          color:#fff;
+          box-shadow:0 3px 0 color-mix(in srgb,var(--accent2) 72%,#000),0 8px 15px rgba(15,59,93,.20);
+        }
+        .tasklog-note-dot {
+          position:absolute;
+          top:6px;
+          right:6px;
+          width:7px;
+          height:7px;
+          border-radius:999px;
+          background:#fff;
+          box-shadow:0 0 0 2px var(--accent);
+          opacity:0;
+          transform:scale(.7);
+          transition:opacity .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);
+        }
+        .tasklog-note-btn.has-note .tasklog-note-dot { opacity:1; transform:scale(1); }
+        .tasklog-note-backdrop {
+          position:fixed;
+          inset:0;
+          z-index:2147483300;
+          background:rgba(5,16,28,.58);
+          backdrop-filter:blur(4px);
+          opacity:0;
+          visibility:hidden;
+          transition:opacity .2s ease,visibility .2s ease;
+        }
+        .tasklog-note-backdrop.open { opacity:1; visibility:visible; }
+        .tasklog-note-dialog {
+          position:fixed;
+          inset:0;
+          z-index:2147483301;
+          display:grid;
+          place-items:center;
+          padding:max(18px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+          pointer-events:none;
+          opacity:0;
+          visibility:hidden;
+          transition:opacity .2s ease,visibility .2s ease;
+        }
+        .tasklog-note-dialog.open { pointer-events:auto; opacity:1; visibility:visible; }
+        .tasklog-note-panel {
+          width:min(560px,100%);
+          max-height:min(82vh,720px);
+          overflow:auto;
+          border:1px solid var(--panel-border-inner);
+          border-radius:20px;
+          background:var(--card);
+          color:var(--text);
+          padding:18px;
+          box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--panel-border-outer),0 24px 58px rgba(0,0,0,.32);
+          transform:translateY(14px) scale(.975);
+          transition:transform .22s cubic-bezier(.2,.8,.2,1);
+        }
+        .tasklog-note-dialog.open .tasklog-note-panel { transform:translateY(0) scale(1); }
+        .tasklog-note-heading { display:flex; gap:12px; align-items:flex-start; margin-bottom:16px; }
+        .tasklog-note-heading-icon {
+          flex:0 0 auto;
+          width:40px;
+          height:40px;
+          border-radius:12px;
+          display:grid;
+          place-items:center;
+          background:var(--accent-soft);
+          color:var(--accent);
+        }
+        .tasklog-note-heading-icon svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+        .tasklog-note-heading-copy { min-width:0; }
+        .tasklog-note-heading h2 { margin:0 0 3px; color:var(--accent); font-size:1.12rem; }
+        .tasklog-note-heading p { margin:0; color:var(--muted); font-size:.86rem; line-height:1.4; overflow-wrap:anywhere; }
+        .tasklog-note-textarea {
+          width:100%;
+          min-height:190px;
+          max-height:42vh;
+          resize:vertical;
+          border:2px solid var(--input-border);
+          border-radius:14px;
+          background:var(--input);
+          color:var(--text);
+          padding:12px 13px;
+          outline:none;
+          font:inherit;
+          font-size:1rem;
+          font-weight:650;
+          line-height:1.48;
+          box-shadow:inset 0 1px 2px rgba(22,34,43,.06);
+        }
+        .tasklog-note-textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
+        .tasklog-note-meta { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:7px 2px 0; color:var(--muted); font-size:.75rem; line-height:1.35; }
+        .tasklog-note-count { font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .tasklog-note-actions { display:grid; grid-template-columns:auto 1fr 1fr; gap:9px; margin-top:16px; }
+        .tasklog-note-actions .btn { min-height:46px; margin:0; }
+        .tasklog-note-clear { color:var(--danger)!important; border-color:color-mix(in srgb,var(--danger) 35%,var(--border))!important; }
+        .tasklog-note-clear[hidden] { display:none; }
+        @media (max-width:520px) {
+          .tasklog-note-panel { padding:16px; border-radius:18px; }
+          .tasklog-note-textarea { min-height:170px; }
+          .tasklog-note-actions { grid-template-columns:1fr 1fr; }
+          .tasklog-note-clear { grid-column:1 / -1; grid-row:2; }
+        }
+        @media (prefers-reduced-motion:reduce) {
+          .tasklog-note-dot,.tasklog-note-backdrop,.tasklog-note-dialog,.tasklog-note-panel { transition:none!important; }
+          .tasklog-note-panel { transform:none!important; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    if (!document.getElementById('taskLogNoteDialog')) {
+      document.body.insertAdjacentHTML('beforeend',`
+        <div id="taskLogNoteBackdrop" class="tasklog-note-backdrop" aria-hidden="true"></div>
+        <section id="taskLogNoteDialog" class="tasklog-note-dialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="taskLogNoteTitle" aria-describedby="taskLogNoteHelp">
+          <div class="tasklog-note-panel">
+            <div class="tasklog-note-heading">
+              <span class="tasklog-note-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.75h14v12.5H9l-4 3v-15.5Z"></path><path d="M8.5 9h7M8.5 12.5h5"></path></svg></span>
+              <div class="tasklog-note-heading-copy"><h2 id="taskLogNoteTitle">Task Note</h2><p id="taskLogNoteTaskLabel">Task</p></div>
+            </div>
+            <label for="taskLogNoteTextarea">Note</label>
+            <textarea id="taskLogNoteTextarea" class="tasklog-note-textarea" maxlength="${MAX_TASK_LOG_NOTE}" spellcheck="true" placeholder="Add measurements, setup details, reminders, exceptions, or anything useful for this task..."></textarea>
+            <div class="tasklog-note-meta"><span id="taskLogNoteHelp">Saved with this assigned task and included in Task Logging job backups.</span><b id="taskLogNoteCount" class="tasklog-note-count">0 / ${MAX_TASK_LOG_NOTE}</b></div>
+            <div class="tasklog-note-actions">
+              <button id="taskLogNoteClearBtn" class="btn secondary tasklog-note-clear" type="button">Clear Note</button>
+              <button id="taskLogNoteCancelBtn" class="btn secondary" type="button">Cancel</button>
+              <button id="taskLogNoteSaveBtn" class="btn" type="button">Save Note</button>
+            </div>
+          </div>
+        </section>
+      `);
+    }
+  }
+
+  installTaskLogNoteUi();
+  const taskLogNoteBackdrop=document.getElementById('taskLogNoteBackdrop');
+  const taskLogNoteDialog=document.getElementById('taskLogNoteDialog');
+  const taskLogNoteTextarea=document.getElementById('taskLogNoteTextarea');
+  const taskLogNoteTaskLabel=document.getElementById('taskLogNoteTaskLabel');
+  const taskLogNoteCount=document.getElementById('taskLogNoteCount');
+  const taskLogNoteClearBtn=document.getElementById('taskLogNoteClearBtn');
+  const taskLogNoteCancelBtn=document.getElementById('taskLogNoteCancelBtn');
+  const taskLogNoteSaveBtn=document.getElementById('taskLogNoteSaveBtn');
+  let taskLogNoteEditingTaskId=null;
+  let taskLogNotePreviousFocus=null;
+
   function showTaskLogStatus(message,type='ok') {
     taskLogStatus.textContent = message;
     taskLogStatus.className = `status show ${type}`;
@@ -123,6 +306,14 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
 
   function activeTaskLogJob() {
     return taskLogJobs.find(job=>job.id===taskLogActiveJobId) || null;
+  }
+
+  function findTaskLogTaskById(taskId) {
+    for (const job of taskLogJobs) {
+      const task=(job.tasks||[]).find(item=>item.id===taskId);
+      if (task) return {job,task};
+    }
+    return null;
   }
 
   function findRunningTaskLogTask() {
@@ -191,6 +382,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
           id:taskId,
           presetId,
           name,
+          note:normalizeTaskLogTaskNote(task.note ?? '',MAX_TASK_LOG_NOTE),
           accumulatedMs,
           running,
           startedAt,
@@ -261,6 +453,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
         id:job.id,title:job.title,createdAt:job.createdAt,updatedAt:job.updatedAt,
         tasks:job.tasks.map(task=>({
           id:task.id,presetId:task.presetId ?? null,name:task.name,
+          note:normalizeTaskLogTaskNote(task.note ?? '',MAX_TASK_LOG_NOTE),
           accumulatedMs:Math.max(0,Number(task.accumulatedMs||0)),
           running:task.running===true,
           startedAt:task.running===true ? Number(task.startedAt) : null,
@@ -469,7 +662,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     }
     const now=new Date().toISOString();
     for (const preset of selected) {
-      job.tasks.push({id:taskLogNextTaskId++,presetId:preset.id,name:preset.name,accumulatedMs:0,running:false,startedAt:null,sessions:[],createdAt:now,updatedAt:now});
+      job.tasks.push({id:taskLogNextTaskId++,presetId:preset.id,name:preset.name,note:'',accumulatedMs:0,running:false,startedAt:null,sessions:[],createdAt:now,updatedAt:now});
       taskLogSelectedPresetIds.delete(preset.id);
     }
     job.updatedAt=now;
@@ -511,6 +704,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
         </div>
         <div class="tasklog-task-actions">
           <button class="tasklog-timer-btn${task.running?' stop':''}" type="button" data-tasklog-timer-action="${task.running?'stop':'start'}" data-tasklog-task-id="${task.id}">${task.running?'Stop':'Start'}</button>
+          <button class="tasklog-note-btn${task.note?' has-note':''}" type="button" data-tasklog-note="${task.id}" aria-label="${task.note?'Edit':'Add'} note for ${escapeHtml(task.name)}" title="${task.note?'Edit task note':'Add task note'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.75h14v12.5H9l-4 3v-15.5Z"></path><path d="M8.5 9h7M8.5 12.5h5"></path></svg><span class="tasklog-note-dot" aria-hidden="true"></span></button>
           <button class="tasklog-remove-task" type="button" aria-label="Remove ${escapeHtml(task.name)} from this job" data-tasklog-remove-task="${task.id}">×</button>
         </div>
       </div>`;
@@ -518,6 +712,75 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     for (const details of taskLogTaskList.querySelectorAll('.tasklog-session-details')) {
       if (openSessionTasks.has(String(details.dataset.tasklogSessionDetails))) details.open=true;
     }
+  }
+
+  function updateTaskLogNoteCount() {
+    const length=String(taskLogNoteTextarea.value || '').length;
+    taskLogNoteCount.textContent=`${length} / ${MAX_TASK_LOG_NOTE}`;
+  }
+
+  function setTaskLogNoteDialogOpen(open) {
+    const restoreTaskId=taskLogNoteEditingTaskId;
+    const previousFocus=taskLogNotePreviousFocus;
+    taskLogNoteBackdrop.classList.toggle('open',open);
+    taskLogNoteDialog.classList.toggle('open',open);
+    taskLogNoteBackdrop.setAttribute('aria-hidden',open?'false':'true');
+    taskLogNoteDialog.setAttribute('aria-hidden',open?'false':'true');
+    if (open) {
+      requestAnimationFrame(()=>{
+        taskLogNoteTextarea.focus({preventScroll:true});
+        taskLogNoteTextarea.setSelectionRange(taskLogNoteTextarea.value.length,taskLogNoteTextarea.value.length);
+      });
+    } else {
+      taskLogNoteEditingTaskId=null;
+      taskLogNotePreviousFocus=null;
+      requestAnimationFrame(()=>{
+        if (previousFocus && document.contains(previousFocus)) previousFocus.focus({preventScroll:true});
+        else if (restoreTaskId) document.querySelector(`[data-tasklog-note="${restoreTaskId}"]`)?.focus({preventScroll:true});
+      });
+    }
+  }
+
+  function openTaskLogNoteDialog(taskId) {
+    const found=findTaskLogTaskById(taskId);
+    if (!found) return;
+    taskLogNoteEditingTaskId=taskId;
+    taskLogNotePreviousFocus=document.activeElement;
+    taskLogNoteTaskLabel.textContent=`${found.job.title} — ${found.task.name}`;
+    taskLogNoteTextarea.value=normalizeTaskLogTaskNote(found.task.note ?? '',MAX_TASK_LOG_NOTE);
+    taskLogNoteClearBtn.hidden=!taskLogNoteTextarea.value;
+    updateTaskLogNoteCount();
+    setTaskLogNoteDialogOpen(true);
+  }
+
+  function commitTaskLogNote(value,clearedExplicitly=false) {
+    const found=findTaskLogTaskById(taskLogNoteEditingTaskId);
+    if (!found) { setTaskLogNoteDialogOpen(false); return; }
+    const normalized=normalizeTaskLogTaskNote(value,MAX_TASK_LOG_NOTE);
+    applyTaskLogTaskNote(found.job,found.task,normalized,new Date().toISOString(),MAX_TASK_LOG_NOTE);
+    persistTaskLogJobs(true);
+    renderTaskLogging();
+    setTaskLogNoteDialogOpen(false);
+    showTaskLogStatus(clearedExplicitly || !normalized ? `Task note cleared for ${found.task.name}.` : `Task note saved for ${found.task.name}.`,'ok');
+  }
+
+  function saveTaskLogNoteFromDialog() {
+    commitTaskLogNote(taskLogNoteTextarea.value,false);
+  }
+
+  function clearTaskLogNoteFromDialog() {
+    taskLogNoteTextarea.value='';
+    updateTaskLogNoteCount();
+    commitTaskLogNote('',true);
+  }
+
+  function trapTaskLogNoteFocus(event) {
+    if (event.key!=='Tab' || !taskLogNoteDialog.classList.contains('open')) return;
+    const focusable=[taskLogNoteTextarea,taskLogNoteClearBtn,taskLogNoteCancelBtn,taskLogNoteSaveBtn].filter(el=>el && !el.hidden && !el.disabled);
+    if (!focusable.length) { event.preventDefault(); return; }
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if (event.shiftKey && document.activeElement===first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement===last) { event.preventDefault(); first.focus(); }
   }
 
   function setTaskLogRenameDialogOpen(open) {
@@ -671,7 +934,7 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
       showTaskLogStatus('That task is already assigned to this job.','error'); return;
     }
     const now=new Date().toISOString();
-    job.tasks.push({id:taskLogNextTaskId++,presetId:preset.id,name:preset.name,accumulatedMs:0,running:false,startedAt:null,sessions:[],createdAt:now,updatedAt:now});
+    job.tasks.push({id:taskLogNextTaskId++,presetId:preset.id,name:preset.name,note:'',accumulatedMs:0,running:false,startedAt:null,sessions:[],createdAt:now,updatedAt:now});
     job.updatedAt=now;
     persistTaskLogJobs(true);
     renderTaskLogging();
@@ -917,9 +1180,36 @@ function applyTaskLogJobRename(job,value,updatedAt,maxLength=120) {
     }
     trapTaskLogRenameFocus(event);
   });
+  taskLogNoteSaveBtn.addEventListener('click',saveTaskLogNoteFromDialog);
+  taskLogNoteClearBtn.addEventListener('click',clearTaskLogNoteFromDialog);
+  taskLogNoteCancelBtn.addEventListener('click',()=>setTaskLogNoteDialogOpen(false));
+  taskLogNoteBackdrop.addEventListener('click',()=>setTaskLogNoteDialogOpen(false));
+  taskLogNoteTextarea.addEventListener('input',()=>{
+    updateTaskLogNoteCount();
+    taskLogNoteClearBtn.hidden=!taskLogNoteTextarea.value.trim();
+  });
+  taskLogNoteDialog.addEventListener('keydown',event=>{
+    if (event.key==='Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setTaskLogNoteDialogOpen(false);
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key==='Enter') {
+      event.preventDefault();
+      saveTaskLogNoteFromDialog();
+      return;
+    }
+    trapTaskLogNoteFocus(event);
+  });
   taskLogPresetSelect.addEventListener('change',()=>{ taskLogAddTaskBtn.disabled=!taskLogPresetSelect.value; });
   taskLogAddTaskBtn.addEventListener('click',addPresetToActiveTaskLogJob);
   taskLogTaskList.addEventListener('click',e=>{
+    const noteBtn=e.target.closest('[data-tasklog-note]');
+    if (noteBtn) {
+      openTaskLogNoteDialog(Number(noteBtn.dataset.tasklogNote));
+      return;
+    }
     const timerBtn=e.target.closest('[data-tasklog-timer-action]');
     if (timerBtn) {
       const id=Number(timerBtn.dataset.tasklogTaskId);
