@@ -58,6 +58,7 @@ jobs:
             'fabrication_pro_capacitor/package.json' \
             'fabrication_pro_capacitor/release.json' \
             'fabrication_pro_capacitor/scripts/verify-header-branding.mjs' \
+            'fabrication_pro_capacitor/scripts/verify-web.mjs' \
             'fabrication_pro_capacitor/www/app-logo.jpg' \
             'fabrication_pro_capacitor/www/index.html' \
             'fabrication_pro_capacitor/www/styles.css' \
@@ -73,6 +74,7 @@ jobs:
           git add fabrication_pro_capacitor/package.json \
                   fabrication_pro_capacitor/release.json \
                   fabrication_pro_capacitor/scripts/verify-header-branding.mjs \
+                  fabrication_pro_capacitor/scripts/verify-web.mjs \
                   fabrication_pro_capacitor/www/app-logo.jpg \
                   fabrication_pro_capacitor/www/index.html \
                   fabrication_pro_capacitor/www/styles.css
