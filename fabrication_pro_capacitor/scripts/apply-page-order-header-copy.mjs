@@ -80,9 +80,9 @@ html = replaceOnce(html, changelogAnchor, changelogAddition, '1.0.5 header brand
 fs.writeFileSync(indexPath, html);
 
 let verifyFeatures = fs.readFileSync(verifyFeaturesPath, 'utf8');
-const navContract = `const navTools=[...html.matchAll(/class="fab-page-link"[^>]*data-tool="([^\\"]+)"/g)].map(match=>match[1]);\nif(new Set(navTools).size!==navTools.length) throw new Error('Pages drawer contains duplicate data-tool identifiers.');\nif(JSON.stringify(navTools)!==JSON.stringify(expectedNavTools)) throw new Error(\`Pages drawer order changed unexpectedly. Expected \${expectedNavTools.join(' > ')}, got \${navTools.join(' > ')}.\`);`;
-const navAndPanelContract = `${navContract}\nconst panelTools=[...html.matchAll(/<section id="tool-([^\\"]+)" class="tool-panel[^\\"]*">/g)].map(match=>match[1]);\nconst expectedPanelTools=[...expectedNavTools,'settings'];\nif(JSON.stringify(panelTools)!==JSON.stringify(expectedPanelTools)) throw new Error(\`Physical tool-panel order must match Pages drawer order with Settings last. Expected \${expectedPanelTools.join(' > ')}, got \${panelTools.join(' > ')}.\`);`;
-verifyFeatures = replaceOnce(verifyFeatures, navContract, navAndPanelContract, 'Pages navigation verification block');
+const navOrderCheck = "if(JSON.stringify(navTools)!==JSON.stringify(expectedNavTools)) throw new Error(`Pages drawer order changed unexpectedly. Expected ${expectedNavTools.join(' > ')}, got ${navTools.join(' > ')}.`);";
+const navAndPanelOrderCheck = `${navOrderCheck}\nconst panelTools=[...html.matchAll(/<section id=\"tool-([^\"]+)\" class=\"tool-panel[^\"]*\">/g)].map(match=>match[1]);\nconst expectedPanelTools=[...expectedNavTools,'settings'];\nif(JSON.stringify(panelTools)!==JSON.stringify(expectedPanelTools)) throw new Error(\`Physical tool-panel order must match Pages drawer order with Settings last. Expected \${expectedPanelTools.join(' > ')}, got \${panelTools.join(' > ')}.\`);`;
+verifyFeatures = replaceOnce(verifyFeatures, navOrderCheck, navAndPanelOrderCheck, 'Pages drawer order verifier');
 verifyFeatures = replaceOnce(
   verifyFeatures,
   "const tagline='The multi-tool built specifically for efficient shop fabrication. — Navigate the tools with the [ <strong>≡</strong> Pages ] button in the top right corner. — Understand the tool before you use it.';",
