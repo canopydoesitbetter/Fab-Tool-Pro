@@ -227,9 +227,12 @@
           #pageMenuBtn.fab-page-menu-btn{width:72px;height:72px;padding:5px;border-radius:16px;}
           #pageMenuBtn.fab-page-menu-btn.is-floating{width:70px;height:70px;}
           .fab-header-actions .theme-toggle{
+            flex:0 0 44px;
             width:100%;
             min-width:0;
+            height:44px;
             min-height:44px;
+            max-height:44px;
             align-self:end;
             padding:7px 6px;
             font-size:.8rem;
