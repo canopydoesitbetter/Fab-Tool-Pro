@@ -186,24 +186,64 @@
           min-width:0;
         }
         @media (max-width:760px){
+          .topbar .brand-row{
+            display:grid;
+            grid-template-columns:minmax(0,1fr) 90px;
+            grid-template-areas:
+              "brand actions"
+              "clock actions";
+            column-gap:12px;
+            row-gap:12px;
+            align-items:stretch;
+          }
           .topbar .header-brand{
-            flex:1 1 150px;
-            flex-basis:150px;
+            grid-area:brand;
+            width:100%;
             min-width:0;
+            display:block;
+          }
+          .topbar .brand-copy{
+            width:100%;
+          }
+          .topbar #shiftClockControl{
+            grid-area:clock;
+            width:100%;
+            min-width:0;
+            align-self:end;
           }
           .fab-header-actions{
-            flex:0 0 90px;
+            grid-area:actions;
+            flex:none;
             width:90px;
-            gap:8px;
+            min-width:90px;
+            align-self:stretch;
+            justify-content:space-between;
+            gap:10px;
           }
-          .fab-page-menu-dock-slot{height:72px;}
+          .fab-page-menu-dock-slot{
+            height:72px;
+            align-self:start;
+          }
           #pageMenuBtn.fab-page-menu-btn{width:72px;height:72px;padding:5px;border-radius:16px;}
           #pageMenuBtn.fab-page-menu-btn.is-floating{width:70px;height:70px;}
-          .fab-header-actions .theme-toggle{min-height:40px;padding:7px 6px;font-size:.8rem;}
+          .fab-header-actions .theme-toggle{
+            width:100%;
+            min-width:0;
+            min-height:44px;
+            align-self:end;
+            padding:7px 6px;
+            font-size:.8rem;
+          }
         }
         @media (max-width:420px){
-          .topbar .header-brand{flex-basis:138px;}
-          .fab-header-actions{flex-basis:84px;width:84px;}
+          .topbar .brand-row{
+            grid-template-columns:minmax(0,1fr) 84px;
+            column-gap:10px;
+          }
+          .fab-header-actions{
+            width:84px;
+            min-width:84px;
+          }
           .fab-page-menu-dock-slot{height:66px;}
           #pageMenuBtn.fab-page-menu-btn{width:66px;height:66px;border-radius:15px;}
           #pageMenuBtn.fab-page-menu-btn.is-floating{width:66px;height:66px;}
