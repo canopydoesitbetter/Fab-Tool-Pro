@@ -41,6 +41,10 @@ test('wizard hat Pages control docks above theme and floats at the right edge on
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect(trigger).toHaveClass(/\bis-floating\b/);
+  await expect.poll(async () => page.evaluate(() => {
+    const rect = document.getElementById('pageMenuBtn').getBoundingClientRect();
+    return window.innerWidth - rect.right;
+  })).toBeLessThanOrEqual(28);
 
   const floating = await page.evaluate(() => {
     const trigger = document.getElementById('pageMenuBtn');
