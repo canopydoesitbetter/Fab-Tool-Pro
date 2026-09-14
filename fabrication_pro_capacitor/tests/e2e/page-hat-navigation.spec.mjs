@@ -73,6 +73,7 @@ test('phone header keeps clock lower-left with hat centered above lower-right th
     const topbar = document.querySelector('.topbar').getBoundingClientRect();
     const copy = document.querySelector('.brand-copy').getBoundingClientRect();
     const clock = document.getElementById('shiftClockControl').getBoundingClientRect();
+    const clockButton = document.getElementById('shiftClockBtn').getBoundingClientRect();
     const hat = document.getElementById('pageMenuBtn').getBoundingClientRect();
     const theme = document.getElementById('themeToggle').getBoundingClientRect();
     return {
@@ -86,6 +87,7 @@ test('phone header keeps clock lower-left with hat centered above lower-right th
       clockTop: clock.top,
       clockBottom: clock.bottom,
       clockWidth: clock.width,
+      clockButtonHeight: clockButton.height,
       hatLeft: hat.left,
       hatRight: hat.right,
       hatBottom: hat.bottom,
@@ -93,6 +95,7 @@ test('phone header keeps clock lower-left with hat centered above lower-right th
       themeRight: theme.right,
       themeTop: theme.top,
       themeBottom: theme.bottom,
+      themeHeight: theme.height,
     };
   });
 
@@ -109,4 +112,6 @@ test('phone header keeps clock lower-left with hat centered above lower-right th
   expect(geometry.hatBottom).toBeLessThanOrEqual(geometry.themeTop - 6);
   expect(geometry.themeRight).toBeLessThanOrEqual(geometry.topbarRight - 12);
   expect(geometry.copyRight).toBeLessThanOrEqual(geometry.hatLeft - 6);
+  expect(Math.abs(geometry.themeHeight - geometry.clockButtonHeight)).toBeLessThanOrEqual(1);
+  expect(geometry.themeHeight).toBeLessThanOrEqual(46);
 });
