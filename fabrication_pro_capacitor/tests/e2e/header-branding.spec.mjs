@@ -13,15 +13,17 @@ const EXPECTED_PAGE_ORDER = [
   'overhang'
 ];
 
-test('header uses the approved app logo without repeating the app name', async ({ page }) => {
+test('header uses the approved wizard-hat logo as the Pages control without repeating the app name', async ({ page }) => {
   await openApp(page);
 
-  const logo = page.locator('#appHeaderLogo');
+  const trigger = page.locator('#pageMenuBtn');
+  const logo = trigger.locator('#appHeaderLogo');
   await expect(logo).toBeVisible();
   await expect(logo).toHaveAttribute('src', 'app-logo.jpg');
   await expect(logo).toHaveAttribute('alt', 'Fabri-Cadabra');
+  await expect(trigger).toHaveAttribute('aria-label', 'Open Pages');
   await expect(page.locator('.topbar .brand h1')).toHaveCount(0);
-  await expect(page.locator('.topbar .brand-copy')).toHaveText('Built for efficient shop fabrication. — Navigate with the [ ≡ Pages ] button in the top right corner.');
+  await expect(page.locator('.topbar .brand-copy')).toHaveText('Built for efficient shop fabrication. — Tap the wizard hat to open Pages.');
   await expectNoHorizontalOverflow(page);
 });
 
