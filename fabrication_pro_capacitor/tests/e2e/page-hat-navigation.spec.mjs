@@ -65,3 +65,48 @@ test('wizard hat Pages control docks above theme and floats at the right edge on
   await expect(trigger).toHaveClass(/\bis-docked\b/);
   await expect(themeToggle).toBeVisible();
 });
+
+test('phone header keeps clock lower-left with hat centered above lower-right theme control', async ({ page }) => {
+  await page.setViewportSize({ width: 540, height: 800 });
+
+  const geometry = await page.evaluate(() => {
+    const topbar = document.querySelector('.topbar').getBoundingClientRect();
+    const copy = document.querySelector('.brand-copy').getBoundingClientRect();
+    const clock = document.getElementById('shiftClockControl').getBoundingClientRect();
+    const hat = document.getElementById('pageMenuBtn').getBoundingClientRect();
+    const theme = document.getElementById('themeToggle').getBoundingClientRect();
+    return {
+      topbarLeft: topbar.left,
+      topbarRight: topbar.right,
+      copyLeft: copy.left,
+      copyRight: copy.right,
+      copyBottom: copy.bottom,
+      copyWidth: copy.width,
+      clockLeft: clock.left,
+      clockTop: clock.top,
+      clockBottom: clock.bottom,
+      clockWidth: clock.width,
+      hatLeft: hat.left,
+      hatRight: hat.right,
+      hatBottom: hat.bottom,
+      themeLeft: theme.left,
+      themeRight: theme.right,
+      themeTop: theme.top,
+      themeBottom: theme.bottom,
+    };
+  });
+
+  const hatCenter = (geometry.hatLeft + geometry.hatRight) / 2;
+  const themeCenter = (geometry.themeLeft + geometry.themeRight) / 2;
+
+  expect(geometry.copyLeft - geometry.topbarLeft).toBeLessThanOrEqual(24);
+  expect(geometry.copyWidth).toBeGreaterThan(260);
+  expect(geometry.clockWidth).toBeGreaterThan(260);
+  expect(geometry.clockLeft).toBeLessThan(geometry.themeLeft);
+  expect(geometry.clockTop).toBeGreaterThanOrEqual(geometry.copyBottom + 6);
+  expect(Math.abs(geometry.clockBottom - geometry.themeBottom)).toBeLessThanOrEqual(6);
+  expect(Math.abs(hatCenter - themeCenter)).toBeLessThanOrEqual(2);
+  expect(geometry.hatBottom).toBeLessThanOrEqual(geometry.themeTop - 6);
+  expect(geometry.themeRight).toBeLessThanOrEqual(geometry.topbarRight - 12);
+  expect(geometry.copyRight).toBeLessThanOrEqual(geometry.hatLeft - 6);
+});
