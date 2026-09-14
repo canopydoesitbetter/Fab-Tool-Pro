@@ -6,6 +6,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('wizard hat Pages control docks above theme and floats at the right edge on scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 360 });
+
   const trigger = page.locator('#pageMenuBtn');
   const logo = trigger.locator('#appHeaderLogo');
   const themeToggle = page.locator('#themeToggle');
