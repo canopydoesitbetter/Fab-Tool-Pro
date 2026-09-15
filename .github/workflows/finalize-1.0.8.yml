@@ -37,7 +37,6 @@ jobs:
           const version = '1.0.8';
           const previousVersion = '1.0.7';
           const buildNumber = 1000017;
-
           const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
           const write = (relative, content) => fs.writeFileSync(path.join(root, relative), content, 'utf8');
 
@@ -47,17 +46,13 @@ jobs:
           write('package.json', JSON.stringify(pkg, null, 2) + '\n');
 
           const lock = JSON.parse(read('package-lock.json'));
-          if (lock.version !== previousVersion || lock.packages?.['']?.version !== previousVersion) {
-            throw new Error('package-lock.json is not on the expected 1.0.7 baseline.');
-          }
+          if (lock.version !== previousVersion || lock.packages?.['']?.version !== previousVersion) throw new Error('package-lock.json is not on the expected 1.0.7 baseline.');
           lock.version = version;
           lock.packages[''].version = version;
           write('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
 
           const release = JSON.parse(read('release.json'));
-          if (release.version !== previousVersion || release.buildNumber !== 1000016) {
-            throw new Error(`Unexpected release baseline: ${JSON.stringify(release)}`);
-          }
+          if (release.version !== previousVersion || release.buildNumber !== 1000016) throw new Error(`Unexpected release baseline: ${JSON.stringify(release)}`);
           write('release.json', JSON.stringify({ version, buildNumber, previousVersion }, null, 2) + '\n');
 
           const bootstrapPath = 'www/app/bootstrap.js';
@@ -76,21 +71,23 @@ jobs:
           if (!html.includes(oldCurrentLabel)) throw new Error('1.0.7 current changelog label was not found.');
           html = html.replace(oldCurrentLabel, "<span class='changelog-version-label'>Version 1.0.7</span>");
 
-          const entry = `      <article class='changelog-entry changelog-release' data-changelog-version='1.0.8'>
-        <div class='changelog-entry-heading'>
-          <div>
-            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.8</span>
-            <h2>Wizard Hat Pages Navigation</h2>
-          </div>
-        </div>
-        <ul>
-          <li><b>Branded Pages Control:</b> Replaced the floating text Pages button with the Fabri-Cadabra wizard-hat artwork as the primary Pages control, keeping the familiar Pages drawer one tap away without extra header clutter.</li>
-          <li><b>Docked Header Placement:</b> At the top of the app, the wizard hat docks on the right side of the header centered directly above the Light/Dark control, while Clock In/Out remains anchored to the lower-left for a compact, balanced phone layout.</li>
-          <li><b>Scroll-Aware Floating:</b> As the header scrolls away, the same wizard-hat control smoothly detaches to the right edge of the screen and stays within easy reach, then returns to its docked header position when the user scrolls back to the top.</li>
-          <li><b>Tactile &amp; Accessible:</b> The wizard-hat control uses Fabri-Cadabra's established raised-button styling with clear hover, press, and keyboard-focus feedback while preserving the existing drawer backdrop, Escape-key, focus, and page-selection behavior.</li>
-          <li><b>Regression Protection:</b> Added automated coverage for docked and floating states, right-edge placement, compact phone header alignment, equal-height lower controls, and unchanged Pages drawer behavior.</li>
-        </ul>
-      </article>`;
+          const entry = [
+            "      <article class='changelog-entry changelog-release' data-changelog-version='1.0.8'>",
+            "        <div class='changelog-entry-heading'>",
+            "          <div>",
+            "            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.8</span>",
+            "            <h2>Wizard Hat Pages Navigation</h2>",
+            "          </div>",
+            "        </div>",
+            "        <ul>",
+            "          <li><b>Branded Pages Control:</b> Replaced the floating text Pages button with the Fabri-Cadabra wizard-hat artwork as the primary Pages control, keeping the familiar Pages drawer one tap away without extra header clutter.</li>",
+            "          <li><b>Docked Header Placement:</b> At the top of the app, the wizard hat docks on the right side of the header centered directly above the Light/Dark control, while Clock In/Out remains anchored to the lower-left for a compact, balanced phone layout.</li>",
+            "          <li><b>Scroll-Aware Floating:</b> As the header scrolls away, the same wizard-hat control smoothly detaches to the right edge of the screen and stays within easy reach, then returns to its docked header position when the user scrolls back to the top.</li>",
+            "          <li><b>Tactile &amp; Accessible:</b> The wizard-hat control uses Fabri-Cadabra's established raised-button styling with clear hover, press, and keyboard-focus feedback while preserving the existing drawer backdrop, Escape-key, focus, and page-selection behavior.</li>",
+            "          <li><b>Regression Protection:</b> Added automated coverage for docked and floating states, right-edge placement, compact phone header alignment, equal-height lower controls, and unchanged Pages drawer behavior.</li>",
+            "        </ul>",
+            "      </article>"
+          ].join('\n');
           html = html.replace(previousEntry, entry + '\n' + previousEntry);
           write(htmlPath, html);
           NODE
@@ -108,12 +105,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            fabrication_pro_capacitor/package.json \
-            fabrication_pro_capacitor/package-lock.json \
-            fabrication_pro_capacitor/release.json \
-            fabrication_pro_capacitor/www/app/bootstrap.js \
-            fabrication_pro_capacitor/www/index.html
+          git add fabrication_pro_capacitor/package.json fabrication_pro_capacitor/package-lock.json fabrication_pro_capacitor/release.json fabrication_pro_capacitor/www/app/bootstrap.js fabrication_pro_capacitor/www/index.html
           git diff --cached --check
           git commit -m 'release: finalize v1.0.8'
           git push origin HEAD:work
