@@ -947,10 +947,25 @@
         <button id='settingsChangelogCloseBtn' class='cut-list-close-btn' type='button' aria-label='Close Changelog'>×</button>
       </div>
       <div class='cut-list-drawer-body settings-changelog-body'>
+      <article class='changelog-entry changelog-release' data-changelog-version='1.0.8'>
+        <div class='changelog-entry-heading'>
+          <div>
+            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.8</span>
+            <h2>Wizard Hat Pages Navigation</h2>
+          </div>
+        </div>
+        <ul>
+          <li><b>Branded Pages Control:</b> Replaced the floating text Pages button with the Fabri-Cadabra wizard-hat artwork as the primary Pages control, keeping the familiar Pages drawer one tap away without extra header clutter.</li>
+          <li><b>Docked Header Placement:</b> At the top of the app, the wizard hat docks on the right side of the header centered directly above the Light/Dark control, while Clock In/Out remains anchored to the lower-left for a compact, balanced phone layout.</li>
+          <li><b>Scroll-Aware Floating:</b> As the header scrolls away, the same wizard-hat control smoothly detaches to the right edge of the screen and stays within easy reach, then returns to its docked header position when the user scrolls back to the top.</li>
+          <li><b>Tactile &amp; Accessible:</b> The wizard-hat control uses Fabri-Cadabra's established raised-button styling with clear hover, press, and keyboard-focus feedback while preserving the existing drawer backdrop, Escape-key, focus, and page-selection behavior.</li>
+          <li><b>Regression Protection:</b> Added automated coverage for docked and floating states, right-edge placement, compact phone header alignment, equal-height lower controls, and unchanged Pages drawer behavior.</li>
+        </ul>
+      </article>
       <article class='changelog-entry changelog-release' data-changelog-version='1.0.7'>
         <div class='changelog-entry-heading'>
           <div>
-            <span id='settingsCurrentChangelogVersion' class='changelog-version-label'>Version 1.0.7</span>
+            <span class='changelog-version-label'>Version 1.0.7</span>
             <h2>Fastener Spacing Workflow Upgrade</h2>
           </div>
         </div>
