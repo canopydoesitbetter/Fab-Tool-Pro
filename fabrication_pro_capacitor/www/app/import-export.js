@@ -17,6 +17,13 @@
     return normalizeSavedOptimizerJobsDictionary(readSavedOptimizerJobs());
   }
 
+  function normalizedFastenerSpacingForBackup() {
+    const definition=getPersistentStoreDefinition('fastenerSpacing');
+    const result=normalizePersistentStoreValue('fastenerSpacing',storageGet(definition.key),{fromImport:true});
+    if (result.status==='invalid' || result.status==='unsupported') throw result.error || new Error('Fastener Spacing data could not be safely backed up.');
+    return result.value;
+  }
+
   function normalizedBackupPreferences() {
     const themeResult=normalizePersistentStoreValue('theme',storageGet(getPersistentStoreDefinition('theme').key),{fromImport:true});
     const toolResult=normalizePersistentStoreValue('lastTool',storageGet(getPersistentStoreDefinition('lastTool').key),{fromImport:true});
@@ -58,6 +65,7 @@
         fabricatorNotes:notes,
         checklists,
         optimizer:{savedJobs:currentSavedOptimizerJobsForBackup()},
+        fastenerSpacing:normalizedFastenerSpacingForBackup(),
         preferences:normalizedBackupPreferences()
       }
     };
@@ -110,6 +118,9 @@
     const checklistRecord=normalizeBackupStore('checklists',sections.checklists);
     if (!sections.optimizer || typeof sections.optimizer!=='object' || Array.isArray(sections.optimizer) || !Object.prototype.hasOwnProperty.call(sections.optimizer,'savedJobs')) throw new Error('The Sheet Optimizer backup section is invalid.');
     const savedJobs=normalizeBackupStore('optimizerSavedJobs',sections.optimizer.savedJobs);
+    const fastenerSpacing=Object.prototype.hasOwnProperty.call(sections,'fastenerSpacing')
+      ? normalizeBackupStore('fastenerSpacing',sections.fastenerSpacing)
+      : null;
 
     const preferences=sections.preferences;
     if (!preferences || typeof preferences!=='object' || Array.isArray(preferences)) throw new Error('The preferences backup section is invalid.');
@@ -130,6 +141,9 @@
       [getPersistentStoreDefinition('quickReferenceTable').key]:serializePersistentStoreValue('quickReferenceTable',quickReferenceTable),
       [getPersistentStoreDefinition('quickReferenceDisplayMode').key]:serializePersistentStoreValue('quickReferenceDisplayMode',quickReferenceDisplayMode)
     };
+    if (fastenerSpacing!==null) {
+      storage[getPersistentStoreDefinition('fastenerSpacing').key]=serializePersistentStoreValue('fastenerSpacing',fastenerSpacing);
+    }
     return {storage,exportedAt,appVersion:candidate.appVersion,schemaVersion:FABRI_CADABRA_BACKUP_SCHEMA_VERSION,sourceSchemaVersion};
   }
 
