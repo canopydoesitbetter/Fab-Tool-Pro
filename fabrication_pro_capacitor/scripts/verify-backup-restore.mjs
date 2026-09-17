@@ -36,6 +36,15 @@ const expected=[
 for (const key of expected) need(app.includes(key),`Stable persistence key disappeared from registered app source: ${key}.`);
 need(new Set(expected).size===expected.length,'Backup verifier expected-key list contains duplicates.');
 
+for(const marker of [
+  'function normalizedFastenerSpacingForBackup()',
+  "fastenerSpacing:normalizedFastenerSpacingForBackup()",
+  "Object.prototype.hasOwnProperty.call(sections,'fastenerSpacing')",
+  "normalizeBackupStore('fastenerSpacing',sections.fastenerSpacing)",
+  "storage[getPersistentStoreDefinition('fastenerSpacing').key]=serializePersistentStoreValue('fastenerSpacing',fastenerSpacing)"
+]) need(app.includes(marker),`Fastener Spacing full-backup contract missing ${marker}.`);
+need(app.includes("for (const name of ['taskLogging','shiftSchedule','fabricatorNotes','checklists','optimizer','preferences'])"),'Legacy schema-v2 required-section list must remain backward compatible and not require the newer Fastener Spacing field.');
+
 for(const id of ['settingsDataBackupCard','settingsBackupBtn','settingsRestoreBtn','settingsBackupRestoreFile','settingsRestoreRecoveryBtn','settingsBackupStatus','settingsRecoveryMeta']) {
   need(html.includes(`id='${id}'`) || html.includes(`id="${id}"`),`Settings Data & Backup markup missing ${id}.`);
 }
@@ -86,4 +95,4 @@ need(String(pkg.scripts?.verify||'').includes('npm run verify:backup-restore'),'
 const release=JSON.parse(readFileSync(join(root,'release.json'),'utf8'));
 need(pkg.version===release.version,`Backup verifier package version ${pkg.version} must match release metadata ${release.version}.`);
 
-console.log('Unified backup schema v2, central 11-store registry, v1 migration, restore safety, and recovery contract: OK');
+console.log('Unified backup schema v2, central 11-store registry, Fastener Spacing round-trip, v1 migration, restore safety, and recovery contract: OK');
