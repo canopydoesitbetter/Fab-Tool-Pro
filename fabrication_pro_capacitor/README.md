@@ -10,12 +10,26 @@ Edit the file that owns the thing you want to change:
 | --- | --- |
 | `www/index.html` | Application markup, visible copy, page/drawer structure, calculator/guide markup |
 | `www/styles.css` | Core application styling and responsive behavior |
-| `www/app.js` | Fabrication tools, saved-data behavior, Shift Schedule timer policy/persistence, canonical navigation, shared drawer mechanics, backup-domain bridge, self-tests |
+| `www/app/bootstrap.js` | Application version, shared helpers, recovery-snapshot helper, and early app-level event hooks |
+| `www/app/storage.js` | Central persistent-store registry, schema normalization/migrations, and recovery-protection state |
+| `www/app/drawers.js` | Shared drawer focus behavior and the canonical confirmation dialog |
+| `www/app/navigation.js` | Pages navigation, theme, wizard-hat dock/floating behavior, shared page-info drawers, and the public `FabriCadabraApp` surface |
+| `www/app/shift-schedule.js` | Shift Schedule timing engine, persistence, clock state, pause policy, and Task Logging permission rules |
+| `www/app/task-logging.js` | Task Logging jobs, presets, timers, task notes, sessions, and feature-specific import/export |
+| `www/app/notes.js` | Fabricator Notes data, formatting, persistence, and feature-specific import/export |
+| `www/app/checklist.js` | Checklist topics/items, completion, reordering, persistence, and feature-specific import/export |
+| `www/app/quick-reference.js` | Quick Reference tables, cell selection, and display/table preferences |
+| `www/app/calculators.js` | Aluminum Overhang and Fastener Spacing calculators, including Fastener Spacing persistent progress |
+| `www/app/sheet-optimizer.js` | Sheet Optimizer products/materials, saved jobs, nesting, cut tracking, and job import/export |
+| `www/app/saw-optimizer.js` | Saw Optimizer stock packing, cut tracking, and Saw job import/export |
+| `www/app/settings.js` | Settings UI, changelog, Shift Schedule settings controls, and settings drawers |
+| `www/app/import-export.js` | Full-backup domain bridge, backup payload construction, restore normalization, and app-owned persistence-key exposure |
+| `www/app/self-tests.js` | In-app fabrication and data-contract self-tests |
 | `www/backup.js` | Full-app backup/restore orchestration, IndexedDB recovery snapshots, and transaction-style localStorage replacement |
 | `www/calculator.js` | Basic Calculator behavior and Calculator Guide event wiring |
 | `www/native-compat.js` | Capacitor-only Blob export compatibility |
 
-There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. `app.js` owns domain validation and persistent state rules; `backup.js` only orchestrates full backup/restore and recovery by calling the narrow backup bridge exposed by `app.js`. Git history is the archive for previous source versions.
+The 15 files under `www/app/` are loaded in the canonical order declared by `scripts/app-module-manifest.mjs`. There is no duplicate frozen application file and no runtime enhancement layer that replaces stale markup after startup. The `www/app/` modules collectively own domain validation and persistent-state rules; `www/backup.js` only orchestrates full backup/restore and recovery by calling the narrow backup bridge exposed by `www/app/import-export.js`. Git history is the archive for previous source versions.
 
 ## Compatibility guarantees
 
@@ -59,11 +73,11 @@ npm install
 npm run verify
 ```
 
-The verification suite checks the canonical source structure, JavaScript syntax, protected persistence/import/export contracts, native Blob export byte preservation, iOS privacy configuration, and Android permanent-signing workflow configuration.
+The verification suite checks the canonical module structure and load order, JavaScript syntax, protected persistence/import/export contracts, native Blob export byte preservation, iOS privacy configuration, and Android permanent-signing workflow configuration.
 
 ### Browser regression tests
 
-The Playwright regression suite drives the shipped `www/` application through real Chromium DOM interactions, including desktop and mobile viewports, navigation, drawers, Task Logging timers, Shift Clock, Notes, Checklist, calculators, Quick Reference, and both optimizers. The tests serve `www/` from a local test server and run in isolated browser contexts; they do not connect to or reuse production user data.
+The Playwright regression suite drives the shipped `www/` application through real Chromium DOM interactions, including desktop and mobile viewports, navigation, drawers, Task Logging timers, Shift Clock, Notes, Checklist, calculators, Quick Reference, full backup/restore, and both optimizers. The tests serve `www/` from a local test server and run in isolated browser contexts; they do not connect to or reuse production user data.
 
 For a clean local browser-test setup:
 
@@ -134,10 +148,10 @@ When working with generated native projects locally, sync the current web assets
 npm run sync
 ```
 
-Generated `android/` and `ios/` projects are build products for this workflow; the canonical product source remains the files under `www/` listed above.
+Generated `android/` and `ios/` projects are build products for this workflow; the canonical product source remains the files under `www/` described above.
 
 ## Persistence notes
 
-Fabri-Cadabra uses browser/WebView `localStorage`. In Capacitor, that storage belongs to the installed application and persists across normal restarts and same-identity app updates. Uninstalling the application removes app-local storage. Settings → Data & Backup can export one full portable JSON backup of all app-owned persistent state, while the existing feature-specific JSON exports remain available for targeted transfer. Destructive replacement imports and full restore create one rolling IndexedDB recovery snapshot before mutation.
+Fabri-Cadabra uses browser/WebView `localStorage`. In Capacitor, that storage belongs to the installed application and persists across normal restarts and same-identity app updates. Uninstalling the application removes app-local storage. Settings → Data & Backup can export one full portable JSON backup of all app-owned persistent state, including the Fastener Spacing workspace, while the existing feature-specific JSON exports remain available for targeted transfer. Destructive replacement imports and full restore create one rolling IndexedDB recovery snapshot before mutation.
 
 Shift Schedule configuration and its live clock/override state use the isolated `fabricationShiftScheduleV1` localStorage record. This state is a Task Logging guardrail, not a payroll/timecard history or export format.
