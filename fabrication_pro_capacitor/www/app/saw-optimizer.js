@@ -3,6 +3,7 @@
   const MAX_SAW_PIECES = 500;
   const MAX_SAW_ROWS = 150;
   const MAX_SAW_TUBE_LENGTH = 10000;
+  const MAX_SAW_LABEL_LENGTH = 120;
   const SAW_JOB_FILE_VERSION = 1;
   const MAX_SAW_IMPORT_BYTES = 2 * 1024 * 1024;
   const sawTubeLength = document.getElementById('sawTubeLength');
@@ -104,7 +105,7 @@
       if (!Number.isInteger(id) || id<1 || ids.has(id)) throw new Error(`Saw part ${index+1} has an invalid or duplicate ID.`);
       if (!Number.isFinite(length) || length<=0 || length>MAX_SAW_TUBE_LENGTH) throw new Error(`Saw part ${index+1} has an invalid length.`);
       if (!Number.isInteger(qty) || qty<1 || qty>500) throw new Error(`Saw part ${index+1} has an invalid quantity.`);
-      if (label.length>MAX_OPTIMIZER_LABEL_LENGTH) throw new Error(`Saw part ${index+1} label exceeds ${MAX_OPTIMIZER_LABEL_LENGTH} characters.`);
+      if (label.length>MAX_SAW_LABEL_LENGTH) throw new Error(`Saw part ${index+1} label exceeds ${MAX_SAW_LABEL_LENGTH} characters.`);
       ids.add(id);
       return {id,label,length,qty};
     });
@@ -252,8 +253,8 @@
       showSawStatus('Quantity must be a whole number from 1 through 500.');
       return;
     }
-    if (label.length>MAX_OPTIMIZER_LABEL_LENGTH) {
-      showSawStatus(`Part labels are limited to ${MAX_OPTIMIZER_LABEL_LENGTH} characters.`);
+    if (label.length>MAX_SAW_LABEL_LENGTH) {
+      showSawStatus(`Part labels are limited to ${MAX_SAW_LABEL_LENGTH} characters.`);
       return;
     }
     if (sawJob.length>=MAX_SAW_ROWS) {
@@ -566,4 +567,3 @@
     clearSawStatus();
   });
   renderSawJob();
-
